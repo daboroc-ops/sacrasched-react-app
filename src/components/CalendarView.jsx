@@ -154,6 +154,22 @@ function DayModal({ day, massSlots, myEvents, sacEvents, onClose }) {
 export default function CalendarView() {
     const axios = useAxiosPrivate();
 
+    /* ── Inject JotForm AI agent chat widget ─────────────────── */
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src   = 'https://cdn.jotfor.ms/agent/embedjs/019dfcd2d4fc73cab42fc9d7f051841af52a/embed.js?autoOpenChatIn=1';
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            // Remove the script tag when leaving the Calendar tab
+            document.body.removeChild(script);
+            // Also remove the widget iframe/container that JotForm injects
+            document.querySelectorAll('[id^="JotFormAgent"], [class*="jotform-agent"]')
+                .forEach(el => el.remove());
+        };
+    }, []);
+
     const now   = new Date();
     const [year,  setYear]  = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth());
