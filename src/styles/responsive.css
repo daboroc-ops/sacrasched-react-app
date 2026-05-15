@@ -1,0 +1,35 @@
+@media (max-width: 900px) {
+    .schedule-grid { grid-template-columns: 1fr 1fr; }
+    .cal-legend     { display: none; }
+}
+
+@media (max-width: 768px) {
+    /* Sidebar slides off-screen; toggled with .sidebar--open */
+    .sidebar              { transform: translateX(-100%); }
+    .sidebar--open        { transform: translateX(0); }
+    .sidebar-backdrop     { display: block; }
+
+    /* Header spans full width */
+    .app-main             { margin-left: 0; }
+    .header-menu-btn      { display: flex; }
+
+    /* Forms go single-column */
+    .form-grid            { grid-template-columns: 1fr; }
+    .form-group--full     { grid-column: 1; }
+
+    /* Other grids */
+    .schedule-grid        { grid-template-columns: 1fr; }
+    .req-card__body       { grid-template-columns: 1fr; }
+
+    /* Calendar: smaller cells, hide extra chips */
+    .cal-cell             { min-height: 60px; }
+    .cal-cell__event      { display: none; }
+    .cal-cell__event:first-child { display: block; }
+}
+
+@media (max-width: 480px) {
+    .auth-card  { padding: 24px 18px; }
+    .sub-tabs   { gap: 4px; }
+    .sub-tab    { padding: 6px 12px; font-size: 12px; }
+    .app-content { padding: 12px; }
+}

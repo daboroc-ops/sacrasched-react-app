@@ -1,0 +1,123 @@
+/* ─── Book Services sub-tabs ── */
+.sub-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.sub-tab {
+    padding: 7px 16px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+}
+
+.sub-tab:hover        { background: var(--stone-100); color: var(--text-primary); }
+.sub-tab--active      { background: var(--stone-800); color: #fff; border-color: var(--stone-800); }
+
+.book-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ─── My Requests filter tabs ── */
+.filter-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.filter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+}
+
+.filter-tab:hover       { background: var(--stone-100); }
+.filter-tab--active     { background: var(--stone-800); color: #fff; border-color: var(--stone-800); }
+
+.filter-tab__count {
+    background: rgba(255,255,255,.2);
+    color: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.filter-tab:not(.filter-tab--active) .filter-tab__count {
+    background: var(--stone-100);
+    color: var(--text-muted);
+}
+
+/* ─── Request cards ── */
+.req-list { display: flex; flex-direction: column; gap: 8px; }
+
+.req-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition);
+}
+.req-card:hover { box-shadow: var(--shadow-md); }
+
+.req-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--transition);
+}
+.req-card__header:hover { background: var(--stone-50); }
+
+.req-card__info    { display: flex; flex-direction: column; gap: 2px; }
+.req-card__type    { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.req-card__sub     { font-size: 12px; color: var(--text-secondary); }
+
+.req-card__right   { display: flex; align-items: center; gap: 10px; }
+.req-card__date    { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.req-card__chevron { font-size: 10px; color: var(--text-muted); }
+
+.req-card__body {
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--stone-50);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 20px;
+}
+
+.req-card__detail { display: flex; flex-direction: column; gap: 2px; }
+
+.req-card__key {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+}
+
+.req-card__val { font-size: 13px; color: var(--text-primary); }

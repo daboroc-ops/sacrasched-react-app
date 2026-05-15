@@ -1,0 +1,98 @@
+/* ─── Auth page wrapper ── */
+.auth-page {
+    min-height: 100vh;
+    background: var(--stone-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+}
+
+/* ─── Auth card ── */
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+}
+
+.auth-card--wide    { max-width: 560px; }
+.auth-card--success { text-align: center; }
+
+/* ─── Brand / logo block ── */
+.auth-brand {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.auth-brand__icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--stone-800);
+    color: var(--brand);
+    font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.auth-brand__icon--success {
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: 28px;
+    width: 64px; height: 64px;
+    margin-bottom: 16px;
+}
+
+.auth-brand__name { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.auth-brand__sub  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ─── Headings ── */
+.auth-title    { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.auth-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+
+/* ─── Inline error ── */
+.auth-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+/* ─── Form spacing ── */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ─── Footer link ── */
+.auth-footer { text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 20px; }
+.auth-link   { color: var(--brand-dark); font-weight: 600; }
+.auth-link:hover { text-decoration: underline; }
+
+/* ─── Password strength hints ── */
+.pwd-hints {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.pwd-hint {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--stone-100);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.pwd-hint.ok  { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.pwd-hint.bad { background: #fee2e2; color: #991b1b; border-color: #fecaca; }

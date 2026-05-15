@@ -1,0 +1,9 @@
+@import './styles/base.css';
+@import './styles/layout.css';
+@import './styles/auth.css';
+@import './styles/forms.css';
+@import './styles/calendar.css';
+@import './styles/schedule.css';
+@import './styles/services.css';
+@import './styles/responsive.css';
+@import './styles/payment.css';
