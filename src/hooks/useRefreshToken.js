@@ -8,7 +8,8 @@ const useRefreshToken = () => {
         const res = await axiosPublic.get('/refresh');
         setAuth(prev => ({
             ...prev,
-            accessToken: res.data.accessToken
+            accessToken: res.data.accessToken,
+            ...(res.data.user ? { user: res.data.user } : {}),
         }));
         return res.data.accessToken;
     };

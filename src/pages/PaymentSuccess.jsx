@@ -16,7 +16,7 @@ export default function PaymentSuccess() {
     const axios                 = useAxiosPrivate();
     const paymentId             = searchParams.get('payment_id');
 
-    const [phase,    setPhase]    = useState('checking'); // checking | completed | failed | pending
+    const [phase,    setPhase]    = useState('checking'); // checking | succeeded | failed | pending
     const [payment,  setPayment]  = useState(null);
     const pollCount  = useRef(0);
     const pollTimer  = useRef(null);
@@ -26,7 +26,7 @@ export default function PaymentSuccess() {
         try {
             const res = await axios.get(`/payment/${paymentId}/verify`);
             setPayment(res.data.payment);
-            setPhase(res.data.status === 'completed' ? 'completed'
+            setPhase(res.data.status === 'succeeded' ? 'succeeded'
                    : res.data.status === 'failed'    ? 'failed'
                    :                                   'pending');
         } catch {
@@ -78,7 +78,7 @@ export default function PaymentSuccess() {
         </div>
     );
 
-    if (phase === 'completed') return (
+    if (phase === 'succeeded') return (
         <div className="pay-result-page">
             <div className="pay-result-card">
                 <div className="pay-result-card__icon pay-result-card__icon--success">

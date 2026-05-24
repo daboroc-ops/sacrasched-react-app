@@ -93,9 +93,10 @@
 }
 .req-card__header:hover { background: var(--stone-50); }
 
-.req-card__info    { display: flex; flex-direction: column; gap: 2px; }
-.req-card__type    { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.req-card__sub     { font-size: 12px; color: var(--text-secondary); }
+.req-card__info      { display: flex; flex-direction: column; gap: 2px; }
+.req-card__type      { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.req-card__sub       { font-size: 12px; color: var(--text-secondary); }
+.req-card__submitted { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
 .req-card__right   { display: flex; align-items: center; gap: 10px; }
 .req-card__date    { font-size: 11px; color: var(--text-muted); white-space: nowrap; }

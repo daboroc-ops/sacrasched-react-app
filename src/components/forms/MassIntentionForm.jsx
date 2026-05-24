@@ -20,10 +20,16 @@ function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
 }
 
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 const blank = auth => ({
     intentionType:   '',
     requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    contactNumber:   '',
+    email:           auth?.user?.email          || '',
+    contactNumber:   auth?.user?.contactNumber  || '',
     intentionFor:    '',
     preferredDate:   '',
     preferredTime:   '',
@@ -93,6 +99,11 @@ export default function MassIntentionForm() {
                             value={form.requestorName} onChange={set('requestorName')} required />
                     </div>
                     <div className="form-group">
+                        <label className="form-label">Email <span className="req">*</span></label>
+                        <input className="form-input" type="email"
+                            value={form.email} onChange={set('email')} required />
+                    </div>
+                    <div className="form-group">
                         <label className="form-label">Contact Number <span className="req">*</span></label>
                         <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
                             value={form.contactNumber} onChange={set('contactNumber')} required />
@@ -137,7 +148,7 @@ export default function MassIntentionForm() {
                 <div className="form-grid">
                     <div className="form-group">
                         <label className="form-label">Preferred Date <span className="req">*</span></label>
-                        <input className="form-input" type="date" value={form.preferredDate}
+                        <input className="form-input" type="date" min={todayStr()} value={form.preferredDate}
                             onChange={e => setForm(p => ({ ...p, preferredDate: e.target.value, preferredTime: '' }))}
                             required />
                     </div>

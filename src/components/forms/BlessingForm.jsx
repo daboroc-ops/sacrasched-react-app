@@ -8,10 +8,24 @@ function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
 }
 
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Parish office hours: 8 AM – 5 PM, hourly slots
+const TIME_SLOTS = Array.from({ length: 10 }, (_, i) => {
+    const h = 8 + i;
+    const value = `${String(h).padStart(2,'0')}:00`;
+    const label = `${((h + 11) % 12) + 1}:00 ${h < 12 ? 'AM' : 'PM'}`;
+    return { value, label };
+});
+
 const blank = auth => ({
     blessingType:    '',
     requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    contactNumber:   '',
+    email:           auth?.user?.email          || '',
+    contactNumber:   auth?.user?.contactNumber  || '',
     blessingFor:     '',
     venue:           '',
     preferredDate:   '',
@@ -77,6 +91,11 @@ export default function BlessingForm() {
                             value={form.requestorName} onChange={set('requestorName')} required />
                     </div>
                     <div className="form-group">
+                        <label className="form-label">Email <span className="req">*</span></label>
+                        <input className="form-input" type="email"
+                            value={form.email} onChange={set('email')} required />
+                    </div>
+                    <div className="form-group">
                         <label className="form-label">Contact Number <span className="req">*</span></label>
                         <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
                             value={form.contactNumber} onChange={set('contactNumber')} required />
@@ -127,13 +146,18 @@ export default function BlessingForm() {
                 <div className="form-grid">
                     <div className="form-group">
                         <label className="form-label">Preferred Date <span className="req">*</span></label>
-                        <input className="form-input" type="date"
+                        <input className="form-input" type="date" min={todayStr()}
                             value={form.preferredDate} onChange={set('preferredDate')} required />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Preferred Time <span className="req">*</span></label>
-                        <input className="form-input" type="time"
-                            value={form.preferredTime} onChange={set('preferredTime')} required />
+                        <select className="form-select"
+                            value={form.preferredTime} onChange={set('preferredTime')} required>
+                            <option value="">— Select time —</option>
+                            {TIME_SLOTS.map(s => (
+                                <option key={s.value} value={s.value}>{s.label}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </section>

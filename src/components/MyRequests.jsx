@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronUp, faChevronDown, faInbox } from '@fortawesome/free-solid-svg-icons';
+import { faChevronUp, faChevronDown, faInbox, faClock } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import PayButton from './PayButton';
 
@@ -13,6 +13,20 @@ function fmtTime(t) {
     if (!t) return '—';
     const [h, m] = t.split(':').map(Number);
     return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+function isPastDate(iso) {
+    if (!iso) return false;
+    const d = new Date(iso); d.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    return d < today;
+}
+
+// Document Request has no service date — its `date` is createdAt, so exclude it.
+function deriveStatus(type, status, date) {
+    if (type === 'Document Request') return status;
+    if (status === 'rejected' || status === 'cancelled') return status;
+    return isPastDate(date) ? 'completed' : status;
 }
 
 function StatusBadge({ status }) {
@@ -35,6 +49,10 @@ function RequestCard({ item }) {
                 <div className="req-card__info">
                     <span className="req-card__type">{item.type}</span>
                     <span className="req-card__sub">{item.label}</span>
+                    <span className="req-card__submitted">
+                        <FontAwesomeIcon icon={faClock} style={{ marginRight: '4px', opacity: 0.55 }} />
+                        Submitted {fmtDate(item.createdAt)}
+                    </span>
                 </div>
                 <div className="req-card__right">
                     <StatusBadge status={item.status} />
@@ -57,22 +75,23 @@ function RequestCard({ item }) {
             {/* ── Fee row ── */}
             {item.fee > 0 && (
                 <div className="req-card__fee-row">
-                    <span className="req-card__fee-label">Service Fee</span>
+                    <span className="req-card__fee-label">Payment</span>
                     <span className="req-card__fee-amount">
                         ₱{Number(item.fee).toLocaleString()}
                     </span>
                     {item.isPaid
                         ? <span className="badge badge--paid">Paid</span>
-                        : (
-                            <PayButton
-                                compact
-                                amount={item.fee}
-                                description={`${item.type}: ${item.label}`}
-                                serviceType={item.serviceType}
-                                referenceId={item._id}
-                            />
-                        )
+                        : <span className="badge badge--unpaid">Unpaid</span>
                     }
+                    {!item.isPaid && (
+                        <PayButton
+                            compact
+                            amount={item.fee}
+                            description={`${item.type}: ${item.label}`}
+                            serviceType={item.serviceType}
+                            referenceId={item._id}
+                        />
+                    )}
                 </div>
             )}
         </div>
@@ -98,10 +117,25 @@ export default function MyRequests() {
                     axios.get('/payment/my').catch(() => ({ data: [] }))
                 ]);
 
-                // Build a set of reference IDs that have a completed payment
+                // Auto-verify any pending checkout payments so the badge updates
+                // even if the user never waited on the success page.
+                const pendingCheckouts = (payRes.data || []).filter(
+                    p => p.status === 'pending' && p.paymongoCheckoutId
+                );
+                let payments = payRes.data || [];
+                if (pendingCheckouts.length > 0) {
+                    await Promise.allSettled(
+                        pendingCheckouts.map(p => axios.get(`/payment/${p._id}/verify`))
+                    );
+                    // Re-fetch with the now-updated statuses
+                    const fresh = await axios.get('/payment/my').catch(() => ({ data: [] }));
+                    payments = fresh.data || [];
+                }
+
+                // Build a set of reference IDs that have a succeeded (paid) payment
                 const paidRefs = new Set(
-                    (payRes.data || [])
-                        .filter(p => p.status === 'completed')
+                    payments
+                        .filter(p => p.status === 'succeeded')
                         .map(p => p.referenceId?.toString())
                         .filter(Boolean)
                 );
@@ -111,8 +145,9 @@ export default function MyRequests() {
                         _id:         b._id,
                         type:        'Blessing',
                         label:       `${b.blessingType} — ${b.blessingFor}`,
-                        status:      b.status,
+                        status:      deriveStatus('Blessing', b.status, b.preferredDate),
                         date:        b.preferredDate,
+                        createdAt:   b.createdAt,
                         fee:         b.fee || 0,
                         serviceType: 'blessing',
                         isPaid:      paidRefs.has(b._id.toString()),
@@ -129,8 +164,9 @@ export default function MyRequests() {
                         _id:         m._id,
                         type:        'Mass Intention',
                         label:       `${m.intentionType} — ${m.intentionFor}`,
-                        status:      m.status,
+                        status:      deriveStatus('Mass Intention', m.status, m.preferredDate),
                         date:        m.preferredDate,
+                        createdAt:   m.createdAt,
                         fee:         m.fee || 0,
                         serviceType: 'massIntention',
                         isPaid:      paidRefs.has(m._id.toString()),
@@ -146,8 +182,9 @@ export default function MyRequests() {
                         _id:         s._id,
                         type:        s.sacramentType,
                         label:       `Recipient: ${s.recipientName}`,
-                        status:      s.status,
+                        status:      deriveStatus(s.sacramentType, s.status, s.preferredDate),
                         date:        s.preferredDate,
+                        createdAt:   s.createdAt,
                         fee:         s.fee || 0,
                         serviceType: 'sacrament',
                         isPaid:      paidRefs.has(s._id.toString()),
@@ -165,6 +202,7 @@ export default function MyRequests() {
                         label:       `${d.documentType} (${d.copies} ${d.copies === 1 ? 'copy' : 'copies'})`,
                         status:      d.status,
                         date:        d.createdAt,
+                        createdAt:   d.createdAt,
                         fee:         d.fee || 0,
                         serviceType: 'documentRequest',
                         isPaid:      paidRefs.has(d._id.toString()),

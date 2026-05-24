@@ -11,7 +11,8 @@ function fmtFee(fee) {
 const blank = auth => ({
     documentType:    '',
     requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    contactNumber:   '',
+    email:           auth?.user?.email          || '',
+    contactNumber:   auth?.user?.contactNumber  || '',
     purpose:         '',
     copies:          1,
     additionalNotes: ''
@@ -75,6 +76,11 @@ export default function DocumentRequestForm() {
                         <label className="form-label">Requestor Name <span className="req">*</span></label>
                         <input className="form-input" type="text"
                             value={form.requestorName} onChange={set('requestorName')} required />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Email <span className="req">*</span></label>
+                        <input className="form-input" type="email"
+                            value={form.email} onChange={set('email')} required />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Contact Number <span className="req">*</span></label>

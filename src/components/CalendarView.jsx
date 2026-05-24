@@ -35,6 +35,12 @@ function cellKey(y, m, d) {
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
+function isPastKey(dateKey) {
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return dateKey < todayKey;
+}
+
 /* ── Day cell ───────────────────────────────────────────────── */
 function CalCell({ dayNum, isCurrentMonth, isToday, chips, onClick }) {
     return (
@@ -69,7 +75,7 @@ function CalCell({ dayNum, isCurrentMonth, isToday, chips, onClick }) {
 }
 
 /* ── Day detail modal ───────────────────────────────────────── */
-function DayModal({ day, massSlots, myEvents, sacEvents, onClose }) {
+function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose }) {
     return (
         <div className="modal is-open" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="modal__box modal__box--lg">
@@ -97,17 +103,53 @@ function DayModal({ day, massSlots, myEvents, sacEvents, onClose }) {
                     </>
                 )}
 
-                {/* Booked sacraments (anonymised) */}
+                {/* Approved/completed sacraments */}
                 {sacEvents.length > 0 && (
                     <>
-                        <p className="section-label">Booked Sacraments</p>
+                        <p className="section-label">Sacraments</p>
                         <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {[...sacEvents].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map((ev, i) => {
+                            {[...sacEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
                                 const c = colorFor(ev.sacramentType);
                                 return (
                                     <div key={i} className="slot-row">
                                         <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
                                         <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.sacramentType}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+
+                {/* Approved/completed blessings */}
+                {blessEvents.length > 0 && (
+                    <>
+                        <p className="section-label">Blessings</p>
+                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
+                            {[...blessEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
+                                const c = colorFor('Blessing');
+                                return (
+                                    <div key={i} className="slot-row">
+                                        <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
+                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.blessingType}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+
+                {/* Approved/completed mass intentions */}
+                {intentionEvents.length > 0 && (
+                    <>
+                        <p className="section-label">Mass Intentions</p>
+                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
+                            {[...intentionEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
+                                const c = colorFor('Mass Intention');
+                                return (
+                                    <div key={i} className="slot-row">
+                                        <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
+                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.intentionType}</span>
                                     </div>
                                 );
                             })}
@@ -124,7 +166,9 @@ function DayModal({ day, massSlots, myEvents, sacEvents, onClose }) {
                                 const c = colorFor(ev.type);
                                 const bdg = ev.status === 'approved'
                                     ? <span className="badge badge--approved">Approved</span>
-                                    : <span className="badge badge--pending">Pending</span>;
+                                    : ev.status === 'completed'
+                                        ? <span className="badge badge--completed">Completed</span>
+                                        : <span className="badge badge--pending">Pending</span>;
                                 return (
                                     <div key={i} className="slot-row">
                                         <span className="slot-row__time">{fmtTime(ev.time)}</span>
@@ -138,7 +182,8 @@ function DayModal({ day, massSlots, myEvents, sacEvents, onClose }) {
                     </>
                 )}
 
-                {massSlots.length === 0 && sacEvents.length === 0 && myEvents.length === 0 && (
+                {massSlots.length === 0 && sacEvents.length === 0 && blessEvents.length === 0 &&
+                 intentionEvents.length === 0 && myEvents.length === 0 && (
                     <div className="slot-list--empty"><p>Nothing scheduled for this day.</p></div>
                 )}
 
@@ -162,9 +207,7 @@ export default function CalendarView() {
         document.body.appendChild(script);
 
         return () => {
-            // Remove the script tag when leaving the Calendar tab
             document.body.removeChild(script);
-            // Also remove the widget iframe/container that JotForm injects
             document.querySelectorAll('[id^="JotFormAgent"], [class*="jotform-agent"]')
                 .forEach(el => el.remove());
         };
@@ -175,24 +218,28 @@ export default function CalendarView() {
     const [month, setMonth] = useState(now.getMonth());
     const [selectedDay, setSelectedDay] = useState(null);
 
-    const [massSchedule, setMassSchedule] = useState({ weekdays: [], saturdays: [], sundays: [] });
-    const [sacEvents,    setSacEvents]    = useState([]); // { preferredDate, preferredTime, sacramentType }
-    const [myEvents,     setMyEvents]     = useState([]); // user's own events { dateKey, time, type, name, status }
-    const [loading,      setLoading]      = useState(true);
+    const [massSchedule,     setMassSchedule]     = useState({ weekdays: [], saturdays: [], sundays: [] });
+    const [sacEvents,        setSacEvents]         = useState([]); // approved/completed sacraments
+    const [blessEvents,      setBlessEvents]       = useState([]); // approved/completed blessings
+    const [intentionEvents,  setIntentionEvents]   = useState([]); // approved/completed mass intentions
+    const [myEvents,         setMyEvents]          = useState([]); // user's own events
+    const [loading,          setLoading]           = useState(true);
 
-    /* Build service-event map keyed by "YYYY-MM-DD" */
-    const sacMap = {};
-    sacEvents.forEach(ev => {
-        const k = utcKey(ev.preferredDate);
-        if (!sacMap[k]) sacMap[k] = [];
-        sacMap[k].push(ev);
-    });
-    const myMap = {};
-    myEvents.forEach(ev => {
-        const k = ev.dateKey;
-        if (!myMap[k]) myMap[k] = [];
-        myMap[k].push(ev);
-    });
+    /* Build lookup maps keyed by "YYYY-MM-DD" */
+    const makeMap = (arr, getKey) => {
+        const map = {};
+        arr.forEach(ev => {
+            const k = getKey(ev);
+            if (!map[k]) map[k] = [];
+            map[k].push(ev);
+        });
+        return map;
+    };
+
+    const sacMap       = makeMap(sacEvents,       ev => utcKey(ev.preferredDate));
+    const blessMap     = makeMap(blessEvents,     ev => utcKey(ev.preferredDate));
+    const intentionMap = makeMap(intentionEvents, ev => utcKey(ev.preferredDate));
+    const myMap        = makeMap(myEvents,        ev => ev.dateKey);
 
     const getMassSlots = dow => {
         if (dow === 0) return massSchedule.sundays;
@@ -205,32 +252,46 @@ export default function CalendarView() {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const [msRes, sacRes, blessRes, sacrRes] = await Promise.all([
+                const [msRes, sacRes, blessRes, intentionRes, myBlessRes, mySacRes] = await Promise.all([
                     axios.get('/user/mass-schedule'),
-                    axios.get('/sacrament/calendar'),          // anonymised sacraments
+                    axios.get('/sacrament/calendar'),
+                    axios.get('/blessing/calendar'),
+                    axios.get('/mass-intention/calendar'),
                     axios.get('/blessing/my').catch(() => ({ data: [] })),
                     axios.get('/sacrament/my').catch(() => ({ data: [] }))
                 ]);
 
                 setMassSchedule(msRes.data);
-                setSacEvents(sacRes.data || []);
+                setSacEvents(sacRes.data       || []);
+                setBlessEvents(blessRes.data   || []);
+                setIntentionEvents(intentionRes.data || []);
 
-                /* Combine user's own blessings + sacraments into myEvents */
+                /* User's own events for "My Requests" section in the modal */
+                const rollStatus = (status, dateKey) => {
+                    if (status === 'rejected' || status === 'cancelled') return status;
+                    return isPastKey(dateKey) ? 'completed' : status;
+                };
                 const own = [
-                    ...(blessRes.data || []).map(b => ({
-                        dateKey: utcKey(b.preferredDate),
-                        time:    b.preferredTime || '',
-                        type:    'Blessing',
-                        name:    b.blessingFor || b.blessingType,
-                        status:  b.status
-                    })),
-                    ...(sacrRes.data || []).map(s => ({
-                        dateKey: utcKey(s.preferredDate),
-                        time:    s.preferredTime || '',
-                        type:    s.sacramentType,
-                        name:    s.recipientName,
-                        status:  s.status
-                    }))
+                    ...(myBlessRes.data || []).map(b => {
+                        const dk = utcKey(b.preferredDate);
+                        return {
+                            dateKey: dk,
+                            time:    b.preferredTime || '',
+                            type:    'Blessing',
+                            name:    b.blessingFor || b.blessingType,
+                            status:  rollStatus(b.status, dk)
+                        };
+                    }),
+                    ...(mySacRes.data || []).map(s => {
+                        const dk = utcKey(s.preferredDate);
+                        return {
+                            dateKey: dk,
+                            time:    s.preferredTime || '',
+                            type:    s.sacramentType,
+                            name:    s.recipientName,
+                            status:  rollStatus(s.status, dk)
+                        };
+                    })
                 ];
                 setMyEvents(own);
             } catch (err) {
@@ -263,23 +324,27 @@ export default function CalendarView() {
             cy = nd.getFullYear(); cm2 = nd.getMonth();
         }
 
-        const key     = cellKey(cy, cm2, dn);
-        const dow     = new Date(cy, cm2, dn).getDay();
-        const masses  = getMassSlots(dow);
-        const sacs    = sacMap[key] || [];
-        const mine    = myMap[key]  || [];
+        const key      = cellKey(cy, cm2, dn);
+        const dow      = new Date(cy, cm2, dn).getDay();
+        const masses   = getMassSlots(dow);
+        const sacs     = sacMap[key]       || [];
+        const bless    = blessMap[key]     || [];
+        const intents  = intentionMap[key] || [];
+        const mine     = myMap[key]        || [];
 
         const chips = [
-            ...masses.map(() => ({ type: 'Mass', label: 'Mass' })),
-            ...sacs.map(s  => ({ type: s.sacramentType, label: s.sacramentType })),
-            ...mine.map(m  => ({ type: m.type,          label: m.type }))
+            ...masses.map(()  => ({ type: 'Mass',           label: 'Mass'           })),
+            ...sacs.map(s     => ({ type: s.sacramentType,  label: s.sacramentType  })),
+            ...bless.map(b    => ({ type: 'Blessing',       label: b.blessingType   })),
+            ...intents.map(() => ({ type: 'Mass Intention', label: 'Mass Intention' })),
+            ...mine.map(m     => ({ type: m.type,           label: m.type           }))
         ];
 
-        cells.push({ key, dn, cm, cy, cm2, dow, isToday: key === todayKey, chips, masses, sacs, mine });
+        cells.push({ key, dn, cm, cy, cm2, dow, isToday: key === todayKey,
+                     chips, masses, sacs, bless, intents, mine });
     }
 
     const openDay = cell => {
-        const d = new Date(cell.cy, cell.cm2, cell.dn);
         setSelectedDay({
             ...cell,
             label: `${DAY_NAMES[cell.dow]}, ${MONTH_NAMES[cell.cm2]} ${cell.dn}, ${cell.cy}`
@@ -310,7 +375,12 @@ export default function CalendarView() {
                     </div>
                     <span className="cal-nav__title">{MONTH_NAMES[month]} {year}</span>
                     <div className="cal-legend">
-                        {[['#c9a96e','Mass'],['#fb7185','Blessing'],['#7c3aed','Wedding'],['#3b82f6','Baptism'],['#78716c','Funeral']].map(([c,l])=>(
+                        {[
+                            ['#c9a96e', 'Mass'],
+                            ['#fb7185', 'Blessing'],
+                            ['#7c3aed', 'Sacrament'],
+                            ['#0d9488', 'Mass Intention'],
+                        ].map(([c,l]) => (
                             <span key={l} className="cal-legend__item">
                                 <span className="cal-legend__dot" style={{ background: c }} />{l}
                             </span>
@@ -345,6 +415,8 @@ export default function CalendarView() {
                     day={selectedDay}
                     massSlots={selectedDay.masses}
                     sacEvents={selectedDay.sacs}
+                    blessEvents={selectedDay.bless}
+                    intentionEvents={selectedDay.intents}
                     myEvents={selectedDay.mine}
                     onClose={() => setSelectedDay(null)}
                 />

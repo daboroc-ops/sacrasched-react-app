@@ -3,7 +3,7 @@ import { createContext, useState } from 'react';
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-    // auth shape: { accessToken, user: { id, username, firstname, lastname, email } }
+    // auth shape: { accessToken, user: { id, username, firstname, lastname, email, contactNumber } }
     const [auth, setAuth] = useState({});
 
     return (
