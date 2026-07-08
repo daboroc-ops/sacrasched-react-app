@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronUp, faChevronDown, faInbox, faClock } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import PayButton from './PayButton';
 
@@ -29,15 +27,8 @@ function deriveStatus(type, status, date) {
     return isPastDate(date) ? 'completed' : status;
 }
 
-function StatusBadge({ status }) {
-    const map = {
-        pending:   'badge--pending',
-        approved:  'badge--approved',
-        rejected:  'badge--rejected',
-        completed: 'badge--completed',
-        cancelled: 'badge--rejected'
-    };
-    return <span className={`badge ${map[status] || 'badge--pending'}`}>{status}</span>;
+function StatusText({ status }) {
+    return <span className={`req-status req-status--${status}`}>{status}</span>;
 }
 
 function RequestCard({ item }) {
@@ -49,15 +40,12 @@ function RequestCard({ item }) {
                 <div className="req-card__info">
                     <span className="req-card__type">{item.type}</span>
                     <span className="req-card__sub">{item.label}</span>
-                    <span className="req-card__submitted">
-                        <FontAwesomeIcon icon={faClock} style={{ marginRight: '4px', opacity: 0.55 }} />
-                        Submitted {fmtDate(item.createdAt)}
-                    </span>
+                    <span className="req-card__submitted">Submitted {fmtDate(item.createdAt)}</span>
                 </div>
                 <div className="req-card__right">
-                    <StatusBadge status={item.status} />
+                    <StatusText status={item.status} />
                     <span className="req-card__date">{fmtDate(item.date)}</span>
-                    <FontAwesomeIcon icon={open ? faChevronUp : faChevronDown} className="req-card__chevron" />
+                    <span className="req-card__chevron">{open ? '−' : '+'}</span>
                 </div>
             </div>
 
@@ -80,8 +68,8 @@ function RequestCard({ item }) {
                         ₱{Number(item.fee).toLocaleString()}
                     </span>
                     {item.isPaid
-                        ? <span className="badge badge--paid">Paid</span>
-                        : <span className="badge badge--unpaid">Unpaid</span>
+                        ? <span className="req-status req-status--approved">Paid</span>
+                        : <span className="req-status req-status--pending">Unpaid</span>
                     }
                     {!item.isPaid && (
                         <PayButton
@@ -132,10 +120,10 @@ export default function MyRequests() {
                     payments = fresh.data || [];
                 }
 
-                // Build a set of reference IDs that have a succeeded (paid) payment
+                // Build a set of reference IDs that have a paid payment
                 const paidRefs = new Set(
                     payments
-                        .filter(p => p.status === 'succeeded')
+                        .filter(p => p.status === 'paid')
                         .map(p => p.referenceId?.toString())
                         .filter(Boolean)
                 );
@@ -254,7 +242,6 @@ export default function MyRequests() {
 
             {shown.length === 0 ? (
                 <div className="empty-state">
-                    <FontAwesomeIcon icon={faInbox} className="empty-state__icon" />
                     <p className="empty-state__title">No {filter === 'all' ? '' : filter} requests yet.</p>
                     <p className="empty-state__sub">Use "Book Services" to submit your first request.</p>
                 </div>

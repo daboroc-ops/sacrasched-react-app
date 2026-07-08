@@ -1,14 +1,16 @@
 import useAxiosPrivate from './useAxiosPrivate';
 
 /**
- * Returns a `checkout` function that:
- *  1. POSTs to /payment/checkout on the backend
- *  2. Creates a PayMongo checkout session (QRPH only)
- *  3. Redirects the browser to the PayMongo-hosted QR page
+ * Payment helpers:
+ *
+ *   checkout(...)  – online: creates a PayMongo QR Ph session and redirects.
+ *   payCash(...)   – on-site: records a pending CASH payment (Pay at Parish),
+ *                    no redirect; returns { paymentId, amount, status }.
  *
  * Usage:
- *   const { checkout } = usePayment();
+ *   const { checkout, payCash } = usePayment();
  *   await checkout({ amount, description, serviceType, referenceId });
+ *   const res = await payCash({ amount, description, serviceType, referenceId });
  */
 export default function usePayment() {
     const axios = useAxiosPrivate();
@@ -24,5 +26,15 @@ export default function usePayment() {
         window.location.href = res.data.checkoutUrl;
     };
 
-    return { checkout };
+    const payCash = async ({ amount, description, serviceType, referenceId }) => {
+        const res = await axios.post('/payment/cash', {
+            amount,
+            description,
+            serviceType,
+            referenceId
+        });
+        return res.data;
+    };
+
+    return { checkout, payCash };
 }

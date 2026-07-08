@@ -1,18 +1,18 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCross } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import axiosPublic from '../api/axios';
 import useAuth from '../hooks/useAuth';
 
 export default function Login() {
-    const { setAuth } = useAuth();
-    const navigate    = useNavigate();
+    const { auth, setAuth } = useAuth();
+    const navigate          = useNavigate();
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errMsg,   setErrMsg]   = useState('');
     const [loading,  setLoading]  = useState(false);
+
+    if (auth?.accessToken) return <Navigate to="/dashboard" replace />;
 
     const handleSubmit = async e => {
         e.preventDefault();
@@ -32,61 +32,63 @@ export default function Login() {
 
     return (
         <div className="auth-page">
-            <div className="auth-card">
-                <div className="auth-brand">
-                    <div className="auth-brand__icon">
-                        <FontAwesomeIcon icon={faCross} />
-                    </div>
-                    <h1 className="auth-brand__name">SacraSched</h1>
-                    <p className="auth-brand__sub">Parish Scheduling System</p>
+            {/* Wordmark */}
+            <div className="auth-wordmark">
+                <img src="/sacrasched-wordmark.svg" alt="SacraSched" className="auth-wordmark__svg" />
+            </div>
+
+            {/* Icon */}
+            <div className="auth-icon-wrap">
+                <img src="/favicon.svg" alt="SacraSched" />
+            </div>
+
+            {/* Error */}
+            {errMsg && <div className="auth-error">{errMsg}</div>}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="auth-form-wrap">
+                <div className="auth-field">
+                    <label className="auth-field__label">Username</label>
+                    <input
+                        className="auth-input"
+                        type="text"
+                        autoComplete="username"
+                        placeholder="Enter your username"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        required
+                    />
                 </div>
 
-                <h2 className="auth-title">Welcome back</h2>
-                <p className="auth-subtitle">Sign in to manage your requests</p>
+                <div className="auth-field">
+                    <label className="auth-field__label">Password</label>
+                    <input
+                        className="auth-input"
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
 
-                {errMsg && <div className="auth-error">{errMsg}</div>}
-
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="username">Username</label>
-                        <input
-                            id="username"
-                            className="form-input"
-                            type="text"
-                            autoComplete="username"
-                            value={username}
-                            onChange={e => setUsername(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="password">Password</label>
-                        <input
-                            id="password"
-                            className="form-input"
-                            type="password"
-                            autoComplete="current-password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-
+                <div className="auth-btns">
                     <button
                         type="submit"
-                        className="btn btn--primary btn--full"
+                        className="auth-btn auth-btn--filled"
                         disabled={loading}
                     >
-                        {loading ? 'Signing in…' : 'Sign In'}
+                        {loading ? 'Signing in…' : 'Login'}
                     </button>
-                </form>
 
-                <p className="auth-footer">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="auth-link">Register here</Link>
-                </p>
-            </div>
+                    <Link to="/register" style={{ textDecoration: 'none' }}>
+                        <button type="button" className="auth-btn auth-btn--outline">
+                            Create New Account
+                        </button>
+                    </Link>
+                </div>
+            </form>
         </div>
     );
 }

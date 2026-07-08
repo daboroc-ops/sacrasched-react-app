@@ -18,7 +18,7 @@ const blank = auth => ({
     additionalNotes: ''
 });
 
-export default function DocumentRequestForm() {
+export default function DocumentRequestForm({ parishId }) {
     const axios                              = useAxiosPrivate();
     const { auth }                           = useAuth();
     const { loading: cfgLoading, getCategoryItems } = useConfig();
@@ -40,7 +40,7 @@ export default function DocumentRequestForm() {
         e.preventDefault();
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/document-request', { ...form, fee: totalFee });
+            const res = await axios.post('/document-request', { ...form, fee: totalFee, parishId });
             setStatus('ok');
             setMsg('Document request submitted! Please allow 3–5 business days for processing.');
             if (totalFee > 0) {

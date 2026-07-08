@@ -100,7 +100,7 @@
 
 .req-card__right   { display: flex; align-items: center; gap: 10px; }
 .req-card__date    { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-.req-card__chevron { font-size: 10px; color: var(--text-muted); }
+.req-card__chevron { font-size: 14px; color: var(--text-muted); line-height: 1; }
 
 .req-card__body {
     padding: 12px 16px 16px;

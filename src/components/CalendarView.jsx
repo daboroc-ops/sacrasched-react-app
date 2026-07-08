@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 
 /* ── Colour map for event chips ─────────────────────────────── */
@@ -41,8 +41,8 @@ function isPastKey(dateKey) {
     return dateKey < todayKey;
 }
 
-/* ── Day cell ───────────────────────────────────────────────── */
-function CalCell({ dayNum, isCurrentMonth, isToday, chips, onClick }) {
+/* ── Day cell — shows total event count only ────────────────── */
+function CalCell({ dayNum, isCurrentMonth, isToday, totalEvents, onClick }) {
     return (
         <div
             className={[
@@ -54,141 +54,109 @@ function CalCell({ dayNum, isCurrentMonth, isToday, chips, onClick }) {
             onClick={isCurrentMonth ? onClick : undefined}
         >
             <div className="cal-cell__num">{dayNum}</div>
-            {chips.length > 0 && (
-                <div className="cal-cell__events">
-                    {chips.slice(0, 2).map((c, i) => {
-                        const col = colorFor(c.type);
-                        return (
-                            <div key={i} className="cal-cell__event"
-                                style={{ background: col.bg, color: col.text }}>
-                                {c.label}
-                            </div>
-                        );
-                    })}
-                    {chips.length > 2 && (
-                        <div className="cal-cell__more">+{chips.length - 2} more</div>
-                    )}
+            {totalEvents > 0 && (
+                <div className="cal-cell__count">
+                    <span className="cal-cell__count-num">{totalEvents}</span>
+                    <span className="cal-cell__count-label">event{totalEvents !== 1 ? 's' : ''}</span>
                 </div>
             )}
         </div>
     );
 }
 
-/* ── Day detail modal ───────────────────────────────────────── */
+/* ── Day detail modal — 5 AM to 8 PM hourly slot grid ───────── */
 function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose }) {
+    /* Combine every event into one list with normalised shape */
+    const allEvents = [
+        ...massSlots.map(m => ({
+            time:  m.time,
+            type:  'Mass',
+            label: m.label || 'Regular Mass',
+            kind:  'mass'
+        })),
+        ...sacEvents.map(ev => ({
+            time:  ev.preferredTime || '',
+            type:  ev.sacramentType,
+            label: ev.sacramentType,
+            kind:  'service'
+        })),
+        ...blessEvents.map(ev => ({
+            time:  ev.preferredTime || '',
+            type:  'Blessing',
+            label: ev.blessingType,
+            kind:  'service'
+        })),
+        ...intentionEvents.map(ev => ({
+            time:  ev.preferredTime || '',
+            type:  'Mass Intention',
+            label: ev.intentionType,
+            kind:  'service'
+        })),
+        ...myEvents.map(ev => ({
+            time:   ev.time,
+            type:   ev.type,
+            label:  ev.name,
+            status: ev.status,
+            kind:   'mine'
+        }))
+    ];
+
+    /* Group by starting hour (5 AM – 8 PM = 5..20) */
+    const slotMap = {};
+    allEvents.forEach(ev => {
+        if (!ev.time) return;
+        const hour = parseInt(ev.time.split(':')[0], 10);
+        if (hour < 5 || hour > 20) return;
+        if (!slotMap[hour]) slotMap[hour] = [];
+        slotMap[hour].push(ev);
+    });
+
+    const hours = [];
+    for (let h = 5; h <= 20; h++) hours.push(h);
+
     return (
         <div className="modal is-open" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="modal__box modal__box--lg">
                 <div className="cal-day-header">
                     <h3 className="t-modal-title" style={{ margin: 0 }}>{day.label}</h3>
+                    <button className="cal-day-header__close" onClick={onClose} aria-label="Close">
+                        ×
+                    </button>
                 </div>
 
-                {/* Mass schedule */}
-                {massSlots.length > 0 && (
-                    <>
-                        <p className="section-label">Mass Schedule</p>
-                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {massSlots.map((m, i) => {
-                                const c = colorFor('Mass');
-                                return (
-                                    <div key={i} className="slot-row">
-                                        <span className="slot-row__time">{fmtTime(m.time)}</span>
-                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>Mass</span>
-                                        <span className="slot-row__label">{m.label || 'Regular Mass'}</span>
-                                        <span className="badge badge--recurring">Recurring</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-
-                {/* Approved/completed sacraments */}
-                {sacEvents.length > 0 && (
-                    <>
-                        <p className="section-label">Sacraments</p>
-                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {[...sacEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
-                                const c = colorFor(ev.sacramentType);
-                                return (
-                                    <div key={i} className="slot-row">
-                                        <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
-                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.sacramentType}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-
-                {/* Approved/completed blessings */}
-                {blessEvents.length > 0 && (
-                    <>
-                        <p className="section-label">Blessings</p>
-                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {[...blessEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
-                                const c = colorFor('Blessing');
-                                return (
-                                    <div key={i} className="slot-row">
-                                        <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
-                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.blessingType}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-
-                {/* Approved/completed mass intentions */}
-                {intentionEvents.length > 0 && (
-                    <>
-                        <p className="section-label">Mass Intentions</p>
-                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {[...intentionEvents].sort((a,b)=>(a.preferredTime||'').localeCompare(b.preferredTime||'')).map((ev, i) => {
-                                const c = colorFor('Mass Intention');
-                                return (
-                                    <div key={i} className="slot-row">
-                                        <span className="slot-row__time">{fmtTime(ev.preferredTime)}</span>
-                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.intentionType}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-
-                {/* User's own events */}
-                {myEvents.length > 0 && (
-                    <>
-                        <p className="section-label">My Requests</p>
-                        <div className="slot-list" style={{ marginBottom: '1rem' }}>
-                            {[...myEvents].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map((ev, i) => {
-                                const c = colorFor(ev.type);
-                                const bdg = ev.status === 'approved'
-                                    ? <span className="badge badge--approved">Approved</span>
-                                    : ev.status === 'completed'
-                                        ? <span className="badge badge--completed">Completed</span>
-                                        : <span className="badge badge--pending">Pending</span>;
-                                return (
-                                    <div key={i} className="slot-row">
-                                        <span className="slot-row__time">{fmtTime(ev.time)}</span>
-                                        <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.type}</span>
-                                        <span className="slot-row__label" style={{ flex: 1 }}>{ev.name}</span>
-                                        <div className="slot-row__actions">{bdg}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-
-                {massSlots.length === 0 && sacEvents.length === 0 && blessEvents.length === 0 &&
-                 intentionEvents.length === 0 && myEvents.length === 0 && (
-                    <div className="slot-list--empty"><p>Nothing scheduled for this day.</p></div>
-                )}
-
-                <div className="modal__actions">
-                    <button className="btn btn--ghost" onClick={onClose}>Close</button>
+                <div className="time-slots">
+                    {hours.map(h => {
+                        const slot = (slotMap[h] || []).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+                        const hourLabel = `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
+                        return (
+                            <div key={h} className={`time-slot${slot.length ? ' time-slot--filled' : ''}`}>
+                                <div className="time-slot__hour">{hourLabel}</div>
+                                <div className="time-slot__events">
+                                    {slot.length === 0 ? (
+                                        <span className="time-slot__empty">—</span>
+                                    ) : slot.map((ev, i) => {
+                                        const c = colorFor(ev.type);
+                                        let badge = null;
+                                        if (ev.kind === 'mass') {
+                                            badge = <span className="badge badge--recurring">Recurring</span>;
+                                        } else if (ev.kind === 'mine') {
+                                            if (ev.status === 'approved')       badge = <span className="badge badge--approved">Approved</span>;
+                                            else if (ev.status === 'completed') badge = <span className="badge badge--completed">Completed</span>;
+                                            else                                badge = <span className="badge badge--pending">Pending</span>;
+                                        }
+                                        return (
+                                            <div key={i} className="time-slot__event">
+                                                <span className="time-slot__event-time">{fmtTime(ev.time)}</span>
+                                                <span className="slot-row__type" style={{ background: c.bg, color: c.text }}>{ev.type}</span>
+                                                <span className="time-slot__event-label">{ev.label}</span>
+                                                {badge}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
@@ -201,13 +169,17 @@ export default function CalendarView() {
 
     /* ── Inject JotForm AI agent chat widget ─────────────────── */
     useEffect(() => {
+        const SRC = 'https://cdn.jotfor.ms/agent/embedjs/019dfcd2d4fc73cab42fc9d7f051841af52a/embed.js?autoOpenChatIn=1';
+        if (document.querySelector(`script[src="${SRC}"]`)) return;
+
         const script = document.createElement('script');
-        script.src   = 'https://cdn.jotfor.ms/agent/embedjs/019dfcd2d4fc73cab42fc9d7f051841af52a/embed.js?autoOpenChatIn=1';
+        script.src   = SRC;
         script.async = true;
         document.body.appendChild(script);
 
         return () => {
-            document.body.removeChild(script);
+            const existing = document.querySelector(`script[src="${SRC}"]`);
+            if (existing) document.body.removeChild(existing);
             document.querySelectorAll('[id^="JotFormAgent"], [class*="jotform-agent"]')
                 .forEach(el => el.remove());
         };
@@ -252,13 +224,14 @@ export default function CalendarView() {
         const fetchAll = async () => {
             setLoading(true);
             try {
+                const empty = () => ({ data: [] });
                 const [msRes, sacRes, blessRes, intentionRes, myBlessRes, mySacRes] = await Promise.all([
-                    axios.get('/user/mass-schedule'),
-                    axios.get('/sacrament/calendar'),
-                    axios.get('/blessing/calendar'),
-                    axios.get('/mass-intention/calendar'),
-                    axios.get('/blessing/my').catch(() => ({ data: [] })),
-                    axios.get('/sacrament/my').catch(() => ({ data: [] }))
+                    axios.get('/user/mass-schedule').catch(() => ({ data: { weekdays: [], saturdays: [], sundays: [] } })),
+                    axios.get('/sacrament/calendar').catch(empty),
+                    axios.get('/blessing/calendar').catch(empty),
+                    axios.get('/mass-intention/calendar').catch(empty),
+                    axios.get('/blessing/my').catch(empty),
+                    axios.get('/sacrament/my').catch(empty)
                 ]);
 
                 setMassSchedule(msRes.data);
@@ -332,16 +305,10 @@ export default function CalendarView() {
         const intents  = intentionMap[key] || [];
         const mine     = myMap[key]        || [];
 
-        const chips = [
-            ...masses.map(()  => ({ type: 'Mass',           label: 'Mass'           })),
-            ...sacs.map(s     => ({ type: s.sacramentType,  label: s.sacramentType  })),
-            ...bless.map(b    => ({ type: 'Blessing',       label: b.blessingType   })),
-            ...intents.map(() => ({ type: 'Mass Intention', label: 'Mass Intention' })),
-            ...mine.map(m     => ({ type: m.type,           label: m.type           }))
-        ];
+        const totalEvents = masses.length + sacs.length + bless.length + intents.length + mine.length;
 
         cells.push({ key, dn, cm, cy, cm2, dow, isToday: key === todayKey,
-                     chips, masses, sacs, bless, intents, mine });
+                     totalEvents, masses, sacs, bless, intents, mine });
     }
 
     const openDay = cell => {
@@ -354,6 +321,11 @@ export default function CalendarView() {
     return (
         <div>
             {loading && <p className="loading-text">Loading calendar…</p>}
+
+            <p className="cal-hint">
+                <FontAwesomeIcon icon={faCircleInfo} className="cal-hint__icon" />
+                Click a date to view the day's schedules.
+            </p>
 
             <div className="cal-card">
                 {/* Navigation */}
@@ -374,18 +346,6 @@ export default function CalendarView() {
                         }}><FontAwesomeIcon icon={faChevronRight} /></button>
                     </div>
                     <span className="cal-nav__title">{MONTH_NAMES[month]} {year}</span>
-                    <div className="cal-legend">
-                        {[
-                            ['#c9a96e', 'Mass'],
-                            ['#fb7185', 'Blessing'],
-                            ['#7c3aed', 'Sacrament'],
-                            ['#0d9488', 'Mass Intention'],
-                        ].map(([c,l]) => (
-                            <span key={l} className="cal-legend__item">
-                                <span className="cal-legend__dot" style={{ background: c }} />{l}
-                            </span>
-                        ))}
-                    </div>
                 </div>
 
                 {/* Weekday headers */}
@@ -403,7 +363,7 @@ export default function CalendarView() {
                             dayNum={cell.dn}
                             isCurrentMonth={cell.cm}
                             isToday={cell.isToday}
-                            chips={cell.chips}
+                            totalEvents={cell.totalEvents}
                             onClick={() => openDay(cell)}
                         />
                     ))}

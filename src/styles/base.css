@@ -1,31 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 /* ─── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ─── Design tokens ── */
+/* ─── Design tokens — Naga Cathedral palette ── */
 :root {
-    --brand:        #c9a96e;
-    --brand-dark:   #b8904f;
-    --stone-50:     #fafaf9;
-    --stone-100:    #f5f5f4;
-    --stone-200:    #e7e5e4;
-    --stone-300:    #d6d3d1;
-    --stone-400:    #a8a29e;
-    --stone-500:    #78716c;
+    /* Brand — SacraSched Golden Brown (from official logo assets) */
+    --brand:        #964B01;
+    --brand-dark:   #6B3201;
+    --brand-light:  #FDF5EC;
+
+    /* Accent — SacraSched Warm Tan (icon gradient mid-tone) */
+    --gold:         #C49A6C;
+    --gold-dark:    #7A5030;
+    --gold-light:   #FEF0E0;
+
+    /* Stone scale */
+    --stone-50:     #f9fafb;
+    --stone-100:    #f3f4f6;
+    --stone-200:    #e5e7eb;
+    --stone-300:    #d4d4d4;
+    --stone-400:    #9ca3af;
+    --stone-500:    #6b7280;
     --stone-600:    #57534e;
-    --stone-700:    #44403c;
-    --stone-800:    #292524;
-    --stone-900:    #1c1917;
+    --stone-700:    #374151;
+    --stone-800:    #1f2937;
+    --stone-900:    #1C1917;   /* warm near-black, matches seal outline */
+
     --surface:      #ffffff;
-    --surface-2:    #f5f5f4;
-    --border:       #e7e5e4;
-    --text-primary:   #1c1917;
-    --text-secondary: #57534e;
-    --text-muted:     #a8a29e;
+    --surface-2:    #FBF7F3;   /* warm parchment — flame-tinted background */
+    --border:       #e5e7eb;
+
+    /* Text */
+    --text-primary:   #1C1917;
+    --text-secondary: #1f2937;
+    --text-muted:     #6b7280;
+
+    /* Semantic */
     --green:  #16a34a;
-    --yellow: #ca8a04;
-    --red:    #dc2626;
+    --yellow: #C8900A;   /* reuse gold */
+    --red:    #B91C1C;   /* reuse brand red */
     --blue:   #2563eb;
     --sidebar-w:  240px;
     --header-h:   56px;
@@ -37,8 +49,8 @@
 }
 
 /* ─── Base elements ── */
-html   { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text-primary); }
-body   { min-height: 100vh; background: var(--stone-100); }
+html   { font-family: 'Google Sans', 'Nunito Sans', 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: var(--text-primary); -webkit-font-smoothing: antialiased; }
+body   { min-height: 100vh; background: var(--surface-2); /* warm parchment */ }
 a      { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
@@ -51,3 +63,23 @@ input, select, textarea { font-family: inherit; }
 .empty-state__icon  { font-size: 44px; margin-bottom: 16px; display: block; color: var(--stone-400); }
 .empty-state__title { font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
 .empty-state__sub   { font-size: 13px; }
+
+/* ─── Card with bronze left-accent stripe ── */
+.accent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ─── Page section header ── */
+.section-hd {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
