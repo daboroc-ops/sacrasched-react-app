@@ -96,7 +96,7 @@ export default function PayButton({ amount, description, serviceType, referenceI
         </>
     );
 
-    /* ── Full mode: info block + button (used after form submit) ── */
+    /* ── Full mode: info block + buttons (used after form submit) ── */
     return (
         <div className="pay-prompt">
             <div className="pay-prompt__info">

@@ -147,9 +147,9 @@
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 99px;
-    background: var(--stone-100);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
 }
 .pwd-hint.ok  { background: var(--success-bg); color: var(--success-strong); border-color: var(--success-border); }
 .pwd-hint.bad { background: var(--danger-bg); color: var(--danger-strong); border-color: var(--danger-border); }
