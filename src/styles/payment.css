@@ -5,7 +5,7 @@
     margin-top: 16px;
     border: 1.5px solid var(--brand);
     border-radius: var(--radius);
-    background: #fffbf4;
+    background: var(--brand-light);
     padding: 16px 18px;
     display: flex;
     align-items: center;
@@ -48,9 +48,9 @@
 .pay-prompt__error {
     width: 100%;
     font-size: 12px;
-    color: #991b1b;
-    background: #fee2e2;
-    border: 1px solid #fecaca;
+    color: var(--danger-strong);
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
     border-radius: 6px;
     padding: 8px 12px;
     display: flex;
@@ -61,7 +61,7 @@
 /* Pay button — gold/brand style */
 .btn--pay {
     background: var(--brand);
-    color: #fff;
+    color: var(--on-brand);
     padding: 10px 20px;
     font-size: 13px;
     font-weight: 700;
@@ -74,7 +74,7 @@
 /* Compact error (inside cards) */
 .pay-compact__error {
     font-size: 11px;
-    color: #991b1b;
+    color: var(--danger-strong);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -96,16 +96,16 @@
 /* Cash recorded — confirmation block */
 .pay-cash-done {
     margin-top: 16px;
-    border: 1.5px solid #16a34a;
+    border: 1.5px solid var(--green);
     border-radius: var(--radius);
-    background: #f0fdf4;
+    background: var(--success-soft);
     padding: 16px 18px;
     display: flex;
     align-items: flex-start;
     gap: 14px;
 }
 .pay-cash-done__icon {
-    color: #16a34a;
+    color: var(--green);
     font-size: 26px;
     flex-shrink: 0;
     margin-top: 2px;
@@ -113,7 +113,7 @@
 .pay-cash-done strong {
     display: block;
     font-size: 14px;
-    color: #166534;
+    color: var(--success-strong);
     margin-bottom: 4px;
 }
 .pay-cash-done p {
@@ -126,102 +126,6 @@
 /* ═══════════════════════════════════════════════════
    PAY RESULT PAGES  —  success / cancel / failure
    ═══════════════════════════════════════════════════ */
-.pay-result-page {
-    min-height: 100vh;
-    background: var(--stone-100);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
-}
-
-.pay-result-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 40px 36px;
-    width: 100%;
-    max-width: 440px;
-    text-align: center;
-    box-shadow: var(--shadow-md);
-}
-
-/* Icon circle */
-.pay-result-card__icon {
-    width: 72px; height: 72px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px;
-    margin: 0 auto 20px;
-}
-
-.pay-result-card__icon--success   { background: #dcfce7; color: #16a34a; }
-.pay-result-card__icon--failed    { background: #fee2e2; color: #dc2626; }
-.pay-result-card__icon--cancelled { background: var(--stone-100); color: var(--stone-500); }
-.pay-result-card__icon--pending   { background: #fef9c3; color: #ca8a04; }
-
-.pay-result-card__title {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.pay-result-card__sub {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 24px;
-    line-height: 1.6;
-}
-
-.pay-result-card__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 99px;
-    margin-bottom: 24px;
-}
-
-/* Detail rows (success page) */
-.pay-result-card__details {
-    background: var(--stone-50);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 24px;
-    text-align: left;
-}
-
-.pay-detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-}
-
-.pay-detail-row:last-child { border-bottom: none; }
-
-.pay-detail-row__label {
-    color: var(--text-muted);
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-    flex-shrink: 0;
-    padding-top: 2px;
-}
-
-.pay-detail-row__val { color: var(--text-primary); text-align: right; }
-.pay-detail-row__val--amount { font-size: 17px; font-weight: 800; color: var(--brand-dark); }
-.pay-detail-row__val--mono   { font-family: monospace; font-size: 11px; word-break: break-all; }
 
 /* ═══════════════════════════════════════════════════
    MY REQUESTS  —  payment badges & pay buttons
@@ -232,7 +136,7 @@
     gap: 10px;
     padding: 10px 16px;
     border-top: 1px solid var(--border);
-    background: #fffbf4;
+    background: var(--brand-light);
     flex-wrap: wrap;
 }
 
@@ -250,11 +154,11 @@
 }
 
 .badge--paid {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--success-bg);
+    color: var(--success-strong);
 }
 
 .badge--unpaid {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--danger-bg);
+    color: var(--danger-strong);
 }

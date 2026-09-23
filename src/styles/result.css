@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════════
+   End-of-journey pages — payment, email confirmation.
+   See components/ResultPage.jsx
+   ═══════════════════════════════════════════════════════════════ */
+
+.res {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background:
+        radial-gradient(680px 380px at 50% -8%, var(--brand-light) 0%, transparent 72%),
+        var(--surface-2);
+}
+
+.res__card {
+    width: 100%;
+    max-width: 460px;
+    padding: 32px 34px 34px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    animation: res-in 320ms cubic-bezier(.22, .8, .3, 1) both;
+}
+
+@keyframes res-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ─── Branding ─────────────────────────────────────────────── */
+
+.res__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding-bottom: 20px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid var(--border);
+}
+.res__mark {
+    height: 21px;
+    width: auto;
+    display: block;
+}
+.res__parish {
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--brand);
+    line-height: 1.35;
+}
+
+/* ─── Outcome ──────────────────────────────────────────────── */
+
+.res__icon {
+    width: 66px;
+    height: 66px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 29px;
+}
+.res__icon--ok      { background: var(--success-bg); color: var(--green); }
+.res__icon--pending { background: var(--warning-bg); color: var(--gold-dark); }
+.res__icon--bad     { background: var(--danger-bg);  color: var(--red); }
+
+.res__title {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+.res__sub {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ─── Facts ────────────────────────────────────────────────── */
+
+.res__facts {
+    margin: 24px 0 0;
+    padding: 4px 0 0;
+    border-top: 1px solid var(--border);
+    text-align: left;
+}
+.res__facts > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+.res__facts > div:last-child { border-bottom: none; }
+.res__facts dt {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.res__facts dd {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.res__amount { color: var(--brand); font-size: 16px; }
+.res__mono   { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 500; }
+
+/* ─── Actions ──────────────────────────────────────────────── */
+
+.res__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 26px;
+}
+.res__actions .btn,
+.res__actions .auth-btn { width: 100%; }
+
+.res__foot {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+.res__foot a { color: var(--brand); font-weight: 600; }
+
+/* A note that qualifies the outcome rather than describing it. */
+.res__note {
+    margin: 18px 0 0;
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    font-size: 12.5px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .res__card { animation: none; }
+}
+
+@media (max-width: 480px) {
+    .res        { padding: 20px 12px; }
+    .res__card  { padding: 24px 20px 26px; border-radius: 16px; }
+    .res__title { font-size: 19px; }
+
+    /* Stacked, so a long reference is not squeezed into half the width. */
+    .res__facts > div { flex-direction: column; gap: 3px; align-items: stretch; }
+    .res__facts dd    { text-align: left; }
+}

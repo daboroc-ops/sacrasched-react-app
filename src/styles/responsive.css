@@ -4,23 +4,8 @@
 }
 
 @media (max-width: 768px) {
-    /* Sidebar slides off-screen; toggled with .sidebar--open */
-    .sidebar              { transform: translateX(-100%); }
-    .sidebar--open        { transform: translateX(0); }
-    .sidebar-backdrop     { display: block; }
-
-    /* Header spans full width, relative for absolute wordmark */
-    .app-main             { margin-left: 0; }
-    .app-header           { position: relative; }
-    .header-menu-btn      { display: flex; }
-
-    /* Show wordmark, hide page title on mobile */
-    .header-wordmark      { display: block; }
-    .header-title         { display: none; }
-    .header-logout-btn    { display: none; }
-
     /* Forms go single-column */
-    .form-grid            { grid-template-columns: 1fr; }
+    .form-grid            { grid-template-columns: minmax(0, 1fr); }
     .form-group--full     { grid-column: 1; }
 
     /* Other grids */
@@ -29,39 +14,10 @@
 
     /* Calendar: reduce cell height on tablets */
     .cal-cell             { min-height: 64px; }
-
-    /* ── Mobile icon tab bar ── */
-    .mobile-tab-bar {
-        display: flex;
-        align-items: stretch;
-        background: var(--surface);
-        border-bottom: 1px solid var(--border);
-        padding: 0;
-    }
-
-    .mobile-tab {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 12px 0;
-        border: none;
-        background: none;
-        color: #9ca3af;
-        cursor: pointer;
-        flex: 1;
-        font-family: inherit;
-        transition: color 0.15s;
-    }
-    .mobile-tab:hover     { color: var(--text-primary); }
-    .mobile-tab--active   { color: var(--brand); }
-    .mobile-tab__icon     { font-size: 20px; }
 }
 
 @media (max-width: 480px) {
     .auth-card   { padding: 24px 18px; }
-    .sub-tabs    { gap: 4px; }
-    .sub-tab     { padding: 6px 12px; font-size: 12px; }
-    .app-content { padding: 12px 12px 200px; }
 
     /* ── Profile page ────────────────────────────── */
     .profile-page       { max-width: 100%; }
@@ -109,4 +65,30 @@
     .time-slot__event        { gap: 5px; }
     .time-slot__event-time   { font-size: 11px; min-width: 56px; }
     .time-slot__event-label  { font-size: 11px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Inputs on small screens
+   ───────────────────────────────────────────────────────────────
+   iOS Safari zooms the whole page in whenever you focus an input
+   whose font is smaller than 16px — and it does not zoom back out
+   when the field loses focus. The cure is the font size itself.
+
+   The other "fix" going around is maximum-scale=1 on the viewport
+   meta, which stops the zoom by disabling pinch-zoom entirely. That
+   takes zoom away from anyone who needs it to read, so it is not
+   used here; index.html deliberately keeps the plain viewport tag.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    /* The resting label imitates placeholder text, so it tracks the
+       input's size; the lifted state stays proportionally smaller. */
+    .ff__label { font-size: 16px; }
+    .ff__input:focus + .ff__label,
+    .ff__input:not(:placeholder-shown) + .ff__label { font-size: 12px; }
 }

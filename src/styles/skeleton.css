@@ -1,0 +1,424 @@
+/* ═══════════════════════════════════════════════════════════════
+   Loading skeletons — see components/Skeleton.jsx
+   ═══════════════════════════════════════════════════════════════ */
+
+.skel {
+    display: block;
+    flex-shrink: 0;
+    /* Warm grey, so the placeholders sit in the parchment theme rather than
+       looking like a grey box dropped on top of it. */
+    background: color-mix(in srgb, var(--brand) 9%, var(--stone-200));
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--surface) 70%, transparent) 45%,
+        transparent 90%
+    );
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    animation: skel-sweep 1.35s ease-in-out infinite;
+}
+
+@keyframes skel-sweep {
+    from { background-position: 140% 0; }
+    to   { background-position: -60% 0; }
+}
+
+/* A sweeping highlight is exactly the kind of motion that triggers vestibular
+   symptoms. Hold a flat tone instead — it still reads as "not ready yet". */
+@media (prefers-reduced-motion: reduce) {
+    .skel { animation: none; background-image: none; }
+}
+
+/* The label exists for screen readers; the bars carry it visually. */
+.skel-block__label {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.skel-block { position: relative; }
+
+.skel-intro { margin-bottom: 18px; }
+
+/* ── The week of Masses (components/WeekSchedule) ── */
+.skel-week {
+    max-width: 780px;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+}
+.skel-week__row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 18px;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+}
+.skel-week__row:last-child { border-bottom: none; }
+.skel-week__times { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+@media (max-width: 640px) { .skel-week__row { grid-template-columns: 1fr; gap: 8px; } }
+
+/* ── A parish landing page, before the parish is known ── */
+.skel-lp { min-height: 100vh; }
+.skel-lp__nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 64px;
+    padding: 0 max(24px, calc((100% - 1120px) / 2));
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+.skel-lp__spacer { flex: 1; }
+.skel-lp__hero {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    align-items: center;
+    gap: 56px;
+    padding: 76px max(24px, calc((100% - 1120px) / 2)) 84px;
+    background: linear-gradient(180deg, var(--brand-light) 0%, var(--surface) 78%);
+    border-bottom: 1px solid var(--border);
+}
+.skel-lp__copy { display: flex; flex-direction: column; gap: 10px; }
+.skel-lp__cta  { display: flex; gap: 12px; margin-top: 22px; }
+.skel-lp__crest { max-width: 420px; justify-self: center; }
+.skel-lp__tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    padding: 64px max(24px, calc((100% - 1120px) / 2));
+}
+.skel-lp__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+@media (max-width: 900px) {
+    .skel-lp__hero  { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; padding-bottom: 56px; }
+    .skel-lp__crest { max-width: none; }
+    .skel-lp__tiles { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+    .skel-lp__tiles { grid-template-columns: 1fr; }
+}
+
+/* ─── Calendar ─────────────────────────────────────────────── */
+
+/* Built like .cal-card: a bordered card, the nav row, the weekday band,
+   then the cells edge to edge with hairlines between them. */
+.skel-cal-wrap { display: flex; flex-direction: column; min-height: 0; }
+.skel-cal__strip {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    justify-items: center;
+    gap: 12px;
+    padding: 11px 26px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.skel-cal__strip .skel:first-child { justify-self: start; }
+.skel-cal__strip .skel:last-child  { justify-self: end; }
+.skel-cal__hint { margin-bottom: 8px; }
+.skel-cal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.skel-cal__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.skel-cal__controls { display: flex; gap: 8px; }
+.skel-cal__weekdays,
+.skel-cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+.skel-cal__weekdays {
+    justify-items: center;
+    padding: 9px 0;
+    background: var(--stone-50);
+    border-bottom: 1px solid var(--border);
+}
+.skel-cal__cell {
+    /* The same room a real cell takes, so nothing moves when the month lands */
+    min-height: clamp(56px, 9.5vh, 92px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 6px 6px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+.skel-cal__cell:nth-child(7n) { border-right: 0; }
+/* Inside the fixed-height calendar section the skeleton fills the frame like the month does */
+#calendar .skel-block { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#calendar .skel-block__body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#calendar .skel-cal { flex: 1; min-height: 0; }
+#calendar .skel-cal__grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+#calendar .skel-cal__cell { min-height: 0; overflow: hidden; }
+
+/* ─── Mass schedule ────────────────────────────────────────── */
+
+.skel-sched {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+.skel-sched__card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+}
+.skel-sched__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+/* ─── Rows: requests, admin tables ─────────────────────────── */
+
+.skel-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.skel-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.skel-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+}
+.skel-row__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+/* Inside an admin card the rows already sit on a surface — drop the nesting. */
+.ad-card .skel-row {
+    background: none;
+    border-color: var(--border);
+    box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    .skel-sched { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+    .skel-sched      { grid-template-columns: 1fr; }
+    .skel-cal__cell  { min-height: 64px; }
+}
+
+@media (max-width: 480px) {
+    .skel-cal        { padding: 10px; }
+    .skel-cal__cell  { min-height: 52px; padding: 4px; }
+    .skel-row        { padding: 13px 14px; }
+}
+
+/* ─── Session gate ─────────────────────────────────────────── */
+
+/* Stands in for the dashboard shell while the refresh token is exchanged,
+   so the app does not flash an empty page then snap into a full layout. */
+.skel-gate {
+    min-height: 100vh;
+    background: var(--surface-2);
+    padding: 16px clamp(12px, 4.5vw, 64px) 64px;
+}
+
+/* ─── Directory cards (Landing) ────────────────────────────── */
+.skel-parishes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+.skel-parish {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.skel-parish__banner {
+    position: relative;
+    height: 118px;
+    display: flex;
+    align-items: flex-end;
+    gap: 11px;
+    padding: 0 16px 12px;
+    background: color-mix(in srgb, var(--brand) 14%, var(--stone-200));
+}
+.skel-parish__banner .skel { background: color-mix(in srgb, var(--surface) 55%, transparent); }
+.skel-parish__name { display: flex; flex-direction: column; gap: 6px; flex: 1; padding-bottom: 4px; }
+.skel-parish__body { display: flex; flex-direction: column; gap: 9px; padding: 13px 18px 15px; }
+
+/* ─── Hero carousel (Landing) ──────────────────────────────── */
+.skel-carousel { width: 100%; max-width: 460px; }
+.skel-carousel__frame {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 20px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--brand) 12%, var(--stone-200));
+    box-shadow: var(--shadow-lg);
+}
+.skel-carousel__frame .skel { background: color-mix(in srgb, var(--surface) 55%, transparent); }
+.skel-carousel__dots { position: absolute; top: 12px; right: 14px; display: flex; gap: 6px; }
+.skel-carousel__caption {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .18));
+}
+.skel-carousel__name { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+@media (max-width: 900px) { .skel-carousel { max-width: 100%; } }
+
+/* ─── News cards (ParishPosts) ─────────────────────────────── */
+.skel-posts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+.skel-post {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.skel-post__cover { aspect-ratio: 16 / 9; }
+.skel-post__body { display: flex; flex-direction: column; gap: 9px; padding: 16px 18px 18px; }
+
+/* ─── The ticket, opening from a link (GuestBooking) ───────── */
+.skel-ticket-wrap { text-align: left; }
+.skel-ticket__banner { margin-bottom: 14px; }
+.skel-ticket {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.skel-ticket__strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--stone-50);
+    border-bottom: 1px solid var(--border);
+}
+.skel-ticket__body { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.skel-ticket__when {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-2);
+}
+.skel-ticket__lines { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.skel-ticket__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px 16px;
+    margin-top: 10px;
+}
+.skel-ticket__fact { display: flex; flex-direction: column; gap: 6px; }
+.skel-ticket__stub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    border-top: 2px dashed var(--border);
+    background: var(--brand-light);
+}
+.skel-ticket__actions { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 16px 18px; }
+
+/* ─── Admin tables ─────────────────────────────────────────── */
+.skel-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.skel-table__head,
+.skel-table__row {
+    display: grid;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+}
+.skel-table__head { height: 40px; background: var(--stone-50); border-bottom: 1px solid var(--border); }
+.skel-table__row  { height: 54px; border-bottom: 1px solid var(--border); }
+.skel-table__row:last-child { border-bottom: 0; }
+
+/* The analytics chart: a plot-shaped frame with bars, a legend row, then cards */
+.skel-chart {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 10px;
+    align-items: end;
+    height: 220px;
+    padding: 0 12px 0 36px;
+    border-bottom: 1px solid var(--border);
+}
+.skel-chart__legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+.skel-chart__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+.skel-chart__card {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}

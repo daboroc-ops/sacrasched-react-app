@@ -1,0 +1,1315 @@
+/* ═══════════════════════════════════════════════════════════════
+   Admin dashboard — /admin/*
+   Built on the shared tokens in base.css. All classes are ad-* so
+   nothing here can collide with the devotee dashboard styles.
+   ═══════════════════════════════════════════════════════════════ */
+
+.ad-shell {
+    min-height: 100vh;
+    background: var(--surface-2);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.ad-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.ad-header__left,
+.ad-header__right { display: flex; align-items: center; gap: 12px; }
+
+.ad-header__menu {
+    display: none;
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+}
+.ad-header__mark     { width: 28px; height: 28px; object-fit: contain; }
+.ad-header__wordmark { height: 16px; width: auto; }
+
+.ad-header__pill {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 99px;
+    background: var(--brand-light);
+    color: var(--brand);
+}
+
+.ad-header__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 7px 12px;
+    border-radius: 99px;
+    transition: background var(--transition), color var(--transition);
+}
+.ad-header__link:hover { background: var(--stone-100); color: var(--brand); }
+
+.ad-header__user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.ad-header__avatar {
+    display: grid;
+    place-items: center;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-size: 12px;
+    font-weight: 700;
+}
+.ad-header__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.ad-header__logout:hover { background: var(--red); border-color: var(--red); color: var(--on-brand); }
+
+/* ── Body / sidebar ──────────────────────────────────────────── */
+.ad-body { display: flex; flex: 1; min-height: 0; }
+
+.ad-sidebar {
+    width: 232px;
+    flex-shrink: 0;
+    padding: 20px 14px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    /* Stays put under the header while the page scrolls — the office asked
+       for a navigation that does not go with the scroll. On a phone it is a
+       drawer instead (below). */
+    position: sticky;
+    top: 60px;
+    align-self: flex-start;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+.ad-sidebar__label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--stone-400);
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+.ad-sidebar__divider { height: 1px; background: var(--border); margin: 18px 6px; }
+
+.ad-nav { display: flex; flex-direction: column; gap: 2px; }
+.ad-nav__item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 11px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: background var(--transition), color var(--transition);
+}
+.ad-nav__item:hover { background: var(--stone-100); }
+.ad-nav__item--active { background: var(--brand-light); color: var(--brand); font-weight: 600; }
+.ad-nav__icon { width: 16px; text-align: center; font-size: 14px; }
+
+.ad-backdrop {
+    display: none;
+    position: fixed;
+    inset: 60px 0 0;
+    background: rgba(0,0,0,.35);
+    z-index: 29;
+}
+
+/* ── Main ────────────────────────────────────────────────────── */
+.ad-main {
+    flex: 1;
+    min-width: 0;
+    padding: 24px 26px 56px;
+}
+.ad-page-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin-bottom: 18px;
+}
+
+/* ── Welcome banner ──────────────────────────────────────────── */
+.ad-welcome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    background: linear-gradient(120deg, var(--brand-dark) 0%, var(--brand) 60%, var(--gold-dark) 100%);
+    color: var(--on-brand);
+}
+.ad-welcome__greeting { font-size: 17px; font-weight: 700; }
+.ad-welcome__date     { font-size: 12.5px; color: rgba(255,255,255,.82); margin-top: 3px; }
+.ad-welcome__alert,
+.ad-welcome__clear {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 99px;
+}
+.ad-welcome__alert { background: rgba(255,255,255,.92); color: var(--brand-dark); }
+.ad-welcome__clear { background: rgba(255,255,255,.18); color: var(--on-brand); }
+
+/* ── Stat cards ──────────────────────────────────────────────── */
+.ad-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+}
+.ad-stat {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+a.ad-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--gold);
+}
+.ad-stat--static:hover { transform: none; }
+.ad-stat__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.ad-stat__label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.ad-stat__icon {
+    display: grid;
+    place-items: center;
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 13px;
+}
+.ad-stat__value { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+.ad-stat__sub   { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.ad-stat__sub--alert { color: var(--yellow); font-weight: 600; }
+
+/* ── Section headers, cards, grids ───────────────────────────── */
+.ad-section-hd {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 26px 0 12px;
+}
+.ad-section-hd h2   { font-size: 15px; font-weight: 700; }
+.ad-section-hd span { font-size: 12px; color: var(--text-muted); }
+
+.ad-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+}
+.ad-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ad-card__head h3 { font-size: 14px; font-weight: 700; }
+.ad-card__meta    { font-size: 12px; color: var(--text-muted); }
+.ad-card__link    { font-size: 12px; font-weight: 600; color: var(--brand); }
+.ad-card__link:hover { text-decoration: underline; }
+
+.ad-grid          { display: grid; gap: 16px; }
+.ad-grid--2       { grid-template-columns: repeat(2, 1fr); }
+.ad-grid--3       { grid-template-columns: repeat(3, 1fr); }
+.ad-grid--calendar{ grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.ad-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.ad-btn--sm     { height: 32px; padding: 0 12px; font-size: 12.5px; }
+.ad-btn--filled { background: var(--brand); color: var(--on-brand); }
+.ad-btn--filled:hover:not(:disabled) { background: var(--brand-dark); }
+.ad-btn--ghost  { background: var(--surface); border-color: var(--border); color: var(--text-secondary); }
+.ad-btn--ghost:hover:not(:disabled)  { background: var(--stone-100); }
+.ad-btn--danger { background: var(--red); color: var(--on-brand); }
+.ad-btn--danger:hover:not(:disabled) { filter: brightness(.92); }
+.ad-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.ad-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 32px; height: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.ad-icon-btn:hover:not(:disabled) { background: var(--stone-100); color: var(--text-primary); }
+.ad-icon-btn--danger:hover:not(:disabled) { background: var(--red); border-color: var(--red); color: var(--on-brand); }
+.ad-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Toolbar / filters / search ──────────────────────────────── */
+.ad-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.ad-toolbar__actions { display: flex; gap: 8px; }
+
+.ad-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.ad-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 13px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.ad-filter:hover        { background: var(--stone-100); }
+.ad-filter--active      { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.ad-filter__count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: rgba(0,0,0,.07);
+}
+.ad-filter--active .ad-filter__count { background: rgba(255,255,255,.22); }
+
+.ad-search { display: flex; align-items: center; gap: 8px; }
+/* The icon sits inside the box, centred on the text line */
+.ad-search__field { position: relative; flex: 1; min-width: 0; display: flex; }
+.ad-search__icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--stone-400);
+    pointer-events: none;
+}
+/* Written with the input's own class so the general .ad-input padding
+   below cannot win and push the text back under the icon */
+.ad-input.ad-input--search { padding-left: 38px; min-width: 260px; }
+
+/* ── Inputs ──────────────────────────────────────────────────── */
+.ad-input, .ad-select {
+    height: 38px;
+    width: 100%;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.ad-input:focus, .ad-select:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 12%, transparent);
+}
+textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.ad-input--short    { max-width: 150px; }
+.ad-input--time     { max-width: 130px; }
+.ad-input--bold     { font-weight: 600; }
+.ad-select--sm      { height: 30px; font-size: 12px; padding: 0 8px; width: auto; min-width: 108px; text-transform: capitalize; }
+
+/* ── Tables ──────────────────────────────────────────────────── */
+.ad-table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+.ad-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.ad-table th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.ad-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--stone-100);
+    vertical-align: middle;
+}
+.ad-table tbody tr:last-child td { border-bottom: 0; }
+.ad-table tbody tr:hover { background: var(--brand-light); }
+.ad-table__actions-hd { text-align: right; }
+.ad-row--busy { opacity: .55; }
+
+.ad-cell-stack       { display: flex; flex-direction: column; gap: 2px; }
+.ad-cell-stack span  { font-size: 11.5px; color: var(--text-muted); }
+.ad-mono             { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-muted); }
+.ad-tag {
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: var(--gold-light);
+    color: var(--gold-dark);
+}
+.ad-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+
+/* ── Status badges ───────────────────────────────────────────── */
+.ad-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: capitalize;
+    padding: 4px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+.ad-badge--ok    { background: var(--success-bg); color: var(--success-fg); }
+.ad-badge--warn  { background: var(--gold-light); color: var(--gold-dark); }
+.ad-badge--bad   { background: var(--danger-bg); color: var(--red); }
+.ad-badge--info  { background: var(--info-bg); color: var(--info-fg); }
+.ad-badge--muted { background: var(--stone-100); color: var(--stone-500); }
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.ad-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 2px 0;
+}
+.ad-pagination__meta  { font-size: 12px; color: var(--text-muted); padding-top: 12px; }
+.ad-pagination__pages { display: flex; gap: 5px; }
+.ad-page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.ad-page-btn:hover:not(:disabled) { background: var(--stone-100); }
+.ad-page-btn--active { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600; }
+.ad-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── States and banners ──────────────────────────────────────── */
+.ad-state {
+    padding: 42px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.ad-state--error { color: var(--red); }
+
+.ad-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    margin-bottom: 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    border: 1px solid transparent;
+}
+.ad-banner--ok  { background: var(--success-soft); border-color: var(--success-border); color: var(--success-fg); }
+.ad-banner--bad { background: var(--danger-soft); border-color: var(--danger-border); color: var(--red); }
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.ad-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(28, 25, 23, .45);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+}
+.ad-modal {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    animation: ad-pop 160ms ease;
+}
+.ad-modal--wide { max-width: 720px; }
+@keyframes ad-pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+.ad-modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.ad-modal__head h3 { font-size: 15px; font-weight: 700; text-transform: capitalize; }
+.ad-modal__body    { padding: 18px; }
+.ad-confirm__text  { font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
+
+/* ── Forms ───────────────────────────────────────────────────── */
+.ad-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+.ad-field        { display: flex; flex-direction: column; gap: 6px; }
+.ad-field--full  { grid-column: 1 / -1; }
+.ad-field__label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ad-field__label em { color: var(--red); font-style: normal; }
+.ad-field__problem  { color: var(--red); font-weight: 600; }
+
+.ad-form__section {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 20px 0 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.ad-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* ── Config sections ─────────────────────────────────────────── */
+.ad-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+.ad-tab {
+    padding: 9px 15px;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color var(--transition), border-color var(--transition);
+}
+.ad-tab:hover        { color: var(--text-primary); }
+.ad-tab--active      { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+
+.ad-config-col__title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.ad-config-col__empty { font-size: 12.5px; color: var(--stone-400); margin-bottom: 10px; }
+
+.ad-repeat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.ad-config-group {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+}
+.ad-config-items { padding-left: 14px; margin-top: 10px; border-left: 1px dashed var(--border); }
+.ad-fee-preview  { font-size: 12px; color: var(--text-muted); min-width: 70px; }
+
+/* ── Recent lists ────────────────────────────────────────────── */
+.ad-recent { list-style: none; display: flex; flex-direction: column; }
+.ad-recent li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stone-100);
+}
+.ad-recent li:last-child { border-bottom: 0; }
+.ad-recent__body       { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ad-recent__body b     { font-size: 13px; }
+.ad-recent__body span  { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Charts ──────────────────────────────────────────────────── */
+.ad-chart { width: 100%; }
+.ad-chart__plot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 6px;
+    height: 100%;
+    border-bottom: 1px solid var(--border);
+}
+.ad-chart__group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.ad-chart__bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    flex: 1;
+}
+.ad-chart__bar {
+    min-height: 2px;
+    border-radius: 3px 3px 0 0;
+    transition: opacity var(--transition);
+}
+.ad-chart__bar:hover  { opacity: .78; }
+.ad-chart__xlabel     { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+
+.ad-hbars { display: flex; flex-direction: column; gap: 12px; }
+.ad-hbar  { display: grid; grid-template-columns: 92px 1fr 48px; align-items: center; gap: 10px; }
+.ad-hbar__label { font-size: 12.5px; color: var(--text-secondary); }
+.ad-hbar__track { height: 10px; border-radius: 99px; background: var(--stone-100); overflow: hidden; }
+.ad-hbar__fill  { height: 100%; border-radius: 99px; }
+.ad-hbar__value { font-size: 12.5px; font-weight: 600; text-align: right; }
+
+.ad-donut { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.ad-donut__total   { font-size: 22px; font-weight: 700; fill: var(--text-primary); }
+.ad-donut__caption { font-size: 10px; fill: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+
+.ad-legend { list-style: none; display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 140px; }
+.ad-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+.ad-legend li b { margin-left: auto; }
+.ad-legend__dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+.ad-legend-row  { display: flex; flex-wrap: wrap; gap: 14px; }
+.ad-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+/* ── Calendar ────────────────────────────────────────────────── */
+.ad-cal {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+.ad-cal__dow {
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding-bottom: 6px;
+}
+.ad-cal__day {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    min-height: 88px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    text-align: left;
+    transition: border-color var(--transition), background var(--transition);
+}
+.ad-cal__day:hover        { border-color: var(--gold); }
+.ad-cal__day--muted       { background: var(--surface-2); opacity: .6; }
+.ad-cal__day--today       { border-color: var(--brand); }
+.ad-cal__day--selected    { background: var(--brand-light); border-color: var(--brand); }
+.ad-cal__num              { font-size: 12px; font-weight: 600; }
+.ad-cal__day--today .ad-cal__num { color: var(--brand); }
+.ad-cal__chip {
+    font-size: 9.5px;
+    line-height: 1.35;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--stone-100);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ad-cal__chip--sacrament { background: var(--violet-bg); color: var(--violet-fg); }
+.ad-cal__chip--blessing  { background: var(--gold-light); color: var(--gold-dark); }
+.ad-cal__chip--intention { background: var(--info-bg); color: var(--info-fg); }
+.ad-cal__more { font-size: 9.5px; color: var(--text-muted); }
+.ad-cal__nav  { display: flex; align-items: center; gap: 6px; }
+
+.ad-cal-side { display: flex; flex-direction: column; }
+.ad-daylist  { list-style: none; display: flex; flex-direction: column; }
+.ad-daylist li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stone-100);
+}
+.ad-daylist li:last-child { border-bottom: 0; }
+.ad-daylist__time { font-size: 11.5px; font-weight: 700; color: var(--brand); min-width: 62px; }
+
+.ad-mass-block { margin-bottom: 14px; }
+.ad-mass-block:last-child { margin-bottom: 0; }
+.ad-mass-block__title {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.ad-mass-block__empty { font-size: 12px; color: var(--stone-400); }
+.ad-mass-times { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.ad-mass-times li {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 11.5px;
+    padding: 4px 9px;
+    border-radius: 99px;
+    background: var(--brand-light);
+}
+.ad-mass-times li b    { color: var(--brand); }
+.ad-mass-times li span { color: var(--text-muted); }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .ad-grid--calendar { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+    .ad-grid--2, .ad-grid--3 { grid-template-columns: 1fr; }
+    .ad-header__menu { display: grid; place-items: center; }
+    .ad-header__link span,
+    .ad-header__user,
+    .ad-header__logout span { display: none; }
+
+    .ad-sidebar {
+        position: fixed;
+        top: 60px;
+        bottom: 0;
+        left: 0;
+        z-index: 30;
+        width: 244px;
+        height: auto;
+        align-self: auto;
+        transform: translateX(-100%);
+        transition: transform var(--transition);
+        overflow-y: auto;
+    }
+    .ad-sidebar--open { transform: none; box-shadow: var(--shadow-lg); }
+    .ad-backdrop      { display: block; }
+    .ad-main          { padding: 18px 16px 48px; }
+}
+
+@media (max-width: 640px) {
+    .ad-form__grid   { grid-template-columns: 1fr; }
+    .ad-welcome      { flex-direction: column; align-items: flex-start; }
+    .ad-toolbar      { flex-direction: column; align-items: stretch; }
+    .ad-toolbar__actions { justify-content: flex-end; }
+    .ad-input.ad-input--search { min-width: 0; }
+    .ad-search        { flex-wrap: wrap; }
+    .ad-cal__day      { min-height: 64px; }
+    .ad-cal__chip     { display: none; }
+    .ad-donut         { justify-content: center; }
+}
+
+/* Tenant chip in the admin header, shown on a parish's own site */
+.ad-header__tenant {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+}
+
+/* Scope chip on the dashboard welcome banner */
+.ad-welcome__scope {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.18);
+    color: var(--on-brand);
+}
+
+/* Parish shown as a fact rather than a choice on a parish site */
+.parish-picker--fixed .parish-picker__value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--brand);
+    margin: 4px 0 2px;
+}
+
+/* Parish name over the sign-in cover */
+.auth-cover__parish {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--on-brand);
+    margin-bottom: 6px;
+}
+
+/* ─── Staff account with no parish assigned ── */
+.ad-empty-scope {
+    max-width: 560px;
+    margin: 48px auto;
+    padding: 40px 32px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+.ad-empty-scope__icon  { font-size: 30px; color: var(--gold); margin-bottom: 18px; }
+.ad-empty-scope h2     { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+.ad-empty-scope p      { font-size: 14px; line-height: 1.65; color: var(--text-muted); }
+.ad-empty-scope__hint  { margin-top: 14px; font-size: 13px; }
+.ad-empty-scope b      { color: var(--text-primary); }
+
+/* ─── Liturgical calendar (calapi.inadiutorium.cz) ── */
+/* A coloured dot beside the date carries the day's liturgical colour. */
+.ad-cal__lit-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.18);
+    vertical-align: middle;
+}
+
+/* Solemnities and feasts get their name in the cell; ferial days do not. */
+.ad-cal__lit {
+    display: block;
+    margin-top: 2px;
+    font-size: 9.5px;
+    line-height: 1.25;
+    font-weight: 600;
+    color: var(--brand-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ad-cal__lit--primary-liturgical-days,
+.ad-cal__lit--solemnity { color: var(--gold-dark); }
+
+/* ── Selected day, in the side panel ── */
+.ad-lit {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+}
+.ad-lit__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+}
+.ad-lit__swatch {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.2);
+    flex-shrink: 0;
+}
+.ad-lit__swatch--sm { width: 9px; height: 9px; }
+
+.ad-lit__season {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.ad-lit__title        { font-size: 14px; font-weight: 700; line-height: 1.35; }
+.ad-lit__title--plain { font-weight: 500; color: var(--text-muted); }
+.ad-lit__rank {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 9px;
+    border-radius: 99px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+.ad-lit__other {
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px dashed var(--border);
+    list-style: none;
+}
+.ad-lit__other li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 2px 0;
+}
+.ad-lit__other em { font-style: normal; font-size: 10.5px; color: var(--stone-400); }
+
+/* A Mass the office scheduled — not a booking, so it reads differently */
+.ad-cal__chip--mass { background: var(--gold-light); color: var(--gold-dark); font-weight: 600; }
+
+/* ─── Configuration: the parish's rules ──────────────────────────── */
+
+.ad-grid--days { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+.ad-link-btn {
+    margin-left: 8px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brand);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.ad-link-btn:hover { text-decoration: underline; }
+
+.ad-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.ad-check input { accent-color: var(--brand); }
+.ad-check small { display: block; font-size: 11.5px; color: var(--text-muted); white-space: normal; margin-top: 2px; }
+
+.ad-field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--text-secondary); }
+.ad-field > span:first-child { font-weight: 700; color: var(--text-primary); }
+.ad-field small { font-size: 11.5px; color: var(--text-muted); }
+.ad-inline { display: flex; align-items: center; gap: 8px; }
+
+.ad-item { display: flex; flex-direction: column; gap: 6px; }
+.ad-btn--marked { border-color: var(--brand); color: var(--brand); }
+
+.ad-rules {
+    display: grid;
+    gap: 12px;
+    margin: 0 0 10px 10px;
+    padding: 12px 14px;
+    border-left: 3px solid var(--brand);
+    background: var(--stone-50);
+    border-radius: 0 8px 8px 0;
+}
+.ad-rules__field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+.ad-rules__field > span { font-weight: 700; color: var(--text-primary); }
+.ad-rules__days { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ad-rules__days small { margin-left: 6px; color: var(--text-muted); }
+
+.ad-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+.ad-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ad-chip--on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+
+.ad-muted { font-size: 11.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+.ad-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 12px;
+    color: var(--brand);
+    cursor: pointer;
+    text-align: left;
+}
+.ad-file:hover { text-decoration: underline; }
+.ad-file:disabled { opacity: .5; cursor: progress; }
+
+/* ─── Sunday collection ledger ───────────────────────────────────── */
+.ad-ledger__form {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.ad-table--compact td, .ad-table--compact th { padding-top: 8px; padding-bottom: 8px; }
+@media (max-width: 640px) { .ad-ledger__form { grid-template-columns: 1fr 1fr; } }
+
+/* ── The intentions sheet: a day, a Mass, a PDF ─────────────── */
+.ad-sheet { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ad-sheet .ad-select { min-width: 170px; }
+
+/* ── The last 30 days at a glance ───────────────────────────── */
+.ad-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.ad-summary__card {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+.ad-summary__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ad-summary__head b { font-size: 13px; color: var(--text-secondary); }
+.ad-summary__n { font-size: 26px; font-weight: 800; color: var(--brand); letter-spacing: -.02em; }
+.ad-summary__kinds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.ad-summary__kinds li { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-muted); }
+.ad-summary__kinds li span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ad-summary__kinds li b { color: var(--text-primary); }
+.ad-summary__none { font-size: 12.5px; color: var(--text-muted); font-style: italic; }
+
+/* ── Configuration: collapsible categories, the time note ───── */
+.ad-cat__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.ad-cat__toggle:hover { color: var(--brand); }
+.ad-time-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 8px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: var(--gold-light);
+    color: var(--gold-dark);
+    font-size: 12px;
+}
+
+/* ── Mass schedule editor: a day per row, times across ─────── */
+.ad-week { display: flex; flex-direction: column; gap: 10px; }
+.ad-week__day {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 16px;
+    align-items: start;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+.ad-week__day .ad-config-col__title { margin: 8px 0 0; }
+.ad-week__day .ad-config-col__empty,
+.ad-week__day .ad-repeat-row,
+.ad-week__day > .ad-btn { grid-column: 2; }
+.ad-week__day .ad-repeat-row { margin-bottom: 6px; }
+@media (max-width: 640px) {
+    .ad-week__day { grid-template-columns: 1fr; }
+    .ad-week__day .ad-config-col__empty, .ad-week__day .ad-repeat-row, .ad-week__day > .ad-btn { grid-column: 1; }
+}
+
+/* ── Venues with dates ──────────────────────────────────────── */
+.ad-venue { padding: 10px 0 12px; border-bottom: 1px dashed var(--border); }
+.ad-venue:last-of-type { border-bottom: none; }
+.ad-venue__dates { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 0 4px; }
+.ad-venue__dates .ad-inline { gap: 8px; }
+
+/* ── Parish logo card (Configuration → Parish) ── */
+.ad-logo { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.ad-logo__frame {
+    width: 108px;
+    height: 108px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+}
+.ad-logo__frame img { width: 100%; height: 100%; object-fit: contain; }
+.ad-logo__frame--empty { color: var(--text-muted); font-size: 28px; border-style: dashed; }
+.ad-logo__text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ad-logo__text p { margin: 0; font-size: 14px; font-weight: 600; }
+.ad-logo__text small { font-size: 12px; color: var(--text-muted); }
+.ad-logo__text .ad-btn { align-self: flex-start; margin-top: 6px; }
+
+/* The search bar under a list's filters */
+.ad-toolbar--search { margin-top: -4px; }
+.ad-toolbar--search .ad-search { flex: 1; min-width: 0; }
+.ad-toolbar--search .ad-search__field { max-width: 520px; }
+
+/* ── The controls over a list stay put ───────────────────────
+   Tabs, status filter, search and "New request" are pinned under the
+   header; the rows scroll beneath them. The block paints the page's
+   own background so rows do not show through. */
+.ad-sticky {
+    position: sticky;
+    top: 60px;
+    z-index: 20;
+    margin: -8px -8px 14px;
+    padding: 8px 8px 2px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+}
+.ad-sticky .ad-toolbar { margin-bottom: 10px; }
+.ad-toolbar--tabs { margin-bottom: 8px; }
+
+/* ── Tabs ───────────────────────────────────────────────────── */
+.ad-tabs {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+}
+.ad-tabs::-webkit-scrollbar { display: none; }
+.ad-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 13px 10px;
+    margin-bottom: -1px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--transition), border-color var(--transition);
+}
+.ad-tab:hover        { color: var(--text-primary); }
+.ad-tab--active      { color: var(--brand); font-weight: 600; border-bottom-color: var(--brand); }
+.ad-tab__count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: var(--stone-100);
+    color: var(--text-muted);
+}
+.ad-tab--active .ad-tab__count { background: var(--brand-light); color: var(--brand); }
+
+/* ── Segmented switch (Day / Week / Month / Year) ────────────── */
+.ad-seg {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+}
+.ad-seg__btn {
+    height: 28px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 99px;
+    background: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+}
+.ad-seg__btn:hover        { color: var(--text-primary); }
+.ad-seg__btn--active      { background: var(--brand); color: var(--on-brand); }
+
+/* ── Line chart ─────────────────────────────────────────────── */
+.ad-line { position: relative; width: 100%; }
+.ad-line svg { display: block; width: 100%; height: auto; }
+.ad-line__grid   { stroke: var(--border); stroke-width: 1; }
+.ad-line__tick   { font-size: 10.5px; fill: var(--text-muted); }
+.ad-line__xlabel { font-size: 10.5px; fill: var(--text-muted); }
+.ad-line__cursor { stroke: var(--stone-300, #cbbfae); stroke-width: 1; stroke-dasharray: 3 3; }
+.ad-line__tip {
+    position: absolute;
+    top: 6px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 150px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 2;
+}
+.ad-line__tip > b { font-size: 12px; margin-bottom: 2px; }
+.ad-line__tip span { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.ad-line__tip span b { margin-left: auto; color: var(--text-primary); }
+.ad-line__tip i { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.ad-legend-row--toggle { margin-top: 10px; }
+.ad-legend-row--toggle .ad-legend-item {
+    border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+}
+.ad-legend-row--toggle .ad-legend-item b { color: var(--text-primary); }
+.ad-legend-item--off { opacity: .4; text-decoration: line-through; }
+
+/* ── Analytics summary ──────────────────────────────────────── */
+.ad-analytics__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.ad-analytics__head h2 { font-size: 15px; font-weight: 700; }
+.ad-analytics__head p  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.ad-analytics__total   { font-size: 12.5px; color: var(--text-muted); }
+.ad-analytics__total b { font-size: 20px; font-weight: 800; color: var(--brand); margin-right: 4px; letter-spacing: -.02em; }
+
+@media (max-width: 640px) {
+    .ad-sticky { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+    .ad-seg__btn { padding: 0 11px; }
+}
+
+/* A heading inside the create form's grid — "Groom", "Bride" */
+.ad-form__subsection {
+    grid-column: 1 / -1;
+    margin: 4px 0 -6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--brand);
+}
+
+/* The configuration tabs stay under the header while a section scrolls */
+.ad-tabs--sticky {
+    position: sticky;
+    top: 60px;
+    z-index: 20;
+    margin: -8px -8px 16px;
+    padding: 8px 8px 0;
+    background: var(--surface-2);
+}
+
+/* A venue's own Masses on particular days */
+.ad-venue__masses { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.ad-venue__masses-hd { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.ad-venue__masses .ad-inline .ad-input:not(.ad-input--short) { flex: 1; min-width: 200px; }

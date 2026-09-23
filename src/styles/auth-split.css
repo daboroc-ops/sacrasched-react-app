@@ -1,0 +1,268 @@
+/* ═══════════════════════════════════════════════════════════════
+   Split sign-in page — cover on the left, panel on the right.
+   The cover image comes from the "login-cover" content slot in the
+   admin CMS; until one is published a themed placeholder stands in.
+   ═══════════════════════════════════════════════════════════════ */
+
+.auth-split {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    background: var(--surface);
+}
+
+/* ── Cover ───────────────────────────────────────────────────── */
+.auth-cover {
+    position: relative;
+    overflow: hidden;
+    background: var(--brand-light);
+    display: flex;
+    align-items: flex-end;
+}
+.auth-cover__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Stand-in until a photo is uploaded */
+.auth-cover__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(700px 420px at 70% 15%, var(--gold-light) 0%, transparent 60%),
+        linear-gradient(150deg, var(--brand-dark) 0%, var(--brand) 55%, var(--gold-dark) 100%);
+}
+.auth-cover__mark {
+    width: 132px;
+    height: 132px;
+    object-fit: contain;
+    opacity: .9;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.25));
+}
+
+.auth-cover__caption {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 32px 40px;
+    color: var(--on-brand);
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.55) 100%);
+}
+.auth-cover__wordmark {
+    height: 20px;
+    width: auto;
+    margin-bottom: 10px;
+    filter: brightness(0) invert(1);
+}
+.auth-cover__caption p {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 34em;
+    color: rgba(255,255,255,.9);
+}
+
+/* ── Panel ───────────────────────────────────────────────────── */
+.auth-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    background: var(--surface);
+}
+.auth-panel__inner {
+    width: 100%;
+    max-width: 380px;
+}
+
+.auth-panel__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 34px;
+}
+.auth-panel__mark     { width: 34px; height: 34px; object-fit: contain; }
+.auth-panel__wordmark { height: 18px; width: auto; }
+
+.auth-panel__title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-bottom: 6px;
+}
+.auth-panel__sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 26px;
+}
+
+.auth-panel .auth-form-wrap { max-width: none; }
+.auth-panel .auth-error     { margin-bottom: 16px; }
+
+.auth-panel__foot {
+    margin-top: 26px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.auth-panel__foot a:hover { color: var(--brand); }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .auth-split { grid-template-columns: 1fr; }
+
+    /* Cover becomes a banner above the form */
+    .auth-cover  { min-height: 210px; }
+    .auth-panel  { padding: 32px 24px 48px; }
+    .auth-cover__caption { padding: 20px 24px; }
+    .auth-cover__mark    { width: 84px; height: 84px; }
+}
+
+@media (max-width: 560px) {
+    .auth-cover__caption p { display: none; }
+    .auth-cover { min-height: 150px; }
+    .auth-panel__title { font-size: 22px; }
+}
+
+/* ── Turnstile widget ────────────────────────────────────────── */
+.turnstile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 68px;
+}
+.turnstile__widget { display: flex; justify-content: center; }
+.turnstile__error {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--red);
+    text-align: center;
+}
+
+/* ── Resend a confirmation link ──────────────────────────────── */
+.auth-resend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 380px;
+    margin: 18px auto 0;
+    text-align: left;
+}
+.auth-resend__row { display: flex; gap: 8px; }
+.auth-resend__row .auth-input { flex: 1; min-width: 0; }
+.auth-resend__row .auth-btn   { flex-shrink: 0; width: auto; padding: 0 22px; }
+.auth-resend__notice {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--success-fg);
+    background: var(--success-soft);
+    border: 1px solid var(--success-border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-top: 18px;
+}
+
+/* Failure variant of the big status icon */
+.auth-success__icon--bad { background: var(--danger-bg); color: var(--red); }
+.auth-success__note {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--amber-fg);
+    background: var(--amber-bg);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 18px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Platform console entrance — pages/SuperAdminGate.jsx
+   Deliberately unlike the parish sign-in: a visitor who lands here
+   should be in no doubt they are somewhere else.
+   ═══════════════════════════════════════════════════════════════ */
+
+.sag {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background:
+        radial-gradient(700px 400px at 50% -12%, color-mix(in srgb, var(--brand) 30%, transparent) 0%, transparent 70%),
+        var(--stone-900);
+}
+
+.sag__card {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 32px 26px;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    text-align: center;
+}
+
+/* A solid brand disc. The first pass used --brand-light on white, which is
+   two shades of off-white and read as a rendering fault rather than a mark. */
+.sag__badge {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    background: var(--brand);
+    color: var(--on-brand);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 40%, transparent);
+}
+
+.sag__mark {
+    height: 22px;
+    width: auto;
+    margin: 0 auto 14px;
+    display: block;
+}
+
+.sag__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+}
+.sag__sub {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0 0 26px;
+}
+
+/* Each label belongs to the field under it, so it sits close to that field
+   and well clear of the one above. An even gap between everything made the
+   two pairs read as four unrelated things. */
+.sag__card .auth-field__label {
+    display: block;
+    text-align: left;
+    margin-bottom: 6px;
+}
+.sag__card .auth-input { width: 100%; }
+.sag__card .auth-input + .auth-field__label { margin-top: 16px; }
+
+.sag__go { margin-top: 22px; }
+
+.sag__note {
+    margin: 16px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.sag .form-alert { margin-bottom: 18px; text-align: left; }
+
+@media (max-width: 480px) {
+    .sag       { padding: 20px 12px; }
+    .sag__card { padding: 26px 20px 22px; border-radius: 16px; }
+}

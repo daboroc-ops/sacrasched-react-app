@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faCircleInfo, faCalendarPlus } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
+import LiturgicalStrip from './LiturgicalStrip';
+import { CalendarSkeleton } from './Skeleton';
 
 /* ── Colour map for event chips ─────────────────────────────── */
 const COLORS = {
@@ -65,14 +67,14 @@ function CalCell({ dayNum, isCurrentMonth, isToday, totalEvents, onClick }) {
 }
 
 /* ── Day detail modal — 5 AM to 8 PM hourly slot grid ───────── */
-function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose }) {
+function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose, onBook }) {
     /* Combine every event into one list with normalised shape */
     const allEvents = [
         ...massSlots.map(m => ({
             time:  m.time,
-            type:  'Mass',
+            type:  m.special ? 'Scheduled Mass' : 'Mass',
             label: m.label || 'Regular Mass',
-            kind:  'mass'
+            kind:  m.special ? 'special' : 'mass'
         })),
         ...sacEvents.map(ev => ({
             time:  ev.preferredTime || '',
@@ -119,9 +121,25 @@ function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myE
             <div className="modal__box modal__box--lg">
                 <div className="cal-day-header">
                     <h3 className="t-modal-title" style={{ margin: 0 }}>{day.label}</h3>
-                    <button className="cal-day-header__close" onClick={onClose} aria-label="Close">
-                        ×
-                    </button>
+
+                    <div className="cal-day-header__actions">
+                        {/* The day is already chosen — carry it into the form rather
+                            than making the devotee pick the same date twice. A past
+                            day cannot be booked, so it offers nothing. */}
+                        {onBook && !isPastKey(day.key) && (
+                            <button
+                                type="button"
+                                className="cal-day-header__book"
+                                onClick={() => onBook(day.key)}
+                            >
+                                <FontAwesomeIcon icon={faCalendarPlus} />
+                                Book now
+                            </button>
+                        )}
+                        <button className="cal-day-header__close" onClick={onClose} aria-label="Close">
+                            ×
+                        </button>
+                    </div>
                 </div>
 
                 <div className="time-slots">
@@ -164,26 +182,9 @@ function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myE
 }
 
 /* ── Main component ─────────────────────────────────────────── */
-export default function CalendarView() {
+export default function CalendarView({ onBook }) {
     const axios = useAxiosPrivate();
 
-    /* ── Inject JotForm AI agent chat widget ─────────────────── */
-    useEffect(() => {
-        const SRC = 'https://cdn.jotfor.ms/agent/embedjs/019dfcd2d4fc73cab42fc9d7f051841af52a/embed.js?autoOpenChatIn=1';
-        if (document.querySelector(`script[src="${SRC}"]`)) return;
-
-        const script = document.createElement('script');
-        script.src   = SRC;
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            const existing = document.querySelector(`script[src="${SRC}"]`);
-            if (existing) document.body.removeChild(existing);
-            document.querySelectorAll('[id^="JotFormAgent"], [class*="jotform-agent"]')
-                .forEach(el => el.remove());
-        };
-    }, []);
 
     const now   = new Date();
     const [year,  setYear]  = useState(now.getFullYear());
@@ -191,6 +192,7 @@ export default function CalendarView() {
     const [selectedDay, setSelectedDay] = useState(null);
 
     const [massSchedule,     setMassSchedule]     = useState({ weekdays: [], saturdays: [], sundays: [] });
+    const [scheduledMasses,  setScheduledMasses]  = useState([]); // one-off Masses set by the parish office
     const [sacEvents,        setSacEvents]         = useState([]); // approved/completed sacraments
     const [blessEvents,      setBlessEvents]       = useState([]); // approved/completed blessings
     const [intentionEvents,  setIntentionEvents]   = useState([]); // approved/completed mass intentions
@@ -213,10 +215,24 @@ export default function CalendarView() {
     const intentionMap = makeMap(intentionEvents, ev => utcKey(ev.preferredDate));
     const myMap        = makeMap(myEvents,        ev => ev.dateKey);
 
-    const getMassSlots = dow => {
-        if (dow === 0) return massSchedule.sundays;
-        if (dow === 6) return massSchedule.saturdays;
-        return massSchedule.weekdays;
+    /* One-off Masses, keyed by the day they fall on */
+    const scheduledMap = makeMap(scheduledMasses, m => utcKey(m.date));
+
+    /* The recurring pattern for that weekday, plus anything the office
+       scheduled for that exact date. */
+    const getMassSlots = (dow, key) => {
+        const recurring = dow === 0 ? massSchedule.sundays
+                        : dow === 6 ? massSchedule.saturdays
+                        : massSchedule.weekdays;
+
+        const oneOff = (scheduledMap[key] || []).map(m => ({
+            time:  m.time,
+            label: m.title,
+            special: true,
+        }));
+
+        return [...(recurring || []), ...oneOff]
+            .sort((a, b) => String(a.time).localeCompare(String(b.time)));
     };
 
     /* Fetch all data once on mount */
@@ -235,6 +251,7 @@ export default function CalendarView() {
                 ]);
 
                 setMassSchedule(msRes.data);
+                setScheduledMasses(msRes.data?.scheduled || []);
                 setSacEvents(sacRes.data       || []);
                 setBlessEvents(blessRes.data   || []);
                 setIntentionEvents(intentionRes.data || []);
@@ -299,7 +316,7 @@ export default function CalendarView() {
 
         const key      = cellKey(cy, cm2, dn);
         const dow      = new Date(cy, cm2, dn).getDay();
-        const masses   = getMassSlots(dow);
+        const masses   = getMassSlots(dow, key);
         const sacs     = sacMap[key]       || [];
         const bless    = blessMap[key]     || [];
         const intents  = intentionMap[key] || [];
@@ -318,9 +335,19 @@ export default function CalendarView() {
         });
     };
 
+    /* The grid is the page, so the skeleton stands in for the whole of it —
+       including the "click a date" hint, since there is nothing to click yet.
+       The liturgical strip stays: it does not wait on this request. */
+    if (loading) return (
+        <div>
+            <LiturgicalStrip />
+            <CalendarSkeleton />
+        </div>
+    );
+
     return (
         <div>
-            {loading && <p className="loading-text">Loading calendar…</p>}
+            <LiturgicalStrip />
 
             <p className="cal-hint">
                 <FontAwesomeIcon icon={faCircleInfo} className="cal-hint__icon" />
@@ -379,6 +406,7 @@ export default function CalendarView() {
                     intentionEvents={selectedDay.intents}
                     myEvents={selectedDay.mine}
                     onClose={() => setSelectedDay(null)}
+                    onBook={onBook && (date => { setSelectedDay(null); onBook(date); })}
                 />
             )}
         </div>

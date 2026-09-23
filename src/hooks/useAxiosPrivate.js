@@ -26,9 +26,15 @@ const useAxiosPrivate = () => {
                 const prev = err?.config;
                 if (err?.response?.status === 403 && !prev?.sent) {
                     prev.sent = true;
-                    const newToken = await refresh();
-                    prev.headers['Authorization'] = `Bearer ${newToken}`;
-                    return axiosPrivate(prev);
+                    try {
+                        const newToken = await refresh();
+                        prev.headers['Authorization'] = `Bearer ${newToken}`;
+                        return axiosPrivate(prev);
+                    } catch {
+                        // Refresh failed, or the 403 was a role check rather than an
+                        // expired token — surface the original error to the caller.
+                        return Promise.reject(err);
+                    }
                 }
                 return Promise.reject(err);
             }

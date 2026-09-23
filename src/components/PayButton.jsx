@@ -6,19 +6,31 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import usePayment from '../hooks/usePayment';
 
+/* Which way each service is paid: Mass intentions and documents online,
+   the rest at the parish office. The API enforces the same split. */
+const ONLINE = new Set(['massIntention', 'documentRequest']);
+
 /**
+ * How the offering for a request gets settled — one way, never a choice:
+ * online (QR Ph / GCash) for a Mass intention or a document, at the parish
+ * office for a sacrament, a blessing or an occasional Mass. Pressing the
+ * office button records that choice, which is what makes the booking count.
+ *
  * Props:
- *   amount      – number   PHP pesos (e.g. 500)
+ *   amount      – number   PHP pesos (e.g. 500) — shown; the API charges the record's own fee
  *   description – string   shown on the checkout page
  *   serviceType – string   enum matching Payment model
  *   referenceId – string   _id of the related service record
- *   compact     – boolean  render just the buttons (no fee info block)
+ *   compact     – boolean  render just the button (no fee info block)
+ *   onsiteChosen – boolean the office was already chosen (from a lookup)
  */
-export default function PayButton({ amount, description, serviceType, referenceId, compact = false }) {
+export default function PayButton({ amount, description, serviceType, referenceId, compact = false, onsiteChosen = false }) {
     const { checkout, payCash } = usePayment();
     const [busy,     setBusy]     = useState('');   // '' | 'online' | 'cash'
     const [err,      setErr]      = useState('');
-    const [cashDone, setCashDone] = useState(false);
+    const [cashDone, setCashDone] = useState(onsiteChosen);
+
+    const online = ONLINE.has(serviceType);
 
     const handlePay = async () => {
         setBusy('online');
@@ -39,24 +51,40 @@ export default function PayButton({ amount, description, serviceType, referenceI
             await payCash({ amount, description, serviceType, referenceId });
             setCashDone(true);
         } catch (e) {
-            setErr(e?.response?.data?.message || 'Could not record cash payment. Please try again.');
+            setErr(e?.response?.data?.message || 'Could not record that. Please try again.');
         } finally {
             setBusy('');
         }
     };
 
-    /* ── Cash recorded — show confirmation ── */
+    /* ── The office it is — nothing more to press ── */
     if (cashDone) return (
         <div className="pay-cash-done">
             <FontAwesomeIcon icon={faCircleCheck} className="pay-cash-done__icon" />
             <div>
                 <strong>Pay at the parish office</strong>
-                <p>Please settle ₱{Number(amount).toLocaleString()} in cash at the parish office. Your request will be confirmed once payment is received.</p>
+                <p>Please settle ₱{Number(amount).toLocaleString()} at the parish office. Your request stays pending until the office records it.</p>
             </div>
         </div>
     );
 
-    /* ── Compact mode: just the buttons (used inside cards) ── */
+    const button = online ? (
+        <button className={`btn btn--pay${compact ? ' btn--sm' : ''}`} onClick={handlePay} disabled={!!busy}>
+            {busy === 'online'
+                ? <><FontAwesomeIcon icon={faSpinner} spin /> Redirecting…</>
+                : <><FontAwesomeIcon icon={faQrcode} /> {compact ? 'Pay Online' : 'Pay online — QR Ph / GCash'}</>
+            }
+        </button>
+    ) : (
+        <button className={`btn btn--pay${compact ? ' btn--sm' : ''}`} onClick={handleCash} disabled={!!busy}>
+            {busy === 'cash'
+                ? <><FontAwesomeIcon icon={faSpinner} spin /> Saving…</>
+                : <><FontAwesomeIcon icon={faMoneyBillWave} /> Pay at the parish office</>
+            }
+        </button>
+    );
+
+    /* ── Compact mode: just the button (used inside cards) ── */
     if (compact) return (
         <>
             {err && (
@@ -64,34 +92,21 @@ export default function PayButton({ amount, description, serviceType, referenceI
                     <FontAwesomeIcon icon={faCircleExclamation} /> {err}
                 </span>
             )}
-            <div className="pay-compact__btns">
-                <button className="btn btn--pay btn--sm" onClick={handlePay} disabled={!!busy}>
-                    {busy === 'online'
-                        ? <><FontAwesomeIcon icon={faSpinner} spin /> Redirecting…</>
-                        : <><FontAwesomeIcon icon={faQrcode} /> Pay Online</>
-                    }
-                </button>
-                <button className="btn btn--ghost btn--sm" onClick={handleCash} disabled={!!busy}>
-                    {busy === 'cash'
-                        ? <><FontAwesomeIcon icon={faSpinner} spin /> Saving…</>
-                        : <><FontAwesomeIcon icon={faMoneyBillWave} /> Pay at Parish</>
-                    }
-                </button>
-            </div>
+            <div className="pay-compact__btns">{button}</div>
         </>
     );
 
-    /* ── Full mode: info block + buttons (used after form submit) ── */
+    /* ── Full mode: info block + button (used after form submit) ── */
     return (
         <div className="pay-prompt">
             <div className="pay-prompt__info">
-                <div className="pay-prompt__label">Outstanding Fee</div>
+                <div className="pay-prompt__label">Offering</div>
                 <div className="pay-prompt__amount">
                     ₱{Number(amount).toLocaleString()}
                 </div>
                 <div className="pay-prompt__method">
-                    <FontAwesomeIcon icon={faQrcode} />
-                    <span>QR Ph — GCash · Maya · UnionBank — or pay cash at the parish</span>
+                    <FontAwesomeIcon icon={online ? faQrcode : faMoneyBillWave} />
+                    <span>{online ? 'Paid online — QR Ph, GCash, Maya, UnionBank' : 'Settled in cash at the parish office'}</span>
                 </div>
             </div>
 
@@ -101,20 +116,7 @@ export default function PayButton({ amount, description, serviceType, referenceI
                 </div>
             )}
 
-            <div className="pay-prompt__btns">
-                <button className="btn btn--pay" onClick={handlePay} disabled={!!busy}>
-                    {busy === 'online'
-                        ? <><FontAwesomeIcon icon={faSpinner} spin /> Redirecting…</>
-                        : <><FontAwesomeIcon icon={faQrcode} /> Pay with QR Ph</>
-                    }
-                </button>
-                <button className="btn btn--ghost" onClick={handleCash} disabled={!!busy}>
-                    {busy === 'cash'
-                        ? <><FontAwesomeIcon icon={faSpinner} spin /> Saving…</>
-                        : <><FontAwesomeIcon icon={faMoneyBillWave} /> Pay at Parish (Cash)</>
-                    }
-                </button>
-            </div>
+            <div className="pay-prompt__btns">{button}</div>
         </div>
     );
 }

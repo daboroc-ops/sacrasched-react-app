@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useRefreshToken from '../hooks/useRefreshToken';
+import { hadSession } from '../utils/session';
+import { Skeleton, SkeletonBlock } from './Skeleton';
 
 /**
  * Wraps protected routes. On every page load/refresh it silently calls
@@ -10,8 +12,10 @@ import useRefreshToken from '../hooks/useRefreshToken';
  * expired the refresh fails quietly and RequireAuth will redirect to /login.
  */
 export default function PersistLogin() {
-    const [checking, setChecking] = useState(true);
     const { auth } = useAuth();
+    // Already signed in this session (fresh login) — nothing to restore; a
+    // browser that never signed in has no cookie to restore from either
+    const [checking, setChecking] = useState(() => !auth?.accessToken && hadSession());
     const refresh  = useRefreshToken();
     const hasRun   = useRef(false);
 
@@ -22,10 +26,12 @@ export default function PersistLogin() {
 
         // Only call refresh if we don't already have a token in memory
         // (avoids a redundant request right after a fresh login)
-        if (auth?.accessToken) {
-            setChecking(false);
-            return;
-        }
+        if (auth?.accessToken) return;
+
+        // A visitor who has never signed in on this browser has no cookie to
+        // refresh from — asking would only earn a 401 on every public page.
+        // The flag is set on sign-in and cleared on sign-out (utils/session).
+        if (!hadSession()) return;
 
         const tryRefresh = async () => {
             try {
@@ -38,16 +44,16 @@ export default function PersistLogin() {
         };
 
         tryRefresh();
-    }, []); // intentionally empty — run once on mount only
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount only: hasRun guards it, and the token check must not re-run on every auth change
 
     if (checking) {
         return (
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                minHeight: '100vh', background: 'var(--stone-100)',
-                fontFamily: 'Inter, sans-serif', fontSize: '14px', color: 'var(--text-muted)'
-            }}>
-                Loading…
+            <div className="skel-gate">
+                <SkeletonBlock label="Signing you in…">
+                    <Skeleton w="100%" h={104} r={22} />
+                    <Skeleton w="100%" h={54} r={99} style={{ marginTop: 12 }} />
+                    <Skeleton w="100%" h={320} r={8} style={{ marginTop: 18 }} />
+                </SkeletonBlock>
             </div>
         );
     }

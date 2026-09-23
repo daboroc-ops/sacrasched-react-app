@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import PayButton from './PayButton';
+import ReceiptButton from './ReceiptButton';
+import { RequestsSkeleton } from './Skeleton';
 
 function fmtDate(iso) {
     if (!iso) return '—';
@@ -71,6 +73,9 @@ function RequestCard({ item }) {
                         ? <span className="req-status req-status--approved">Paid</span>
                         : <span className="req-status req-status--pending">Unpaid</span>
                     }
+                    {item.isPaid && item.paymentId && (
+                        <ReceiptButton compact paymentId={item.paymentId} />
+                    )}
                     {!item.isPaid && (
                         <PayButton
                             compact
@@ -78,6 +83,7 @@ function RequestCard({ item }) {
                             description={`${item.type}: ${item.label}`}
                             serviceType={item.serviceType}
                             referenceId={item._id}
+                            onsiteChosen={Boolean(item.onsiteChosen)}
                         />
                     )}
                 </div>
@@ -97,11 +103,12 @@ export default function MyRequests() {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const [blessRes, intentRes, sacRes, docRes, payRes] = await Promise.all([
+                const [blessRes, intentRes, sacRes, docRes, occRes, payRes] = await Promise.all([
                     axios.get('/blessing/my').catch(() => ({ data: [] })),
                     axios.get('/mass-intention/my').catch(() => ({ data: [] })),
                     axios.get('/sacrament/my').catch(() => ({ data: [] })),
                     axios.get('/document-request/my').catch(() => ({ data: [] })),
+                    axios.get('/occasional-mass/my').catch(() => ({ data: [] })),
                     axios.get('/payment/my').catch(() => ({ data: [] }))
                 ]);
 
@@ -121,12 +128,12 @@ export default function MyRequests() {
                 }
 
                 // Build a set of reference IDs that have a paid payment
-                const paidRefs = new Set(
-                    payments
-                        .filter(p => p.status === 'paid')
-                        .map(p => p.referenceId?.toString())
-                        .filter(Boolean)
-                );
+                // Which paid payment settled which request — the receipt hangs off it
+                const paidBy = {};
+                payments
+                    .filter(p => p.status === 'paid' && p.referenceId)
+                    .forEach(p => { paidBy[p.referenceId.toString()] = p._id; });
+                const paidRefs = new Set(Object.keys(paidBy));
 
                 const all = [
                     ...(blessRes.data || []).map(b => ({
@@ -138,7 +145,9 @@ export default function MyRequests() {
                         createdAt:   b.createdAt,
                         fee:         b.fee || 0,
                         serviceType: 'blessing',
+                        onsiteChosen: b.paymentChoice === 'onsite',
                         isPaid:      paidRefs.has(b._id.toString()),
+                        paymentId:   paidBy[b._id.toString()] || null,
                         details: [
                             ['Blessing Type', b.blessingType],
                             ['Blessing For',  b.blessingFor],
@@ -158,6 +167,7 @@ export default function MyRequests() {
                         fee:         m.fee || 0,
                         serviceType: 'massIntention',
                         isPaid:      paidRefs.has(m._id.toString()),
+                        paymentId:   paidBy[m._id.toString()] || null,
                         details: [
                             ['Intention Type', m.intentionType],
                             ['Intention For',  m.intentionFor],
@@ -175,13 +185,36 @@ export default function MyRequests() {
                         createdAt:   s.createdAt,
                         fee:         s.fee || 0,
                         serviceType: 'sacrament',
+                        onsiteChosen: s.paymentChoice === 'onsite',
                         isPaid:      paidRefs.has(s._id.toString()),
+                        paymentId:   paidBy[s._id.toString()] || null,
                         details: [
                             ['Sacrament',  s.sacramentType],
                             ['Recipient',  s.recipientName],
                             ['Date', fmtDate(s.preferredDate)],
                             ['Time', fmtTime(s.preferredTime)],
                             ['Notes', s.additionalNotes]
+                        ]
+                    })),
+                    ...(occRes.data || []).map(o => ({
+                        _id:         o._id,
+                        type:        o.massType,
+                        label:       o.details?.deceased || o.details?.organisation || 'Reservation',
+                        status:      o.status,
+                        date:        o.preferredDate,
+                        createdAt:   o.createdAt,
+                        fee:         o.fee || 0,
+                        serviceType: 'occasionalMass',
+                        onsiteChosen: o.paymentChoice === 'onsite',
+                        isPaid:      paidRefs.has(o._id.toString()),
+                        paymentId:   paidBy[o._id.toString()] || null,
+                        details: [
+                            ['Mass',  o.massType],
+                            ['For',   o.details?.deceased || o.details?.organisation],
+                            ['Venue', o.venue || 'Church'],
+                            ['Date',  fmtDate(o.preferredDate)],
+                            ['Time',  fmtTime(o.preferredTime)],
+                            ['Notes', o.additionalNotes]
                         ]
                     })),
                     ...(docRes.data || []).map(d => ({
@@ -194,6 +227,7 @@ export default function MyRequests() {
                         fee:         d.fee || 0,
                         serviceType: 'documentRequest',
                         isPaid:      paidRefs.has(d._id.toString()),
+                        paymentId:   paidBy[d._id.toString()] || null,
                         details: [
                             ['Document Type', d.documentType],
                             ['Copies',  d.copies],
@@ -218,7 +252,7 @@ export default function MyRequests() {
     const FILTERS = ['all', 'pending', 'approved', 'rejected', 'completed'];
     const shown = filter === 'all' ? items : items.filter(i => i.status === filter);
 
-    if (loading) return <p className="loading-text">Loading your requests…</p>;
+    if (loading) return <RequestsSkeleton />;
     if (error)   return <p className="error-text">{error}</p>;
 
     return (

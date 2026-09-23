@@ -1,0 +1,272 @@
+/* ═══════════════════════════════════════════════════════════════
+   Posts — the editor in the admin, the cards on the parish landing
+   page, and the post's own page.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── The editor ───────────────────────────────────────────────── */
+.rte {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.rte__bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+}
+.rte__block {
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text-primary);
+}
+.rte__sep { width: 1px; height: 20px; margin: 0 5px; background: var(--border); }
+.rte__btn {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+.rte__btn:hover     { background: var(--brand-light); color: var(--brand); }
+.rte__btn--on       { background: var(--brand); color: var(--on-brand); }
+.rte__btn--on:hover { background: var(--brand-dark); color: var(--on-brand); }
+
+.rte__body {
+    padding: 18px 22px 26px;
+    outline: none;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+.rte__body:empty::before,
+.rte__body:has(> p:only-child > br:only-child)::before {
+    content: attr(data-placeholder);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.rte__body:has(> p:only-child > br:only-child) { position: relative; }
+.rte__body:has(> p:only-child > br:only-child)::before { position: absolute; }
+
+/* What the office types looks the way the page will show it */
+.rte__body, .post__body { word-wrap: break-word; }
+.rte__body h2, .post__body h2 { font-size: 22px; line-height: 1.25; margin: 22px 0 8px; font-weight: 700; }
+.rte__body h3, .post__body h3 { font-size: 17px; line-height: 1.3;  margin: 18px 0 6px; font-weight: 700; }
+.rte__body p,  .post__body p  { margin: 0 0 12px; }
+.rte__body ul, .post__body ul,
+.rte__body ol, .post__body ol { margin: 0 0 12px; padding-left: 26px; }
+.rte__body li, .post__body li { margin: 3px 0; }
+.rte__body a,  .post__body a  { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+.rte__body blockquote, .post__body blockquote {
+    margin: 14px 0;
+    padding: 6px 18px;
+    border-left: 3px solid var(--gold);
+    background: var(--gold-light);
+    border-radius: 0 10px 10px 0;
+    color: var(--text-secondary);
+}
+.rte__body hr, .post__body hr { margin: 20px 0; border: none; border-top: 1px solid var(--border); }
+.rte__body figure, .post__body figure { margin: 16px 0; }
+.rte__body img, .post__body img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+.rte__body figcaption, .post__body figcaption { margin-top: 6px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
+
+/* ─── The media picker ─────────────────────────────────────────── */
+.mp__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.mp__item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    background: var(--surface-2);
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color .12s ease, transform .12s ease;
+}
+.mp__item:hover { border-color: var(--brand); transform: translateY(-2px); }
+.mp__item--on    { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+.mp__item img  { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.mp__item span { padding: 0 8px 8px; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── The admin's list ─────────────────────────────────────────── */
+.ad-posts { display: flex; flex-direction: column; gap: 12px; }
+.ad-post {
+    display: grid;
+    grid-template-columns: 132px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 16px 12px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+.ad-post--draft { background: var(--surface-2); }
+.ad-post__cover {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 22px;
+    overflow: hidden;
+}
+.ad-post__cover img { width: 100%; height: 100%; object-fit: cover; }
+.ad-post__body { min-width: 0; }
+.ad-post__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+.ad-post__pin  { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--gold-dark); }
+.ad-post__title { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.ad-post__excerpt {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.ad-post__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+@media (max-width: 760px) {
+    .ad-post { grid-template-columns: 96px 1fr; }
+    .ad-post__actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+/* ─── Writing one ───────────────────────────────────────────────── */
+.ad-post-editor__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 18px;
+    align-items: start;
+}
+.ad-post-editor__main { display: flex; flex-direction: column; gap: 14px; }
+.ad-post-editor__title {
+    font-size: 22px;
+    font-weight: 700;
+    height: auto;
+    padding: 10px 14px;
+}
+.ad-post-editor__side { display: flex; flex-direction: column; gap: 10px; }
+.ad-post-editor__side h3 { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.ad-post-editor__cover { position: relative; border-radius: 10px; overflow: hidden; }
+.ad-post-editor__cover img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.ad-post-editor__cover .ad-icon-btn { position: absolute; top: 6px; right: 6px; background: var(--surface); }
+.ad-post-editor__pick {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    aspect-ratio: 4 / 3;
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.ad-post-editor__pick:hover { border-color: var(--brand); color: var(--brand); }
+.ad-post-editor__gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ad-post-editor__thumb { position: relative; border-radius: 8px; overflow: hidden; }
+.ad-post-editor__thumb img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.ad-post-editor__thumb .ad-icon-btn { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; background: var(--surface); }
+
+/* The post's gallery */
+.post__gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 28px; }
+.post__gallery figure { margin: 0; }
+.post__gallery img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; }
+.post__gallery figcaption { margin-top: 6px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
+@media (max-width: 900px) {
+    .ad-post-editor__grid { grid-template-columns: 1fr; }
+}
+
+/* ─── The cards on the landing page ────────────────────────────── */
+.pp {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+.pp__card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+.pp__card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0, 0, 0, .09); }
+.pp__cover img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.pp__body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; }
+.pp__card--bare .pp__body { border-top: 4px solid var(--gold); }
+.pp__meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+.pp__pin  { display: inline-flex; align-items: center; gap: 5px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--gold-dark); }
+.pp__title { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--text-primary); }
+.pp__excerpt {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.pp__more { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--brand); }
+.pp__more svg { font-size: 11px; margin-left: 4px; }
+
+/* ─── The post's own page ──────────────────────────────────────── */
+.post-page .lp-nav__brand { color: inherit; text-decoration: none; }
+.post-page__back { margin-left: auto; }
+.post {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 24px 72px;
+}
+.post__meta { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.post__title {
+    margin: 0 0 20px;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.post__cover { margin: 0 0 26px; }
+.post__cover img { display: block; width: 100%; max-height: 460px; object-fit: cover; border-radius: 18px; }
+.post__body { font-size: 16px; line-height: 1.75; color: var(--text-primary); }
+.post .lp-directory__empty { max-width: 460px; margin: 40px auto; text-align: center; }

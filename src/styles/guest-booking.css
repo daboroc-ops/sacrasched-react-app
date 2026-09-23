@@ -1,0 +1,852 @@
+/* ═══════════════════════════════════════════════════════════════
+   Guest booking — components/GuestBooking.jsx
+   Sits on a parish landing page: offer a Mass intention without an
+   account, then check on it with the reference and email.
+   ═══════════════════════════════════════════════════════════════ */
+
+.gb {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── Book / track ────────────────────────────────────────────── */
+
+/* ── Form ────────────────────────────────────────────────────── */
+.gb__form  { display: flex; flex-direction: column; gap: 16px; }
+
+.gb__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.gb__field > span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-left: 4px;
+}
+.gb__field > span em {
+    font-style: normal;
+    font-weight: 400;
+    color: var(--stone-400);
+    margin-left: 5px;
+}
+.gb__field small {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    padding-left: 4px;
+}
+.gb__mono  { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+
+.gb__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.gb__fee   { margin-right: auto; font-size: 14px; color: var(--text-muted); }
+.gb__fee b { color: var(--brand); font-size: 16px; }
+
+.gb__foot  { font-size: 12.5px; color: var(--text-muted); text-align: center; }
+.gb__foot a { color: var(--brand); font-weight: 600; }
+
+.gb__error {
+    padding: 11px 15px;
+    border-radius: var(--radius);
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* ── Just booked ─────────────────────────────────────────────── */
+.gb--done  { text-align: center; }
+.gb__tick  { font-size: 40px; color: var(--success-fg); margin-bottom: 16px; }
+.gb__tick--wait { color: var(--warning-strong); }
+.gb--done h3 { font-size: 19px; font-weight: 700; margin-bottom: 10px; }
+
+.gb__sub   { font-size: 14px; line-height: 1.65; color: var(--text-muted); max-width: 46em; margin: 0 auto; }
+.gb__sub--small { font-size: 12.5px; margin-top: 10px; }
+
+/* The reference is the whole point of this screen — make it copyable */
+.gb__ref {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 22px auto 0;
+    padding: 16px 18px;
+    max-width: 560px;
+    border: 1.5px dashed var(--brand);
+    border-radius: var(--radius);
+    background: var(--brand-light);
+}
+.gb__ref code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    color: var(--brand-dark);
+    word-break: break-all;
+}
+.gb__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 7px 13px;
+    border: 1px solid var(--brand);
+    border-radius: 99px;
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand);
+}
+.gb__copy:hover { background: var(--gold-light); }
+
+.gb__pay  { margin-top: 22px; }
+.gb__pay-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.gb__pay-row .gb__pay { margin-top: 22px; }
+.gb__link {
+    display: block;
+    width: max-content;
+    text-decoration: none;
+    margin: 18px auto 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: underline;
+}
+
+/* ── A request looked up: a ticket ───────────────────────────── */
+/* How it stands across the top; what, when and who in the body; the
+   reference on a stub along a perforation; the actions at the foot. */
+.tk {
+    margin-top: 8px;
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, .06));
+    overflow: hidden;
+}
+.tk--solo { margin-top: 0; }
+
+.tk__standing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+}
+.tk__standing b { flex: 1; min-width: 0; }
+.tk__standing svg { font-size: 15px; }
+.tk--ok   .tk__standing { background: var(--success-bg); color: var(--success-strong); }
+.tk--wait .tk__standing { background: var(--warning-bg); color: var(--warning-fg); }
+.tk--bad  .tk__standing { background: var(--danger-bg);  color: var(--danger-fg); }
+
+.tk__body { padding: 20px 20px 18px; }
+
+.tk__head small {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 4px;
+}
+.tk__head h3 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--text-primary);
+}
+.tk__head p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+.tk__head p b { color: var(--text-primary); font-weight: 700; }
+
+.tk__when {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-2);
+}
+.tk__leaf {
+    flex-shrink: 0;
+    width: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    text-align: center;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+.tk__leaf small {
+    display: block;
+    padding: 3px 0 2px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--brand);
+}
+.tk__leaf b {
+    display: block;
+    padding: 3px 0 4px;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text-primary);
+}
+.tk__when-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tk__when-text b { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.tk__when-text span { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.tk__when-text svg { font-size: 11.5px; color: var(--brand); }
+
+.tk__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px 18px;
+    margin: 18px 0 0;
+}
+.tk__facts dt { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+.tk__facts dd { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.tk__pay { text-transform: capitalize; }
+.tk__pay--paid { color: var(--success-fg); }
+.tk__pay--due  { color: var(--warning-fg); }
+.tk__due dd    { color: var(--warning-fg); }
+
+/* The stub: a perforation with a notch either side, the reference on it */
+.tk__stub {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    border-top: 2px dashed var(--border);
+    background: var(--brand-light);
+}
+.tk__stub::before,
+.tk__stub::after {
+    content: '';
+    position: absolute;
+    top: -11px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface-2, #f6f7f5);
+    border: 1px solid var(--border);
+}
+.tk__stub::before { left: -11px; border-left-color: transparent; }
+.tk__stub::after  { right: -11px; border-right-color: transparent; }
+.tk__stub-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tk__stub-text small { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-dark); }
+.tk__stub-text code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    word-break: break-all;
+}
+
+.tk__actions {
+    padding: 4px 20px 20px;
+    text-align: center;
+}
+.tk__actions .gb__pay { margin-top: 16px; }
+.tk__actions .gb__pay-row .gb__pay { margin-top: 16px; }
+.tk__actions .gb__link { margin-top: 14px; }
+.tk__actions .gb__cancelled { text-align: left; }
+
+.gb__status {
+    flex-shrink: 0;
+    padding: 4px 11px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.gb__status--pending   { background: var(--gold-light);   color: var(--gold-dark); }
+.gb__status--approved  { background: var(--success-bg);   color: var(--success-fg); }
+.gb__status--completed { background: var(--success-bg);   color: var(--success-strong); }
+.gb__status--rejected,
+.gb__status--cancelled { background: var(--danger-bg);    color: var(--danger-fg); }
+
+/* The deadline for the offering, and the notice once it has gone by */
+.gb__deadline {
+    display: inline-block;
+    margin: 14px auto 0;
+    padding: 9px 16px;
+    border-radius: 99px;
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.gb__cancelled {
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+@media (max-width: 640px) {
+    .tk__body { padding: 16px; }
+    .tk__head h3 { font-size: 19px; }
+    .tk__stub, .tk__actions { padding-left: 16px; padding-right: 16px; }
+    .gb        { padding: 20px 16px; }
+    .gb__actions .lp-btn { width: 100%; }
+    .gb__fee   { margin-right: 0; width: 100%; text-align: center; }
+}
+
+.gb__mono-sm {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    word-break: break-all;
+    color: var(--text-primary);
+}
+.gb__error--after { margin: 16px 0 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   The step wizard inside the guest panel, and the three services
+   that need an account.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* .gb is already a card; the wizard inside it must not be a second one. */
+.gb .gb__wiz {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.gb .gb__wiz .gb__fee {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.gb .gb__wiz .gb__fee b { color: var(--brand); }
+
+/* ─── Other services ───────────────────────────────────────── */
+
+.gsl {
+    max-width: 760px;
+    margin: 28px auto 0;
+}
+
+.gsl__hd {
+    text-align: center;
+    margin-bottom: 18px;
+}
+.gsl__hd h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+}
+.gsl__hd p {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 52ch;
+    margin-inline: auto;
+}
+
+/* Three across rather than four, and shorter than the dashboard's — these
+   are a footnote to the booking above, not the main event. */
+/* booking.css is imported after this file, so .bk-picker / .bk-card would
+   win a same-specificity tie. Scope these under .gsl to outrank them. */
+.gsl .gsl__grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-top: 0;
+}
+.gsl .gsl__card {
+    min-height: 168px;
+    text-decoration: none;
+}
+
+.gsl__foot {
+    margin: 18px 0 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    text-align: center;
+}
+.gsl__foot a { color: var(--brand); font-weight: 600; }
+
+@media (max-width: 768px) {
+    .gsl        { margin-top: 22px; }
+    .gsl .gsl__grid  { grid-template-columns: 1fr; }
+    .gsl .gsl__card  { min-height: 148px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   The panel's cover — what a visitor meets before they start.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* The cover bleeds to the panel's edges, so the padding comes off and the
+   actions below put it back. */
+.gb--intro { padding: 0; overflow: hidden; }
+
+.gb__cover {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 300px;
+    padding: 28px;
+    isolation: isolate;
+}
+
+.gb__cover-art {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+.gb__cover-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* No picture published yet — the theme carries it, at the same height, so
+   uploading one later changes nothing about the layout. */
+.gb__cover-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 78px;
+    color: color-mix(in srgb, var(--on-brand) 30%, transparent);
+    background:
+        radial-gradient(320px 200px at 74% 22%, var(--gold-dark) 0%, transparent 70%),
+        linear-gradient(145deg, var(--brand-dark) 0%, var(--brand) 100%);
+}
+
+/* Dark where the words are, clearer over the top of the picture. */
+.gb__cover-veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        color-mix(in srgb, var(--brand-dark) 22%, transparent) 38%,
+        color-mix(in srgb, var(--brand-dark) 68%, transparent) 66%,
+        color-mix(in srgb, var(--brand-dark) 92%, transparent) 100%
+    );
+}
+
+.gb__cover-body {
+    position: relative;
+    z-index: 1;
+    max-width: 46ch;
+}
+.gb__eyebrow {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 4px 11px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--on-brand) 22%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--on-brand);
+}
+.gb__cover-title {
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--on-brand);
+    margin: 0 0 8px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .45);
+}
+.gb__cover-sub {
+    font-size: 14px;
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--on-brand) 88%, transparent);
+    margin: 0;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
+}
+
+.gb__intro-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 20px 28px 24px;
+}
+.gb__start svg  { margin-right: 8px; }
+.gb__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .gb__cover          { min-height: 240px; padding: 20px; }
+    .gb__cover-title    { font-size: 22px; }
+    .gb__cover-sub      { font-size: 13px; }
+    .gb__cover-fallback { font-size: 58px; }
+
+    .gb__intro-actions  { padding: 16px 20px 20px; gap: 12px; }
+    .gb__start          { width: 100%; justify-content: center; }
+    .gb__check          { width: 100%; justify-content: center; }
+}
+
+/* Back out of the tracker to the cover */
+.gb__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--transition);
+}
+.gb__back:hover { color: var(--brand); }
+.gb__back svg   { font-size: 11px; }
+
+/* ─── Email confirmation, step 1 ───────────────────────────── */
+
+.gb__confirm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.gb__confirm-row .form-input { flex: 1; min-width: 0; }
+.gb__confirm-row--code { margin-top: 10px; }
+
+/* Sized to its label, never claiming the row from the field beside it. */
+.gb__send-code {
+    flex-shrink: 0;
+    width: auto;
+    white-space: nowrap;
+}
+
+.gb__code {
+    max-width: 170px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .28em;
+    text-align: center;
+}
+
+/* The green tick, beside the label rather than inside the field, so it does
+   not sit on top of a long address. */
+.gb__ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 8px;
+    color: var(--green);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: none;
+    vertical-align: middle;
+}
+.gb__ok svg { font-size: 11px; }
+
+.gb__code-msg {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.gb__link-inline {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: var(--brand);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+    .gb__confirm-row { flex-direction: column; align-items: stretch; }
+    .gb__send-code   { width: 100%; }
+    .gb__code        { max-width: none; }
+}
+
+/* The day the calendar already settled, carried into the form so the
+   visitor can see which date they are booking without stepping to it. */
+.gb__day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--brand-light);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.gb__day b   { color: var(--text-primary); }
+.gb__day svg { color: var(--brand); font-size: 13px; }
+
+/* ─── Mass intention: the kinds, and the souls ───────────────────── */
+.int-kinds {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+.int-kind {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: border-color .12s ease, background .12s ease;
+}
+.int-kind:hover      { border-color: var(--brand); }
+.int-kind--on        { border-color: var(--brand); background: var(--brand-light); }
+.int-kind input      { accent-color: var(--brand); }
+.int-kind__name      { flex: 1; min-width: 0; font-weight: 600; color: var(--text-primary); }
+.int-kind__fee       { flex-shrink: 0; font-size: 12px; color: var(--text-muted); }
+
+.souls { display: flex; flex-direction: column; gap: 8px; }
+.souls__count { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-secondary); }
+.souls__count .form-input { width: 90px; }
+.souls__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.souls__row .form-input { flex: 1 1 220px; min-width: 0; }
+.souls__spouse {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.souls__spouse input { accent-color: var(--brand); }
+
+/* ─── The reminders on the last step ─────────────────────────────── */
+.gb__notice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.gb__notice svg { margin-top: 3px; flex-shrink: 0; }
+.gb__notice--info { background: var(--gold-light); color: var(--gold-dark); }
+
+/* What comes after a booking: back to the calendar, or another one */
+.gb__after { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 18px; }
+.gb__after .gb__link { margin-top: 8px; }
+
+/* ── The booking page opened from the link: one screen, no scrolling ── */
+/* Everything above is tightened just enough that the banner, the ticket
+   and the actions sit on a laptop screen together. */
+.lp-track { min-height: 100vh; background: var(--surface); }
+.lp-track .lp-section { padding: 26px 0 30px; }
+.lp-track .gb         { padding: 18px; }
+.lp-track .pban       { min-height: 112px; }
+.lp-track .pban__body { padding: 12px 16px 12px; gap: 12px; }
+.lp-track .pban__badge, .lp-track .pban__logo { width: 42px; height: 42px; border-radius: 12px; }
+.lp-track .pban__text b { font-size: 16px; }
+.lp-track .gb .pban--result { margin-bottom: 14px; }
+
+.lp-track .tk__standing { padding: 9px 16px; font-size: 13px; }
+.lp-track .tk__body     { padding: 14px 16px 12px; }
+.lp-track .tk__head h3  { font-size: 19px; }
+.lp-track .tk__head p   { font-size: 13px; margin-top: 2px; }
+.lp-track .tk__when     { margin-top: 12px; padding: 8px 12px; gap: 12px; }
+.lp-track .tk__leaf     { width: 46px; }
+.lp-track .tk__leaf b   { font-size: 18px; padding: 2px 0 3px; }
+.lp-track .tk__when-text b    { font-size: 13.5px; }
+.lp-track .tk__when-text span { font-size: 12.5px; }
+.lp-track .tk__facts    { margin-top: 12px; gap: 10px 16px; }
+.lp-track .tk__facts dd { font-size: 13.5px; }
+.lp-track .tk__stub     { padding: 10px 16px; }
+.lp-track .tk__stub-text code { font-size: 13px; }
+.lp-track .tk__actions  { padding: 0 16px 14px; }
+.lp-track .tk__actions .gb__pay,
+.lp-track .tk__actions .gb__pay-row .gb__pay { margin-top: 12px; }
+.lp-track .tk__actions .gb__link { margin-top: 10px; }
+.lp-track .gb__cancelled { margin-top: 10px; padding: 8px 12px; }
+
+/* ─── Mass intention: dropdown rows, names, the offering ─────────── */
+.int-rows { display: flex; flex-direction: column; gap: 8px; }
+.int-row  { display: flex; align-items: center; gap: 8px; }
+.int-row .form-select { flex: 1; min-width: 0; }
+.int-row__remove {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.int-row__remove:hover { border-color: var(--danger-fg); color: var(--danger-fg); }
+.int-more { margin: 6px 0 0; font-size: 13px; color: var(--text-secondary); }
+.int-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand);
+    cursor: pointer;
+}
+.int-add:hover:not(:disabled) { text-decoration: underline; }
+.int-add:disabled { color: var(--text-muted); cursor: default; }
+.souls .int-add { align-self: flex-start; margin-top: 2px; }
+.int-offering { position: relative; display: flex; align-items: center; max-width: 240px; }
+.int-offering__sign { position: absolute; left: 12px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
+.int-offering .form-input { padding-left: 28px; }
+.form-hint--error { color: var(--danger-fg); }
+
+/* ─── The offering step: the lines, the total, the gift ──────────── */
+.off-lines {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.off-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+}
+.off-line:last-child { border-bottom: 0; }
+.off-line__label { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--text-primary); }
+.off-line__label small { font-size: 11.5px; color: var(--text-muted); }
+.off-line b { flex-shrink: 0; font-weight: 700; }
+.off-line--total { background: var(--brand-light); font-weight: 700; }
+.off-line--total b { color: var(--brand-dark); font-size: 15px; }
+.off-gift { width: 100%; }
+
+/* ── The invoice — to be paid at the parish office ──────────────
+   The card is what "Download invoice" saves as a picture, so everything
+   the office needs is inside it and nothing else is. */
+.inv { text-align: center; }
+.inv h3 { font-size: 19px; font-weight: 700; margin-bottom: 10px; }
+.inv__terms { max-width: 40em; }
+.inv__terms b { color: var(--text-primary); }
+.inv__card {
+    max-width: 520px;
+    margin: 22px auto 0;
+    padding: 22px 24px 18px;
+    text-align: left;
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06));
+}
+.inv__head { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.inv__mark.pmark { width: 44px; height: 44px; font-size: 13px; border-radius: 10px; flex-shrink: 0; }
+.inv__parish { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.inv__parish b { font-size: 14.5px; line-height: 1.25; }
+.inv__parish span { font-size: 11.5px; color: var(--text-muted); }
+.inv__label { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
+.inv__ref {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    margin: 16px 0;
+    padding: 12px;
+    border: 1.5px dashed var(--brand);
+    border-radius: var(--radius);
+    background: var(--brand-light);
+}
+.inv__ref small { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-dark); }
+.inv__ref code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; font-weight: 700; letter-spacing: .04em; color: var(--brand-dark); }
+.inv__facts { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; }
+.inv__facts div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; font-size: 13px; }
+.inv__facts dt { color: var(--text-muted); }
+.inv__facts dd { margin: 0; font-weight: 600; }
+.inv__amount {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+}
+.inv__amount div { display: flex; flex-direction: column; gap: 2px; }
+.inv__amount small { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.inv__amount span { font-size: 12px; color: var(--text-muted); }
+.inv__amount b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--brand); }
+.inv__foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 10.5px; color: var(--text-muted); }
+.inv__notice { margin-top: 18px; max-width: 40em; }
+.inv .gb__pay { margin-top: 14px; }
+.tk__invoice { padding: 0 22px 8px; }
+.tk__invoice .gb__tick, .tk__invoice h3 { display: none; }   /* the ticket above already says it */
+.tk__invoice .inv__terms { margin-top: 6px; }
+
+@media (max-width: 480px) {
+    .inv__card { padding: 18px 16px 14px; }
+    .inv__facts div { grid-template-columns: 90px 1fr; }
+    .inv__ref code { font-size: 18px; }
+}
+.inv__ref code { word-break: break-all; text-align: center; }
+.inv__ref code.inv__ref-long { font-size: 14px; letter-spacing: 0; }
+
+/* A couple of the departed: two names side by side under one tag */
+.souls__couple {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+}
+.souls__tag { grid-column: 1 / -1; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+@media (max-width: 480px) { .souls__couple { grid-template-columns: 1fr; } }

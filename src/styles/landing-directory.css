@@ -1,0 +1,407 @@
+/* ═══════════════════════════════════════════════════════════════
+   Landing additions — hero photo and the parish directory
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Hero photo (CMS slot "landing-hero") ────────────────────── */
+.lp-hero__photo {
+    width: 100%;
+    max-width: 520px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    display: block;
+}
+.lp-hero__photo--empty {
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(320px 200px at 70% 20%, var(--gold-light) 0%, transparent 65%),
+        linear-gradient(140deg, var(--brand-dark) 0%, var(--brand) 60%, var(--gold-dark) 100%);
+}
+.lp-hero__photo--empty img {
+    width: 92px;
+    height: 92px;
+    object-fit: contain;
+    opacity: .9;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.25));
+}
+
+/* ── Directory ───────────────────────────────────────────────── */
+.lp-directory {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.lp-parish {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+/* The banner: the parish's colours, its photo fading in from the right */
+.lp-parish__banner {
+    position: relative;
+    display: block;
+    height: 118px;
+    background: linear-gradient(120deg, var(--brand-dark, #1f4d3a) 0%, var(--brand) 55%, var(--gold) 130%);
+    overflow: hidden;
+}
+/* The photo alone — the logo inside the badge is not this */
+.lp-parish__banner > img {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 58%;
+    height: 100%;
+    object-fit: cover;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 30%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 30%, transparent 100%);
+    -webkit-mask-composite: source-in;
+            mask-composite: intersect;
+    transition: transform .5s ease;
+}
+.lp-parish:hover .lp-parish__banner > img { transform: scale(1.04); }
+/* The badge and the name, on the gradient over the picture */
+.lp-parish__banner-text {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .45);
+}
+.lp-parish__banner-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lp-parish__banner-name small {
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: .88;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lp-parish__banner-text b {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.lp-parish__banner .lp-parish__badge {
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #fff;
+}
+.lp-parish__banner--plain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(260px 140px at 85% 20%, rgba(255, 255, 255, .22) 0%, transparent 70%);
+}
+.lp-parish:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand);
+}
+
+.lp-parish__badge {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(140deg, var(--brand) 0%, var(--gold) 100%);
+    color: var(--on-brand);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.lp-parish__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+    padding: 12px 18px 14px;
+}
+.lp-parish__body .lp-parish__address { white-space: normal; }
+.lp-parish__host .lp-parish__go { margin-left: 6px; font-size: 11px; }
+.lp-parish__body b { font-size: 14.5px; }
+.lp-parish__address {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lp-parish__host {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--brand);
+}
+.lp-parish__go { font-size: 13px; color: var(--stone-400); flex-shrink: 0; }
+.lp-parish:hover .lp-parish__go { color: var(--brand); }
+
+.lp-parish__tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--gold-light);
+    color: var(--gold-dark);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* ── Directory states ────────────────────────────────────────── */
+.lp-directory__state {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 32px 0;
+}
+.lp-directory__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 46px 24px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: center;
+}
+.lp-directory__empty svg   { font-size: 26px; color: var(--gold); margin-bottom: 6px; }
+.lp-directory__empty p     { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+.lp-directory__empty b     { color: var(--text-primary); }
+
+@media (max-width: 960px) {
+    .lp-hero__photo { max-width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Parish hero as a cover photo
+   ───────────────────────────────────────────────────────────────
+   On a parish subdomain the church's own photograph runs the full
+   width of the hero with the welcome laid over it. The platform
+   page keeps the copy-beside-picture layout above.
+   ═══════════════════════════════════════════════════════════════ */
+.lp-hero--cover {
+    position: relative;
+    isolation: isolate;
+    min-height: 460px;
+    display: flex;
+    align-items: center;
+    border-bottom: 0;
+}
+
+.lp-hero__cover {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+}
+.lp-hero__cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+/* No photo published yet — a themed panel rather than a blank frame, and
+   dark enough that the text over it stays readable either way. */
+.lp-hero__cover--empty {
+    background:
+        radial-gradient(680px 320px at 78% 12%, var(--gold-dark) 0%, transparent 70%),
+        linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 58%, var(--gold-dark) 100%);
+}
+
+.lp-hero__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        100deg,
+        rgba(12, 10, 9, .78) 0%,
+        rgba(12, 10, 9, .58) 42%,
+        rgba(12, 10, 9, .28) 100%
+    );
+}
+
+/* ── The copy sitting on top ─────────────────────────────────── */
+.lp-hero--cover .lp-hero__inner {
+    grid-template-columns: 1fr;
+    padding-top: 92px;
+    padding-bottom: 92px;
+}
+.lp-hero--cover .lp-hero__copy   { max-width: 680px; }
+.lp-hero--cover .lp-eyebrow      { color: var(--gold-light); }
+.lp-hero--cover .lp-hero__title,
+.lp-hero--cover .lp-hero__title em { color: #fff; }
+.lp-hero--cover .lp-hero__title  { text-shadow: 0 2px 24px rgba(0,0,0,.35); }
+.lp-hero--cover .lp-hero__sub    { color: rgba(255,255,255,.92); }
+
+/* The outline button reads as brand-on-white by default, which disappears
+   against a photograph — on the cover it becomes white-on-transparent. */
+.lp-hero--cover .lp-btn--outline {
+    color: #fff;
+    border-color: rgba(255,255,255,.65);
+    background: rgba(255,255,255,.08);
+}
+.lp-hero--cover .lp-btn--outline:hover { background: rgba(255,255,255,.18); }
+
+@media (max-width: 640px) {
+    .lp-hero--cover { min-height: 380px; }
+    .lp-hero--cover .lp-hero__inner { padding-top: 64px; padding-bottom: 64px; }
+    .lp-hero__scrim {
+        background: linear-gradient(180deg, rgba(12,10,9,.55) 0%, rgba(12,10,9,.78) 100%);
+    }
+}
+
+/* ── The parishes, one after another, in the hero ──────────── */
+.lp-carousel {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    background: var(--brand-dark, #1f4d3a);
+}
+.lp-carousel__track {
+    display: flex;
+    transition: transform .55s cubic-bezier(.22, .8, .3, 1);
+}
+.lp-carousel__slide {
+    position: relative;
+    flex: 0 0 100%;
+    aspect-ratio: 4 / 3;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+}
+.lp-carousel__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.lp-carousel__img--empty {
+    display: grid;
+    place-items: center;
+    font-size: 64px;
+    color: rgba(255, 255, 255, .35);
+    background: linear-gradient(140deg, var(--brand-dark, #1f4d3a) 0%, var(--brand) 60%, var(--gold) 140%);
+}
+.lp-carousel__shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, .75) 100%);
+}
+.lp-carousel__text {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+}
+.lp-carousel__badge {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: .05em;
+}
+.lp-carousel__name { display: flex; flex-direction: column; min-width: 0; flex: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
+.lp-carousel__name b { font-size: 16px; font-weight: 800; line-height: 1.2; }
+.lp-carousel__name span { font-size: 12px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-carousel__go { font-size: 12px; opacity: .8; flex-shrink: 0; margin-bottom: 18px; }
+
+.lp-carousel__arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .85);
+    color: var(--brand-dark, #1f4d3a);
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .2s ease, background .2s ease;
+}
+.lp-carousel__arrow--prev { left: 12px; }
+.lp-carousel__arrow--next { right: 12px; }
+.lp-carousel:hover .lp-carousel__arrow,
+.lp-carousel__arrow:focus-visible { opacity: 1; }
+.lp-carousel__arrow:hover { background: #fff; }
+
+.lp-carousel__dots {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    display: flex;
+    gap: 6px;
+}
+.lp-carousel__dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .45);
+    cursor: pointer;
+    transition: width .25s ease, background .25s ease;
+}
+.lp-carousel__dot--on { width: 22px; background: #fff; }
+
+@media (max-width: 900px) {
+    .lp-carousel { max-width: 100%; }
+    .lp-carousel__arrow { opacity: 1; }
+}
+
+/* ── How to reach SacraSched, in the footer ────────────────── */
+.lp-footer__contacts {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 22px;
+    font-style: normal;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.lp-footer__contacts b { color: var(--text-primary); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.lp-footer__contacts a, .lp-footer__contacts span { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); text-decoration: none; }
+.lp-footer__contacts a:hover { color: var(--brand); }
+.lp-footer__contacts svg { color: var(--brand); font-size: 12px; }

@@ -1,199 +1,209 @@
 import { useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import useAuth from '../../hooks/useAuth';
 import useConfig from '../../hooks/useConfig';
+import useRequestor from './useRequestor';
+import BookingWizard from '../BookingWizard';
 import PayButton from '../PayButton';
-
-function getDayType(dateStr) {
-    const dow = new Date(dateStr).getDay();
-    if (dow === 0) return 'sundays';
-    if (dow === 6) return 'saturdays';
-    return 'weekdays';
-}
-
-function fmtTime(t) {
-    const [h, m] = t.split(':').map(Number);
-    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-}
+import useAvailability from '../../hooks/useAvailability';
+import WhenFields from './WhenFields';
+import IntentionFields from './IntentionFields';
+import MassVenueSelect from './MassVenueSelect';
+import OfferingStep from './OfferingStep';
+import BookingNotice from './BookingNotice';
+import { whenProblem } from '../../utils/booking';
+import { intentionFee, isNamedSouls, soulsProblem, needsForWhom, amountDue, offeringProblem } from '../../utils/intentions';
 
 function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
 }
 
-function todayStr() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-const blank = auth => ({
+const blank = (requestor, date = '') => ({
+    ...requestor,
     intentionType:   '',
-    requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    email:           auth?.user?.email          || '',
-    contactNumber:   auth?.user?.contactNumber  || '',
+    intentionTypes:  [],
+    souls:           [],
     intentionFor:    '',
-    preferredDate:   '',
+    purpose:         '',
+    venue:           '',
+    wantsDonation:   false,
+    offering:        '',
+    preferredDate:   date,
     preferredTime:   '',
     additionalNotes: ''
 });
 
-export default function MassIntentionForm({ parishId }) {
-    const axios                              = useAxiosPrivate();
-    const { auth }                           = useAuth();
-    const { config, loading: cfgLoading, getCategoryItems } = useConfig();
-    const [form,    setForm]                 = useState(blank(auth));
-    const [status,  setStatus]               = useState(null);
-    const [msg,     setMsg]                  = useState('');
-    const [loading, setLoading]              = useState(false);
-    const [payInfo, setPayInfo]              = useState(null);
+/**
+ * A signed-in devotee offering a Mass intention: which Mass first, then the
+ * kinds of intention (as many as apply) and who it is for — a list of souls
+ * for the departed, a married couple counting as one offering. Paid online.
+ */
+export default function MassIntentionForm({ parishId, onExit, initialDate, onCalendar }) {
+    const axios = useAxiosPrivate();
+    const { requestor, needsContact } = useRequestor();
+    const { config, loading: cfgLoading, getCategoryItems } = useConfig(parishId);
+
+    const [form,    setForm]    = useState(() => blank(requestor, initialDate));
+    const [status,  setStatus]  = useState(null);
+    const [msg,     setMsg]     = useState('');
+    const [loading, setLoading] = useState(false);
+    const [payInfo, setPayInfo] = useState(null);
 
     const intentionItems = getCategoryItems('mass intention');
-    const selectedItem   = intentionItems.find(i => i.name === form.intentionType);
-    const fee            = selectedItem?.fee ?? 0;
+    // The same sums the API works out from the parish's price list
+    const listFee = intentionFee(intentionItems, form.intentionTypes, form.souls);
+    const fee     = amountDue(listFee, form.offering, form.wantsDonation);
 
-    const massSchedule   = config?.massSchedule || { weekdays: [], saturdays: [], sundays: [] };
-    const availableTimes = form.preferredDate
-        ? massSchedule[getDayType(form.preferredDate)] || []
-        : [];
+    /* Only the Masses said on that day, still ahead of the clock if that
+       day is today, inside the parish's booking window — and none today
+       after 4:00 PM. */
+    const avail  = useAvailability({ service: 'intention', date: form.preferredDate, venue: form.venue || '', parishId });
+    const months = config?.settings?.advanceMonths || 3;
 
     const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
 
-    const handleSubmit = async e => {
-        e.preventDefault();
+    const submit = async () => {
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/mass-intention', { ...form, fee, parishId });
+            const res = await axios.post('/mass-intention', { ...form, offering: form.wantsDonation ? form.offering : '', parishId });
+            const saved = res.data.data;
             setStatus('ok');
-            setMsg('Mass intention submitted! We will confirm your request shortly.');
-            if (fee > 0) {
+            setMsg('Mass intention submitted! It is confirmed once the offering is paid.');
+            if (saved.fee > 0) {
                 setPayInfo({
-                    amount:      fee,
-                    description: `Mass Intention: ${form.intentionType} — ${form.intentionFor}`,
+                    amount:      saved.fee,
+                    description: `Mass Intention: ${saved.intentionType} — ${saved.intentionFor}`,
                     serviceType: 'massIntention',
-                    referenceId: res.data.data._id
+                    referenceId: saved._id
                 });
             }
-            setForm(blank(auth));
+            setForm(blank(requestor, initialDate));
         } catch (err) {
             setStatus('err');
             setMsg(err?.response?.data?.message || 'Submission failed. Please try again.');
+            // The hour went to someone else meanwhile: ask for the day's
+            // times again and go back to pick one.
+            if (err?.response?.data?.code === 'TIME_NOT_AVAILABLE') {
+                setForm(p => ({ ...p, preferredTime: '' }));
+                avail.refresh();
+                return 0;
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <form className="booking-form" onSubmit={handleSubmit}>
-            <h3 className="form-section-title">Mass Intention Request</h3>
-
-            {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
-            {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
-            {status === 'ok' && payInfo && <PayButton {...payInfo} />}
-
-            {/* ── Requestor Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Requestor Information</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Requestor Name <span className="req">*</span></label>
-                        <input className="form-input" type="text"
-                            value={form.requestorName} onChange={set('requestorName')} required />
+    const steps = [
+        {
+            title: 'Which Mass?',
+            sub: 'Only the Masses said on that day are offered. Same-day intentions close at 4:00 PM.',
+            validate: () => whenProblem(form, avail),
+            render: () => (
+                <WhenFields form={form} setForm={setForm} fixedDate={Boolean(initialDate)}
+                            avail={avail} months={months} timeLabel="Mass Time"
+                            beforeTime={
+                                /* Undas: Mass at the cemeteries too, at their own times */
+                                <MassVenueSelect venues={avail.venues} value={form.venue}
+                                                 onChange={v => setForm(p => ({ ...p, venue: v, preferredTime: '' }))} />
+                            } />
+            ),
+        },
+        {
+            title: 'What would you like offered?',
+            sub: 'Choose the kinds of intention and say who it is offered for.',
+            validate: () => {
+                const kinds = form.intentionTypes.filter(Boolean);
+                if (!kinds.length) return 'Choose at least one kind of intention.';
+                if (kinds.some(isNamedSouls)) { const p = soulsProblem(form.souls); if (p) return p; }
+                if (needsForWhom(kinds) && !form.intentionFor.trim()) return 'Enter who the intention is for.';
+                if (needsContact && !form.contactNumber.trim()) return 'Enter a contact number.';
+                return null;
+            },
+            render: () => (
+                <>
+                    {needsContact && (
+                        <div className="form-group form-group--full">
+                            <label className="form-label">Contact Number <span className="req">*</span></label>
+                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                                value={form.contactNumber} onChange={set('contactNumber')} required />
+                            <p className="form-hint">Your account has no number saved yet.</p>
+                        </div>
+                    )}
+                    <div className="form-group form-group--full">
+                        <label className="form-label">Offered by</label>
+                        <div className="fee-display fee-display--active">{form.requestorName}</div>
                     </div>
+                    <IntentionFields
+                        items={intentionItems}
+                        types={form.intentionTypes}
+                        souls={form.souls}
+                        forWhom={form.intentionFor}
+                        purpose={form.purpose}
+                        onTypes={v => setForm(p => ({ ...p, intentionTypes: v, intentionType: v.join(', ') }))}
+                        onSouls={v => setForm(p => ({ ...p, souls: v }))}
+                        onForWhom={v => setForm(p => ({ ...p, intentionFor: v }))}
+                        onPurpose={v => setForm(p => ({ ...p, purpose: v }))}
+                    />
+                </>
+            ),
+        },
+        {
+            title: 'The offering',
+            sub: 'What your intentions come to — and, if you wish, a little more.',
+            validate: () => (form.wantsDonation ? offeringProblem(listFee, form.offering) : null),
+            render: () => (
+                <>
+                    <OfferingStep
+                        items={intentionItems}
+                        types={form.intentionTypes}
+                        souls={form.souls}
+                        wants={form.wantsDonation}
+                        offering={form.offering}
+                        onWants={v => setForm(p => ({ ...p, wantsDonation: v, ...(v ? {} : { offering: '' }) }))}
+                        onOffering={v => setForm(p => ({ ...p, offering: v }))}
+                    />
                     <div className="form-group">
-                        <label className="form-label">Email <span className="req">*</span></label>
-                        <input className="form-input" type="email"
-                            value={form.email} onChange={set('email')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Contact Number <span className="req">*</span></label>
-                        <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
-                            value={form.contactNumber} onChange={set('contactNumber')} required />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Intention Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Intention Information</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Intention Type <span className="req">*</span></label>
-                        <select className="form-select" value={form.intentionType}
-                            onChange={set('intentionType')} required disabled={cfgLoading}>
-                            <option value="">— Select intention type —</option>
-                            {intentionItems.map(i => (
-                                <option key={i.name} value={i.name}>
-                                    {i.name}{i.fee ? `  —  ₱${Number(i.fee).toLocaleString()}` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Service Fee</label>
+                        <label className="form-label">You will give</label>
                         <div className={`fee-display${fee ? ' fee-display--active' : ''}`}>
                             {fmtFee(fee)}
                         </div>
                     </div>
-                    <div className="form-group form-group--full">
-                        <label className="form-label">Intention For <span className="req">*</span></label>
-                        <input className="form-input" type="text"
-                            placeholder="Name of person / occasion…"
-                            value={form.intentionFor} onChange={set('intentionFor')} required />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Schedule ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Schedule</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Preferred Date <span className="req">*</span></label>
-                        <input className="form-input" type="date" min={todayStr()} value={form.preferredDate}
-                            onChange={e => setForm(p => ({ ...p, preferredDate: e.target.value, preferredTime: '' }))}
-                            required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Mass Time <span className="req">*</span></label>
-                        {availableTimes.length > 0 ? (
-                            <select className="form-select" value={form.preferredTime}
-                                onChange={set('preferredTime')} required>
-                                <option value="">— Select mass time —</option>
-                                {availableTimes.map(s => (
-                                    <option key={s.time} value={s.time}>
-                                        {fmtTime(s.time)}{s.label ? ` — ${s.label}` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : (
-                            <input className="form-input" type="time" value={form.preferredTime}
-                                onChange={set('preferredTime')} required />
-                        )}
-                        {!form.preferredDate
-                            ? <span className="form-hint">Select a date first to load available times</span>
-                            : availableTimes.length === 0
-                                ? <span className="form-hint">No scheduled times found — enter manually</span>
-                                : null}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Additional Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Additional Information</h4>
-                <div className="form-grid">
+                </>
+            ),
+        },
+        {
+            title: 'Anything else we should know?',
+            sub: 'Optional — leave it blank if there is nothing to add.',
+            render: () => (
+                <>
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
                             value={form.additionalNotes} onChange={set('additionalNotes')} />
                     </div>
-                </div>
-            </section>
+                    <BookingNotice />
+                </>
+            ),
+        },
+    ];
 
-            <div className="form-actions">
-                <button type="submit" className="btn btn--primary" disabled={loading || cfgLoading}>
-                    {loading ? 'Submitting…' : 'Submit Request'}
-                </button>
-            </div>
-        </form>
+    return (
+        <BookingWizard
+            title="Mass Intention"
+            steps={steps}
+            onSubmit={submit}
+            onExit={onExit}
+            onCalendar={onCalendar}
+            parish={config?.parish}
+            submitting={loading}
+            disabled={cfgLoading}
+            done={status === 'ok'}
+            banner={
+                <>
+                    {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
+                    {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
+                    {status === 'ok' && payInfo && <PayButton {...payInfo} />}
+                </>
+            }
+        />
     );
 }

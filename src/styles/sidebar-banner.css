@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════════════════
+   Sidebar identity banner — devotee and admin dashboards
+   Picture comes from the "sidebar-banner" CMS slot; the name comes
+   from the parish the site belongs to.
+   ═══════════════════════════════════════════════════════════════ */
+
+.sb-banner {
+    position: relative;
+    flex-shrink: 0;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.sb-banner__media {
+    position: relative;
+    aspect-ratio: 16 / 7;
+    background: var(--surface-2);
+}
+.sb-banner__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Stand-in until a picture is published */
+.sb-banner__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(220px 120px at 72% 20%, var(--gold-light) 0%, transparent 65%),
+        linear-gradient(140deg, var(--brand-dark) 0%, var(--brand) 60%, var(--gold-dark) 100%);
+}
+.sb-banner__placeholder img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    opacity: .92;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,.28));
+}
+
+.sb-banner__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 13px 12px;
+}
+.sb-banner__name {
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.sb-banner__sub {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--brand);
+}
+
+/* The admin sidebar is tighter than the devotee one */
+.ad-sidebar .sb-banner        { margin-bottom: 16px; }
+.ad-sidebar .sb-banner__media { aspect-ratio: 16 / 6; }

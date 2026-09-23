@@ -1,0 +1,801 @@
+/* ═══════════════════════════════════════════════════════════════
+   Superadmin (platform) console — /superadmin/*
+   Reuses the ad-* layout from admin.css and re-skins the chrome in
+   slate so it is never mistaken for a parish admin dashboard.
+   ═══════════════════════════════════════════════════════════════ */
+
+.sa-shell {
+    --sa-ink:    #14202e;
+    --sa-ink-2:  #1e2d3d;
+    --sa-accent: #2f6f8f;
+    --sa-accent-light: #e8f1f5;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.sa-header {
+    background: var(--sa-ink);
+    border-bottom-color: var(--sa-ink-2);
+    color: #fff;
+}
+.sa-header .ad-header__menu {
+    background: transparent;
+    border-color: rgba(255,255,255,.22);
+    color: #fff;
+}
+.sa-header__name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: #fff;
+}
+.sa-header__pill {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.14);
+    color: #fff;
+}
+.sa-header__link   { color: rgba(255,255,255,.78); }
+.sa-header__link:hover { background: rgba(255,255,255,.12); color: #fff; }
+.sa-header__user   { color: rgba(255,255,255,.9); }
+.sa-header__avatar { background: var(--sa-accent); }
+.sa-header__logout {
+    background: transparent;
+    border-color: rgba(255,255,255,.28);
+    color: rgba(255,255,255,.85);
+}
+.sa-header__logout:hover { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.sa-shell .ad-stat__icon,
+.sa-stat__icon {
+    background: var(--sa-accent-light);
+    color: var(--sa-accent);
+}
+.sa-shell a.ad-stat:hover { border-color: var(--sa-accent); }
+.sa-shell .ad-btn--filled { background: var(--sa-accent); }
+.sa-shell .ad-btn--filled:hover:not(:disabled) { background: var(--sa-ink-2); }
+.sa-shell .ad-filter--active {
+    background: var(--sa-accent);
+    border-color: var(--sa-accent);
+}
+.sa-shell .ad-page-btn--active {
+    background: var(--sa-accent);
+    border-color: var(--sa-accent);
+}
+.sa-shell .ad-input:focus,
+.sa-shell .ad-select:focus {
+    border-color: var(--sa-accent);
+    box-shadow: 0 0 0 3px rgba(47, 111, 143, .14);
+}
+.sa-shell .ad-table tbody tr:hover { background: var(--sa-accent-light); }
+
+/* ── Overview banner ─────────────────────────────────────────── */
+.sa-log__main:hover { background: var(--surface-2); }
+
+.sa-log__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--stone-100);
+    color: var(--stone-500);
+    font-size: 13px;
+}
+.sa-log__icon--auth    { background: #dbeafe; color: #1d4ed8; }
+.sa-log__icon--request { background: var(--brand-light); color: var(--brand); }
+.sa-log__icon--payment { background: #dcfce7; color: #15803d; }
+.sa-log__icon--user    { background: #ede9fe; color: #5b21b6; }
+.sa-log__icon--parish  { background: var(--sa-accent-light); color: var(--sa-accent); }
+.sa-log__icon--config  { background: var(--gold-light); color: var(--gold-dark); }
+
+.sa-log__body     { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sa-log__headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 13px;
+}
+.sa-log__headline code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--stone-100);
+    padding: 1px 6px;
+    border-radius: 5px;
+}
+.sa-log__target { color: var(--text-muted); font-size: 12.5px; }
+.sa-log__sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+.sa-log__time { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+.sa-log__chevron {
+    font-size: 11px;
+    color: var(--stone-400);
+    transition: transform var(--transition);
+}
+.sa-log__chevron--open { transform: rotate(180deg); }
+
+.sa-chip {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: var(--stone-100);
+    color: var(--stone-500);
+}
+.sa-chip--auth    { background: #dbeafe; color: #1d4ed8; }
+.sa-chip--request { background: var(--brand-light); color: var(--brand); }
+.sa-chip--payment { background: #dcfce7; color: #15803d; }
+.sa-chip--user    { background: #ede9fe; color: #5b21b6; }
+.sa-chip--parish  { background: var(--sa-accent-light); color: var(--sa-accent); }
+.sa-chip--config  { background: var(--gold-light); color: var(--gold-dark); }
+.sa-chip--failure { background: #fee2e2; color: #b91c1c; }
+
+.sa-log__detail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+    padding: 14px 16px 18px 46px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+}
+.sa-log__detail dt {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+.sa-log__detail dd { font-size: 12.5px; word-break: break-word; }
+.sa-log__detail--full { grid-column: 1 / -1; }
+.sa-log__json {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--sa-ink);
+    color: #d6e4ee;
+    overflow-x: auto;
+}
+
+/* ── Log filter bar ──────────────────────────────────────────── */
+.sa-filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.sa-filterbar__field { display: flex; flex-direction: column; gap: 5px; }
+.sa-filterbar__field span {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+}
+.sa-filterbar .ad-select,
+.sa-filterbar .ad-input { width: auto; min-width: 140px; }
+
+/* ── Parish cards ────────────────────────────────────────────── */
+.sa-parish-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 16px;
+}
+@media (max-width: 900px) {
+    .sa-parish-grid { grid-template-columns: 1fr; }
+}
+.sa-parish { margin-bottom: 0; display: flex; flex-direction: column; }
+.sa-parish__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sa-parish__head h3 { font-size: 15px; font-weight: 700; }
+.sa-parish__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.sa-parish__site {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    margin-bottom: 10px;
+}
+.sa-parish__globe { color: var(--sa-accent); font-size: 13px; }
+.sa-parish__host {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    word-break: break-all;
+}
+.sa-parish__host--empty { color: var(--stone-400); font-style: italic; }
+.sa-parish__usage { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+
+.sa-parish__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--stone-100);
+}
+.sa-parish__delete { margin-left: auto; }
+
+/* ── Subdomain field ─────────────────────────────────────────── */
+.sa-subdomain { display: flex; align-items: center; gap: 8px; }
+.sa-subdomain__suffix {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.sa-subdomain__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    min-height: 16px;
+}
+.sa-ok  { display: inline-flex; align-items: center; gap: 6px; color: var(--green); }
+.sa-bad { display: inline-flex; align-items: center; gap: 6px; color: var(--red); }
+
+.sa-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.sa-checkbox input { width: 16px; height: 16px; accent-color: var(--sa-accent); }
+
+.sa-hint {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-top: 14px;
+}
+.sa-hint code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--stone-100);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .sa-header__name { display: none; }
+    .sa-log__detail  { grid-template-columns: 1fr; padding-left: 16px; }
+}
+
+@media (max-width: 640px) {
+    .sa-filterbar { flex-direction: column; align-items: stretch; }
+    .sa-filterbar .ad-select,
+    .sa-filterbar .ad-input { width: 100%; }
+    .sa-parish-grid { grid-template-columns: 1fr; }
+    .sa-log__time   { display: none; }
+}
+
+/* ─── Offerings per parish ── */
+.sa-offer__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.sa-offer__num   { text-align: right; white-space: nowrap; }
+.sa-offer__num b { font-size: 15px; }
+.sa-offer__muted { color: var(--text-muted); }
+
+.sa-offer__count {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Relative size of each parish's take, against the biggest */
+.sa-offer__bar {
+    display: block;
+    min-width: 90px;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--stone-100);
+    overflow: hidden;
+}
+.sa-offer__bar i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--brand) 0%, var(--gold) 100%);
+}
+
+.sa-offer__orphan            { background: var(--warning-soft); }
+.sa-offer__orphan svg        { color: var(--gold-dark); margin-right: 6px; }
+.sa-offer__orphan span       { font-size: 11.5px; color: var(--text-muted); }
+
+.ad-table tfoot td {
+    border-top: 2px solid var(--border);
+    padding-top: 12px;
+    font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sidebar-free shell: two destinations in the header, everything
+   else reached from the parish it belongs to.
+   ═══════════════════════════════════════════════════════════════ */
+
+.sa-header__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.sa-topnav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 26px;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.sa-topnav::-webkit-scrollbar { display: none; }
+
+.sa-topnav__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 99px;
+    color: color-mix(in srgb, var(--on-brand) 72%, transparent);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+.sa-topnav__item:hover {
+    background: color-mix(in srgb, var(--on-brand) 12%, transparent);
+    color: var(--on-brand);
+}
+.sa-topnav__item--active {
+    background: color-mix(in srgb, var(--on-brand) 18%, transparent);
+    color: var(--on-brand);
+}
+.sa-topnav__item svg { font-size: 12px; }
+
+.sa-header__end {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* No sidebar to sit beside, so the page owns the full width. */
+.sa-main {
+    padding: 22px clamp(14px, 3vw, 34px) 60px;
+    background: var(--stone-100);
+    min-height: calc(100vh - var(--ad-header-h, 58px));
+}
+
+/* ─── The figures, as a strip ──────────────────────────────── */
+
+.sa-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.sa-strip__item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    text-decoration: none;
+}
+.sa-strip__item--link { transition: border-color var(--transition), transform 90ms ease; }
+.sa-strip__item--link:hover { border-color: var(--brand); transform: translateY(-1px); }
+
+.sa-strip__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    font-size: 14px;
+    background: var(--brand-light);
+    color: var(--brand);
+}
+.sa-strip__text { display: flex; flex-direction: column; min-width: 0; }
+.sa-strip__value {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+.sa-strip__label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.sa-strip__sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sa-strip__loading {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* ─── Back out of a per-parish page ────────────────────────── */
+
+.sa-back {
+    display: inline-block;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
+}
+.sa-back:hover { text-decoration: underline; }
+
+/* The row a parish card sent you to, so it is findable in a long table. */
+.sa-offer__focus > td {
+    background: var(--brand-light);
+    box-shadow: inset 3px 0 0 var(--brand);
+}
+
+@media (max-width: 720px) {
+    .sa-topnav        { margin-left: 12px; gap: 4px; }
+    .sa-topnav__item  { padding: 8px 11px; }
+    .sa-header__user  { display: none; }
+    .sa-main          { padding: 16px 12px 48px; }
+    .sa-strip         { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 460px) {
+    .sa-topnav__item span { display: none; }
+    .sa-strip             { grid-template-columns: 1fr; }
+}
+
+/* What this parish has taken, on its own card. */
+.sa-parish__money {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 4px;
+    padding: 10px 13px;
+    border-radius: 10px;
+    background: var(--brand-light);
+}
+.sa-parish__amount {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--brand-dark);
+}
+.sa-parish__amount-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+/* ─── Card cover ───────────────────────────────────────────
+   The parish's own hero, edge to edge across the top of its card.
+   .ad-card carries 18px/20px padding, so the cover pulls back out
+   to the border and rounds only its top corners. */
+.sa-parish { padding-top: 0; overflow: hidden; }
+
+.sa-parish__cover {
+    position: relative;
+    margin: 0 -20px 16px;
+    aspect-ratio: 16 / 6;
+    background: var(--stone-100);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+}
+.sa-parish__cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* A parish with nothing published says so, at the same height, so the
+   row of cards keeps its rhythm either way. */
+.sa-parish__cover-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--text-muted);
+    background:
+        repeating-linear-gradient(45deg,
+            var(--stone-100) 0 10px,
+            var(--stone-200) 10px 20px);
+}
+.sa-parish__cover-empty svg { font-size: 19px; opacity: .55; }
+
+/* ─── One-time credentials ─────────────────────────────────── */
+
+.cred__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 18px;
+}
+.cred__icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 17px;
+}
+.cred__head h3 { margin: 0 0 3px; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.cred__head p  { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.cred__rows { margin: 0; }
+.cred__rows > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+.cred__rows > div:last-child { border-bottom: none; }
+.cred__rows dt { font-size: 12.5px; color: var(--text-muted); flex-shrink: 0; }
+.cred__rows dd {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.cred__rows code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+.cred__password {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--brand-light);
+    font-size: 14px !important;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.cred__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.cred__copy:hover { border-color: var(--brand); color: var(--brand); }
+
+.cred__warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 16px 0 0;
+    padding: 11px 13px;
+    border-radius: var(--radius);
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+.cred__done { width: 100%; margin-top: 16px; }
+
+.ad-form__note {
+    margin: 14px 0 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+.ad-toolbar__end { margin-left: auto; }
+
+/* ─── Who runs this parish ─────────────────────────────────── */
+
+.sa-parish__staff {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.sa-staff {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px 4px 4px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    max-width: 100%;
+}
+.sa-staff__avatar {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 10.5px;
+    font-weight: 700;
+}
+.sa-staff__text {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+}
+.sa-staff__text b {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sa-staff__text em {
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.sa-staff--more {
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* A parish nobody can sign in to is worth noticing, not hiding. */
+.sa-parish__staff-empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.sa-parish__staff-empty svg { font-size: 11px; }
+
+/* ─── Appearance banner ────────────────────────────────────
+   Says which parish is being restyled, using that parish's own
+   picture, instead of asking the operator to choose again. */
+.tb {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 150px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.tb__art { position: absolute; inset: 0; }
+.tb__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tb__fallback {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(140deg, var(--brand-dark) 0%, var(--brand) 100%);
+}
+.tb__veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        color-mix(in srgb, var(--brand-dark) 30%, transparent) 42%,
+        color-mix(in srgb, var(--brand-dark) 88%, transparent) 100%
+    );
+}
+
+.tb__body { position: relative; z-index: 1; min-width: 0; }
+.tb__eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--on-brand) 75%, transparent);
+}
+.tb__name {
+    margin: 0 0 5px;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--on-brand);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+}
+.tb__sub {
+    margin: 0;
+    font-size: 13px;
+    color: color-mix(in srgb, var(--on-brand) 85%, transparent);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
+}
+
+@media (max-width: 560px) {
+    .tb       { min-height: 124px; padding: 16px; }
+    .tb__name { font-size: 18px; }
+}

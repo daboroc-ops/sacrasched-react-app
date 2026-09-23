@@ -1,0 +1,632 @@
+/* ═══════════════════════════════════════════════════════════════
+   Landing page — public marketing page at "/"
+   Uses the shared design tokens from base.css
+   ═══════════════════════════════════════════════════════════════ */
+
+.lp {
+    background: var(--surface);
+    color: var(--text-primary);
+    scroll-behavior: smooth;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SacraSched's own colours — fixed
+   ───────────────────────────────────────────────────────────────
+   The theme editor writes tokens onto :root, which re-skins every
+   parish site. The platform page is not a parish, so it pins its
+   own palette here and inherits nothing: whatever a parish picks,
+   sacrasched.app keeps the brand's golden brown.
+
+   Values are the defaults from base.css. Applied through .lp--platform,
+   which Landing.jsx only adds on the platform host — served from a
+   parish subdomain, the same page follows that parish's theme.
+   ═══════════════════════════════════════════════════════════════ */
+.lp--platform {
+    /* Brand — golden brown */
+    --brand:        #964B01;
+    --brand-dark:   #6B3201;
+    --brand-light:  #FDF5EC;
+    --on-brand:     #FFFFFF;
+
+    /* Accent — warm tan */
+    --gold:         #C49A6C;
+    --gold-dark:    #7A5030;
+    --gold-light:   #FEF0E0;
+
+    /* Surfaces */
+    --surface:      #FFFFFF;
+    --surface-2:    #FBF7F3;
+    --border:       #E5E7EB;
+
+    /* Text */
+    --text-primary:   #1C1917;
+    --text-secondary: #1F2937;
+    --text-muted:     #6B7280;
+
+    /* Greys and the one status colour the page uses */
+    --stone-100:    #F3F4F6;
+    --stone-400:    #9CA3AF;
+    --success-bg:   #DCFCE7;
+    --success-fg:   #15803D;
+}
+
+/* ─── Shared width ── */
+.lp-nav__inner,
+.lp-hero__inner,
+.lp-section__inner,
+.lp-cta__inner,
+.lp-footer__inner {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ─── Buttons ── */
+.lp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 26px;
+    border: 1.5px solid transparent;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background var(--transition), color var(--transition),
+                border-color var(--transition), transform var(--transition),
+                box-shadow var(--transition);
+}
+.lp-btn:hover      { transform: translateY(-1px); }
+.lp-btn:active     { transform: translateY(0); }
+.lp-btn--sm        { height: 40px; padding: 0 18px; font-size: 13px; }
+
+.lp-btn--filled    { background: var(--brand); color: var(--on-brand); box-shadow: var(--shadow-sm); }
+.lp-btn--filled:hover  { background: var(--brand-dark); box-shadow: var(--shadow-md); }
+
+.lp-btn--outline   { background: transparent; color: var(--brand); border-color: var(--brand); }
+.lp-btn--outline:hover { background: var(--brand-light); }
+
+.lp-btn--ghost     { background: transparent; color: var(--text-secondary); }
+.lp-btn--ghost:hover   { background: var(--stone-100); }
+
+.lp-btn--light     { background: var(--surface); color: var(--brand); }
+.lp-btn--light:hover   { background: var(--gold-light); }
+
+.lp-btn--onbrand   { background: transparent; color: var(--on-brand); border-color: rgba(255,255,255,.55); }
+.lp-btn--onbrand:hover { background: rgba(255,255,255,.12); }
+
+/* ─── Eyebrow label ── */
+.lp-eyebrow {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 12px;
+}
+
+/* ═══ Navigation ══════════════════════════════════════════════ */
+.lp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+
+/* The way in, big enough to be found at a glance */
+.lp-btn--big { padding: 16px 30px; font-size: 17px; font-weight: 700; }
+.lp-nav__inner {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+.lp-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+}
+.lp-nav__mark      { width: 30px; height: 30px; object-fit: contain; }
+.lp-nav__wordmark  { height: 18px; width: auto; display: block; }
+
+/* ── Minimised on scroll ── */
+/* At the top the bar runs the full width with SacraSched at full size.
+   Once the visitor scrolls past the hero it minimises — never hides:
+   it lets go of the edges and floats as a small rounded pill, the
+   wordmark folds away to the mark alone, and on a parish site the
+   parish's own name takes its place beside it (.lp-nav__parish). */
+.lp-nav { transition: background .3s ease, border-color .3s ease, padding .3s ease; }
+.lp-nav--compact {
+    padding-top: 10px;
+    background: transparent;
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.lp-nav__inner {
+    border: 1px solid transparent;
+    transition: height .3s ease, max-width .3s ease, padding .3s ease, gap .3s ease,
+                border-radius .3s ease, box-shadow .3s ease, background .3s ease, border-color .3s ease;
+}
+/* Floating, the pill is small and frosted — the page shows through it.
+   Under the pointer it grows back to its full size. */
+.lp-nav--compact .lp-nav__inner {
+    height: 44px;
+    max-width: 760px;
+    padding: 0 16px 0 12px;
+    gap: 16px;
+    border-radius: 99px;
+    border-color: rgba(255, 255, 255, .55);
+    background: rgba(255, 255, 255, .58);
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, .10), inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+.lp-nav--compact .lp-nav__inner:hover,
+.lp-nav--compact .lp-nav__inner:focus-within {
+    height: 52px;
+    max-width: 860px;
+    padding: 0 20px 0 14px;
+    gap: 20px;
+    background: rgba(255, 255, 255, .78);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.lp-nav--compact .lp-nav__links { gap: 16px; }
+.lp-nav--compact .lp-nav__links a { font-size: 13px; transition: font-size .3s ease; }
+.lp-nav--compact .lp-nav__inner:hover .lp-nav__links a,
+.lp-nav--compact .lp-nav__inner:focus-within .lp-nav__links a { font-size: 13.5px; }
+.lp-nav--compact .lp-btn--sm { padding-top: 6px; padding-bottom: 6px; font-size: 12.5px; transition: padding .3s ease, font-size .3s ease; }
+.lp-nav--compact .lp-nav__inner:hover .lp-btn--sm,
+.lp-nav--compact .lp-nav__inner:focus-within .lp-btn--sm { padding-top: 7px; padding-bottom: 7px; font-size: 13px; }
+.lp-nav--compact .pl-nav__badge { width: 30px; height: 30px; font-size: 10.5px; transition: width .3s ease, height .3s ease; }
+.lp-nav--compact .lp-nav__inner:hover .pl-nav__badge,
+.lp-nav--compact .lp-nav__inner:focus-within .pl-nav__badge { width: 38px; height: 38px; }
+.lp-nav--compact .pl-nav__names b { font-size: 13px; transition: font-size .3s ease; }
+.lp-nav--compact .lp-nav__inner:hover .pl-nav__names b,
+.lp-nav--compact .lp-nav__inner:focus-within .pl-nav__names b { font-size: 14.5px; }
+
+/* Minimised, the mark goes and the wordmark alone sits in the middle of
+   the pill, the parish's name on the left and the links on the right. */
+.lp-nav__inner { position: relative; }
+.lp-nav__brand { transition: gap .3s ease; }
+.lp-nav__mark     { max-width: 30px; transition: max-width .3s ease, opacity .2s ease; }
+.lp-nav__wordmark { transition: height .3s ease; }
+.lp-nav--compact .lp-nav__brand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    gap: 0;
+}
+.lp-nav--compact .lp-nav__mark     { max-width: 0; opacity: 0; }
+.lp-nav--compact .lp-nav__wordmark { height: 14px; }
+.lp-nav--compact .lp-nav__inner:hover .lp-nav__wordmark,
+.lp-nav--compact .lp-nav__inner:focus-within .lp-nav__wordmark { height: 16px; }
+
+/* The parish's name, up on the left once the bar is minimised */
+.lp-nav__parish {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    max-width: 38%;
+    color: inherit;
+    opacity: 0;
+    transform: translateX(-8px);
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease;
+}
+.lp-nav--compact .lp-nav__parish { opacity: 1; transform: none; pointer-events: auto; }
+.lp-nav__parish .pl-nav__names b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lp-nav__links {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    margin-left: auto;
+}
+.lp-nav__links a {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color var(--transition);
+}
+.lp-nav__links a:hover { color: var(--brand); }
+
+.lp-nav__actions { display: flex; align-items: center; gap: 10px; }
+
+.lp-nav__toggle {
+    display: none;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+.lp-nav__drawer {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 24px 22px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+/* Under the minimised pill the menu is a card of its own */
+.lp-nav--compact .lp-nav__drawer {
+    margin: 8px 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .10);
+}
+.lp-nav__drawer a:not(.lp-btn) {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 8px 0;
+}
+
+/* ═══ Hero ════════════════════════════════════════════════════ */
+.lp-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(900px 420px at 78% -8%, var(--gold-light) 0%, transparent 62%),
+        linear-gradient(180deg, var(--brand-light) 0%, var(--surface) 78%);
+    border-bottom: 1px solid var(--border);
+}
+.lp-hero__inner {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    align-items: center;
+    gap: 56px;
+    padding-top: 76px;
+    padding-bottom: 84px;
+}
+.lp-hero__title {
+    font-size: 50px;
+    line-height: 1.08;
+    letter-spacing: -.02em;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+.lp-hero__title em {
+    font-style: normal;
+    color: var(--brand);
+    display: block;
+}
+.lp-hero__sub {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--text-muted);
+    max-width: 34em;
+}
+.lp-hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 30px;
+}
+.lp-hero__points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 30px;
+    list-style: none;
+}
+.lp-hero__points li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.lp-hero__points svg { color: var(--brand); font-size: 12px; }
+
+/* ─── Hero artwork: stacked app cards ── */
+.lp-hero__art { display: flex; justify-content: center; }
+
+.lp-card-stack { position: relative; width: 100%; max-width: 400px; padding: 26px 0 42px; }
+
+.lp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow-lg);
+}
+.lp-card__label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+.lp-card--back {
+    transform: rotate(-3deg) translateX(-14px);
+    opacity: .96;
+}
+.lp-card__row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+}
+.lp-card__row:last-child { border-bottom: 0; }
+.lp-card__row b    { color: var(--brand); min-width: 66px; }
+.lp-card__row span { color: var(--text-muted); }
+
+.lp-card--front {
+    position: relative;
+    margin-top: -34px;
+    margin-left: 34px;
+    border-left: 3px solid var(--brand);
+}
+
+.lp-req {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stone-100);
+}
+.lp-req:last-child { border-bottom: 0; }
+.lp-req__icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 14px;
+}
+.lp-req__body   { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lp-req__body b { font-size: 13px; font-weight: 600; }
+.lp-req__body span { font-size: 11.5px; color: var(--text-muted); }
+
+.lp-pill {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 99px;
+}
+.lp-pill--ok   { background: var(--success-bg); color: var(--success-fg); }
+.lp-pill--wait { background: var(--gold-light); color: var(--gold-dark); }
+
+/* ═══ Sections ════════════════════════════════════════════════ */
+.lp-section        { padding: 84px 0; }
+.lp-section--alt   { background: var(--surface-2); border-block: 1px solid var(--border); }
+
+.lp-section__hd {
+    max-width: 620px;
+    margin: 0 auto 48px;
+    text-align: center;
+}
+.lp-section__hd h2 {
+    font-size: 32px;
+    line-height: 1.2;
+    letter-spacing: -.015em;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.lp-section__hd p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.lp-grid       { display: grid; gap: 20px; }
+.lp-grid--4    { grid-template-columns: repeat(4, 1fr); }
+.lp-grid--3    { grid-template-columns: repeat(3, 1fr); }
+.lp-grid--2    { grid-template-columns: repeat(2, 1fr); }
+
+/* ─── Service tile ── */
+.lp-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px 22px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition),
+                border-color var(--transition);
+}
+.lp-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--gold);
+}
+.lp-tile__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(140deg, var(--brand) 0%, var(--gold) 100%);
+    color: var(--on-brand);
+    font-size: 18px;
+    margin-bottom: 16px;
+}
+.lp-tile h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.lp-tile p  { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* ─── Steps ── */
+.lp-step {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px 24px 26px;
+    box-shadow: var(--shadow-sm);
+}
+.lp-step__n {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+.lp-step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.lp-step p  { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* ─── Feature row ── */
+.lp-feature {
+    display: flex;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+}
+.lp-feature__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 16px;
+}
+.lp-feature h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.lp-feature p  { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* ═══ Closing CTA ═════════════════════════════════════════════ */
+.lp-cta {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 55%, var(--gold-dark) 100%);
+    color: var(--on-brand);
+    padding: 76px 0;
+    text-align: center;
+}
+.lp-cta h2 {
+    font-size: 30px;
+    line-height: 1.22;
+    letter-spacing: -.015em;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.lp-cta p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255,255,255,.85);
+    max-width: 44em;
+    margin: 0 auto 28px;
+}
+.lp-cta__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* ═══ Footer ══════════════════════════════════════════════════ */
+.lp-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+}
+.lp-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px 28px;
+}
+.lp-footer__wordmark { height: 16px; width: auto; }
+.lp-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-left: auto;
+}
+.lp-footer__links a {
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: color var(--transition);
+}
+.lp-footer__links a:hover { color: var(--brand); }
+/* The office's way in — there for those who look for it, quiet for everyone else */
+.lp-footer__links .lp-footer__staff {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--stone-400);
+    opacity: .75;
+}
+.lp-footer__links .lp-footer__staff:hover { color: var(--brand); opacity: 1; }
+.lp-footer__note {
+    width: 100%;
+    font-size: 12px;
+    color: var(--stone-400);
+    padding-top: 14px;
+    border-top: 1px solid var(--stone-100);
+}
+
+/* ═══ Responsive ══════════════════════════════════════════════ */
+@media (max-width: 960px) {
+    .lp-hero__inner    { grid-template-columns: 1fr; gap: 44px; padding-top: 56px; padding-bottom: 60px; }
+    .lp-hero__title    { font-size: 40px; }
+    .lp-hero__title em { display: inline; }
+    .lp-grid--4        { grid-template-columns: repeat(2, 1fr); }
+    .lp-grid--3        { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 800px) {
+    .lp-nav--compact { padding-top: 8px; }
+    .lp-nav--compact .lp-nav__inner { margin: 0 10px; width: auto; height: 44px; }
+    /* No hover on a phone: the pill keeps one size */
+    .lp-nav--compact .lp-nav__inner:hover { height: 44px; max-width: none; padding: 0 16px 0 12px; }
+    /* Too narrow for a name and a wordmark side by side: the badge stands for the parish */
+    .lp-nav--compact .lp-nav__parish .pl-nav__names { display: none; }
+    .lp-nav__links,
+    .lp-nav__actions   { display: none; }
+    .lp-nav__toggle    { display: grid; place-items: center; }
+    .lp-nav__drawer    { display: flex; }
+}
+
+@media (max-width: 640px) {
+    .lp-hero__title    { font-size: 32px; }
+    .lp-hero__sub      { font-size: 15px; }
+    .lp-hero__cta .lp-btn { width: 100%; }
+    .lp-grid--4,
+    .lp-grid--2        { grid-template-columns: 1fr; }
+    .lp-section        { padding: 60px 0; }
+    .lp-section__hd    { margin-bottom: 34px; }
+    .lp-section__hd h2 { font-size: 25px; }
+    .lp-card--front    { margin-left: 0; }
+    .lp-card--back     { transform: rotate(-2deg); }
+    .lp-cta            { padding: 58px 0; }
+    .lp-cta h2         { font-size: 24px; }
+    .lp-cta__btns .lp-btn { width: 100%; }
+    .lp-footer__links  { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lp-btn:hover, .lp-tile:hover { transform: none; }
+}

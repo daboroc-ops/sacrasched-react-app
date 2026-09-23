@@ -5,6 +5,9 @@ import {
     faCircleCheck, faSpinner, faQrcode, faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
+import { usePageTitle } from '../hooks/useParish';
+import ResultPage from '../components/ResultPage';
+import ReceiptButton from '../components/ReceiptButton';
 
 // Aggressive early polls, then slow back-off — covers ~3 minutes total.
 // QRPH confirmation from PayMongo can lag 30 s – 2 min after the redirect
@@ -24,9 +27,12 @@ export default function PaymentSuccess() {
     const axios                 = useAxiosPrivate();
     const paymentId             = searchParams.get('payment_id');
 
+    usePageTitle('Payment');
+
     // checking → pending (auto-polls) → succeeded | timedout
     const [phase,     setPhase]     = useState('checking');
     const [payment,   setPayment]   = useState(null);
+    const [parish,    setParish]    = useState(null);   // whose church — for the banner
     const [checking,  setChecking]  = useState(false); // manual retry spinner
     const pollCount   = useRef(0);
     const pollTimer   = useRef(null);
@@ -36,6 +42,7 @@ export default function PaymentSuccess() {
         try {
             const res = await axios.get(`/payment/${paymentId}/verify`);
             setPayment(res.data.payment);
+            if (res.data.parish) setParish(res.data.parish);
             if      (res.data.status === 'paid')   setPhase('succeeded');
             else if (res.data.status === 'failed')  setPhase('timedout');
             else                                    setPhase('pending');
@@ -70,6 +77,7 @@ export default function PaymentSuccess() {
         try {
             const res = await axios.get(`/payment/${paymentId}/verify`);
             setPayment(res.data.payment);
+            if (res.data.parish) setParish(res.data.parish);
             if (res.data.status === 'paid') {
                 setPhase('succeeded');
             } else if (res.data.status === 'failed') {
@@ -87,101 +95,88 @@ export default function PaymentSuccess() {
 
     const fmtPHP = n => n != null ? `₱${Number(n).toLocaleString()}` : '—';
 
+    const toDashboard = (
+        <button
+            className="btn btn--primary"
+            onClick={() => navigate('/dashboard', { replace: true })}
+        >
+            <FontAwesomeIcon icon={faArrowLeft} /> Back to Calendar
+        </button>
+    );
+
     /* ── Checking / polling ── */
     if (phase === 'checking' || phase === 'pending') return (
-        <div className="pay-result-page">
-            <div className="pay-result-card">
-                <div className="pay-result-card__icon pay-result-card__icon--pending">
-                    <FontAwesomeIcon icon={faSpinner} spin />
-                </div>
-                <h2 className="pay-result-card__title">
-                    {phase === 'checking' ? 'Verifying payment…' : 'Waiting for confirmation…'}
-                </h2>
-                <p className="pay-result-card__sub">
-                    Your QR payment is being processed. This page checks automatically —
-                    QR Ph confirmation can take up to a few minutes.
-                </p>
-            </div>
-        </div>
+        <ResultPage
+            parish={parish}
+            eyebrow="Paying"
+            tone="pending"
+            icon={faSpinner}
+            iconSpin
+            title={phase === 'checking' ? 'Verifying payment…' : 'Waiting for confirmation…'}
+            sub="Your QR payment is being processed. This page checks on its own — QR Ph confirmation can take a few minutes."
+        />
     );
 
     /* ── Success ── */
     if (phase === 'succeeded') return (
-        <div className="pay-result-page">
-            <div className="pay-result-card">
-                <div className="pay-result-card__icon pay-result-card__icon--success">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                </div>
-                <h2 className="pay-result-card__title">Payment Confirmed!</h2>
-                <p className="pay-result-card__sub">Your payment has been recorded.</p>
-
-                {payment && (
-                    <div className="pay-result-card__details">
-                        <div className="pay-detail-row">
-                            <span className="pay-detail-row__label">Amount</span>
-                            <span className="pay-detail-row__val pay-detail-row__val--amount">
-                                {fmtPHP(payment.amount)}
-                            </span>
-                        </div>
-                        <div className="pay-detail-row">
-                            <span className="pay-detail-row__label">Description</span>
-                            <span className="pay-detail-row__val">{payment.description}</span>
-                        </div>
-                        <div className="pay-detail-row">
-                            <span className="pay-detail-row__label">Method</span>
-                            <span className="pay-detail-row__val">QR Ph</span>
-                        </div>
-                        <div className="pay-detail-row">
-                            <span className="pay-detail-row__label">Reference</span>
-                            <span className="pay-detail-row__val pay-detail-row__val--mono">
-                                {payment.paymongoPaymentId || payment.paymongoCheckoutId || '—'}
-                            </span>
-                        </div>
+        <ResultPage
+            parish={parish}
+            eyebrow="Paid to"
+            tone="ok"
+            icon={faCircleCheck}
+            title="Payment confirmed"
+            sub="Your offering has been recorded. Download the receipt for your records."
+            actions={<>
+                <ReceiptButton paymentId={paymentId} />
+                {toDashboard}
+            </>}
+        >
+            {payment && (
+                <dl className="res__facts">
+                    <div>
+                        <dt>Amount</dt>
+                        <dd className="res__amount">{fmtPHP(payment.amount)}</dd>
                     </div>
-                )}
-
-                <button
-                    className="btn btn--primary btn--full"
-                    onClick={() => navigate('/dashboard', { replace: true })}
-                >
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                    Back to Dashboard
-                </button>
-            </div>
-        </div>
+                    <div>
+                        <dt>For</dt>
+                        <dd>{payment.description}</dd>
+                    </div>
+                    <div>
+                        <dt>Method</dt>
+                        <dd>QR Ph</dd>
+                    </div>
+                    <div>
+                        <dt>Reference</dt>
+                        <dd className="res__mono">
+                            {payment.paymongoPaymentId || payment.paymongoCheckoutId || '—'}
+                        </dd>
+                    </div>
+                </dl>
+            )}
+        </ResultPage>
     );
 
-    /* ── Timed out — show manual retry, NOT a hard failure ── */
+    /* ── Timed out — a manual retry, not a hard failure ── */
     return (
-        <div className="pay-result-page">
-            <div className="pay-result-card">
-                <div className="pay-result-card__icon pay-result-card__icon--pending">
-                    <FontAwesomeIcon icon={faQrcode} />
-                </div>
-                <h2 className="pay-result-card__title">Still Processing…</h2>
-                <p className="pay-result-card__sub">
-                    Your QR payment may still be on its way. Bank confirmation can sometimes
-                    take a few minutes. Click <strong>Check Again</strong> after completing
-                    the scan in your banking app.
-                </p>
-                <button
-                    className="btn btn--primary btn--full"
-                    onClick={handleRetry}
-                    disabled={checking}
-                    style={{ marginBottom: '10px' }}
-                >
+        <ResultPage
+            parish={parish}
+            eyebrow="Paying"
+            tone="pending"
+            icon={faQrcode}
+            title="Still processing"
+            sub={<>
+                Your QR payment may still be on its way — bank confirmation can take a
+                few minutes. Once you have finished the scan in your banking app,
+                check again.
+            </>}
+            actions={<>
+                <button className="btn btn--primary" onClick={handleRetry} disabled={checking}>
                     {checking
                         ? <><FontAwesomeIcon icon={faSpinner} spin /> Checking…</>
-                        : 'Check Again'}
+                        : 'Check again'}
                 </button>
-                <button
-                    className="btn btn--ghost btn--full"
-                    onClick={() => navigate('/dashboard', { replace: true })}
-                >
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                    Back to Dashboard
-                </button>
-            </div>
-        </div>
+                {toDashboard}
+            </>}
+        />
     );
 }

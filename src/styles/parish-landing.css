@@ -1,0 +1,214 @@
+/* ═══════════════════════════════════════════════════════════════
+   Parish landing page — /parish/:subdomain
+   Builds on the .lp-* landing styles; only the parish-specific
+   pieces live here.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Loading / not-found states ──────────────────────────────── */
+.pl-state {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 24px;
+}
+.pl-state .lp-directory__empty { max-width: 460px; }
+.pl-state__back { margin-top: 14px; }
+
+/* ── Parish identity in the navbar ───────────────────────────── */
+.pl-nav__badge {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: linear-gradient(140deg, var(--brand) 0%, var(--gold) 100%);
+    color: var(--on-brand);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.pl-nav__names {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+}
+.pl-nav__names b     { font-size: 14.5px; font-weight: 700; color: var(--text-primary); }
+.pl-nav__names small { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Parish activities, under the news ───────────────────────── */
+.pa {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+.pa__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+.pa__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 14px;
+}
+.pa__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pa__body b    { font-size: 14.5px; color: var(--text-primary); }
+.pa__body span { font-size: 13px; color: var(--text-muted); }
+
+/* ── Hero crest, standing in for a parish photo ──────────────── */
+/* No min-height here: with the 4:3 aspect ratio it would become a minimum
+   width (347px) and push the hero past a phone screen. The ratio sizes it. */
+.pl-hero__initials {
+    font-size: 58px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--on-brand);
+    text-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+
+/* ── Visit / contact ─────────────────────────────────────────── */
+/* Contacts on the left, the map on the right */
+.pl-visit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 22px;
+    align-items: start;
+}
+.pl-visit--nomap { grid-template-columns: 1fr; }
+.pl-visit--nomap .pl-contact { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); max-width: 900px; margin: 0 auto; }
+.pl-contact {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+.pl-contact__item span a { color: var(--brand); font-weight: 600; text-decoration: none; word-break: break-word; }
+.pl-contact__item span a:hover { text-decoration: underline; }
+.pl-map {
+    position: relative;
+    min-height: 320px;
+    height: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+.pl-map iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    border: 0;
+}
+.pl-map__open {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 13px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .95);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--brand);
+    text-decoration: none;
+}
+@media (max-width: 860px) {
+    .pl-visit { grid-template-columns: 1fr; }
+    .pl-map, .pl-map iframe { min-height: 260px; }
+}
+.pl-contact__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+.pl-contact__item > svg {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 15px;
+    color: var(--brand);
+}
+.pl-contact__item span {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    min-width: 0;
+}
+.pl-contact__item b {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.pl-footer__parish {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand);
+}
+
+@media (max-width: 640px) {
+    .pl-hero__initials { font-size: 44px; }
+}
+
+
+@media (max-width: 800px) {
+    /* The parish name gives way before the bar does: it shrinks and
+       ellipsises so the SacraSched mark stays on screen. */
+    .lp-nav__parish { flex-shrink: 1; }
+    .pl-nav__names b,
+    .pl-nav__names small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* ── The parish's mark: its logo, or its initials until it has one ── */
+.pmark--logo {
+    background: #fff !important;
+    padding: 4px;
+    overflow: hidden;
+}
+.pmark--logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.pl-hero__logo {
+    width: 58%;
+    max-height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .25));
+}

@@ -16,7 +16,7 @@
 
 .schedule-card__header {
     background: var(--stone-800);
-    color: #fff;
+    color: var(--on-brand);
     padding: 14px 16px;
     display: flex;
     align-items: center;
@@ -80,4 +80,104 @@
     text-align: center;
     padding: 20px 16px;
     font-style: italic;
+}
+
+/* ─── One-off Masses, under the weekly grid ── */
+.sched-special { margin-top: 28px; }
+.sched-special__title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+.sched-special__list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.sched-special__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+.sched-special__date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 62px;
+    padding-right: 14px;
+    border-right: 1px dashed var(--border);
+}
+.sched-special__date b    { font-size: 14px; color: var(--brand); }
+.sched-special__date span { font-size: 11.5px; color: var(--text-muted); }
+
+.sched-special__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sched-special__body b    { font-size: 14.5px; }
+.sched-special__body span { font-size: 12.5px; color: var(--text-muted); }
+.sched-special__body em   { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+/* ─── Admin: specific Masses panel ── */
+.sm-panel .ad-card__head h3 svg { margin-right: 8px; color: var(--gold-dark); }
+
+.sm-form { padding: 4px 0 18px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.sm-form__row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.sm-form__row:last-child { margin-bottom: 0; }
+.sm-form__add { flex-shrink: 0; }
+
+.sm-field { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
+.sm-field--grow { flex: 1; min-width: 220px; }
+.sm-field--date { min-width: 165px; }
+.sm-field--time { min-width: 130px; }
+.sm-field > span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.sm-field > span em { font-style: normal; font-weight: 400; color: var(--stone-400); margin-left: 4px; }
+
+.sm-list__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.sm-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.sm-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+.sm-item--off { opacity: .6; }
+.sm-item--off .sm-item__body b { text-decoration: line-through; }
+
+.sm-item__when {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-width: 130px;
+}
+.sm-item__when b    { font-size: 13px; }
+.sm-item__when span { font-size: 11.5px; color: var(--text-muted); }
+
+.sm-item__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.sm-item__body b    { font-size: 13.5px; }
+.sm-item__body span { font-size: 12px; color: var(--text-muted); }
+.sm-item__body em   { font-style: italic; }
+
+.sm-item__actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .sm-item        { flex-wrap: wrap; }
+    .sm-item__when  { min-width: 100%; flex-direction: row; gap: 8px; align-items: baseline; }
+    .sm-field       { min-width: 100%; }
 }

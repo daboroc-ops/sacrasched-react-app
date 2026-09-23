@@ -30,7 +30,7 @@ export default function useParishes() {
         });
 
         return () => { mountedRef.current = false; };
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps -- axiosPrivate is a stable singleton
 
     return { parishes, loading };
 }

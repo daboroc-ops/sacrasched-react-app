@@ -1,188 +1,130 @@
 import { useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import useAuth from '../../hooks/useAuth';
 import useConfig from '../../hooks/useConfig';
+import useRequestor from './useRequestor';
+import BookingWizard from '../BookingWizard';
 import PayButton from '../PayButton';
+import useAvailability from '../../hooks/useAvailability';
+import WhenFields from './WhenFields';
+import { whenProblem } from '../../utils/booking';
+import DetailFields from './DetailFields';
+import RequirementUploads from './RequirementUploads';
+import { missingDetail } from '../../utils/documentDetails';
+import { getDetailFields, expandDetailFields } from '../../utils/sacramentDetails';
+import BookingNotice from './BookingNotice';
 
 function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
 }
 
-function todayStr() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-// Parish office hours: 8 AM – 5 PM, hourly slots
-const TIME_SLOTS = Array.from({ length: 10 }, (_, i) => {
-    const h = 8 + i;
-    const value = `${String(h).padStart(2,'0')}:00`;
-    const label = `${((h + 11) % 12) + 1}:00 ${h < 12 ? 'AM' : 'PM'}`;
-    return { value, label };
-});
-
-/* Type-specific detail fields — keyed by sacrament type name (case-insensitive match) */
-const DETAIL_FIELDS = {
-    wedding: [
-        { key: 'groom',       label: "Groom's Full Name" },
-        { key: 'groomAge',    label: "Groom's Age",      type: 'number' },
-        { key: 'groomFather', label: "Groom's Father" },
-        { key: 'groomMother', label: "Groom's Mother" },
-        { key: 'bride',       label: "Bride's Full Name" },
-        { key: 'brideAge',    label: "Bride's Age",      type: 'number' },
-        { key: 'brideFather', label: "Bride's Father" },
-        { key: 'brideMother', label: "Bride's Mother" },
-        { key: 'sponsor_1',   label: 'Principal Sponsor 1' },
-        { key: 'sponsor_2',   label: 'Principal Sponsor 2' },
-        { key: 'minister',    label: 'Minister / Priest', priest: true },
-    ],
-    baptism: [
-        { key: 'fullName',  label: "Child's Full Name" },
-        { key: 'father',    label: "Father's Name" },
-        { key: 'mother',    label: "Mother's Name" },
-        { key: 'bornin',    label: 'Born In' },
-        { key: 'birthdate', label: 'Birth Date',        type: 'date' },
-        { key: 'sponsor_1', label: 'Godfather (Ninong)' },
-        { key: 'sponsor_2', label: 'Godmother (Ninang)' },
-        { key: 'minister',  label: 'Minister / Priest', priest: true },
-    ],
-    confirmation: [
-        { key: 'fullName',  label: "Candidate's Full Name" },
-        { key: 'father',    label: "Father's Name" },
-        { key: 'mother',    label: "Mother's Name" },
-        { key: 'sponsor_1', label: 'Sponsor 1' },
-        { key: 'sponsor_2', label: 'Sponsor 2' },
-        { key: 'minister',  label: 'Minister / Priest', priest: true },
-    ],
-    funeral: [
-        { key: 'fullName',   label: "Deceased's Full Name" },
-        { key: 'age',        label: 'Age',              type: 'number' },
-        { key: 'residence',  label: 'Residence' },
-        { key: 'status',     label: 'Civil Status' },
-        { key: 'father',     label: "Father's Name" },
-        { key: 'mother',     label: "Mother's Name" },
-        { key: 'marriedto',  label: 'Married To' },
-        { key: 'deathDate',  label: 'Date of Death',   type: 'date' },
-        { key: 'burialDate', label: 'Burial Date',     type: 'date' },
-    ],
-};
-
-function getDetailFields(sacramentTypeName) {
-    if (!sacramentTypeName) return [];
-    const key = sacramentTypeName.toLowerCase();
-    // match by contained keyword
-    for (const [k, fields] of Object.entries(DETAIL_FIELDS)) {
-        if (key.includes(k)) return fields;
-    }
-    return [];
-}
-
-const blank = auth => ({
+const blank = (requestor, date = '') => ({
+    ...requestor,
     sacramentType:   '',
-    requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    email:           auth?.user?.email          || '',
-    contactNumber:   auth?.user?.contactNumber  || '',
     recipientName:   '',
-    preferredDate:   '',
+    preferredDate:   date,
     preferredTime:   '',
     additionalNotes: ''
 });
 
-export default function SacramentForm({ parishId }) {
-    const axios                              = useAxiosPrivate();
-    const { auth }                           = useAuth();
-    const { config, loading: cfgLoading, getCategoryItems } = useConfig();
-    const [form,    setForm]                 = useState(blank(auth));
-    const [details, setDetails]              = useState({});
-    const [status,  setStatus]               = useState(null);
-    const [msg,     setMsg]                  = useState('');
-    const [loading, setLoading]              = useState(false);
-    const [payInfo, setPayInfo]              = useState(null);
+export default function SacramentForm({ parishId, onExit, initialDate, onCalendar }) {
+    const axios = useAxiosPrivate();
+    const { requestor, needsContact } = useRequestor();
+    const { config, loading: cfgLoading, getCategoryItems } = useConfig(parishId);
+
+    const [form,    setForm]    = useState(() => blank(requestor, initialDate));
+    const [details,     setDetails]     = useState({});
+    const [attachments, setAttachments] = useState([]);
+    const [status,  setStatus]  = useState(null);
+    const [msg,     setMsg]     = useState('');
+    const [loading, setLoading] = useState(false);
+    const [payInfo, setPayInfo] = useState(null);
 
     const sacramentItems = getCategoryItems('sacrament');
     const selectedItem   = sacramentItems.find(i => i.name === form.sacramentType);
     const fee            = selectedItem?.fee ?? 0;
-    const detailFields   = getDetailFields(form.sacramentType);
-    const priests        = config?.priests || [];
+    const detailFields   = expandDetailFields(getDetailFields(form.sacramentType), details);
+    const requirements   = selectedItem?.requirements || [];
 
-    const set    = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
-    const setDet = k => e => setDetails(p => ({ ...p, [k]: e.target.value }));
+    /* A wedding's own fixed times, or office hours; never the parish
+       priest's day off; never a slot another wedding holds. */
+    const avail  = useAvailability({ service: 'sacrament', type: form.sacramentType, date: form.preferredDate, parishId });
+    const months = config?.settings?.advanceMonths || 3;
 
-    const handleTypeChange = e => {
-        setForm(p => ({ ...p, sacramentType: e.target.value }));
-        setDetails({});
+    /* A requirement goes up on its own, before the request */
+    const upload = async (file, requirement) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('requirement', requirement);
+        const res = await axios.post('/user/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+        return res.data.file;
     };
 
-    const handleSubmit = async e => {
-        e.preventDefault();
+    const set    = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
+    const setDet = (k, v) => setDetails(p => ({ ...p, [k]: v }));
+
+    const handleTypeChange = e => {
+        setForm(p => ({ ...p, sacramentType: e.target.value, preferredTime: '' }));
+        setDetails({});
+        setAttachments([]);
+    };
+
+    const submit = async () => {
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/sacrament', { ...form, fee, details, parishId });
+            const res = await axios.post('/sacrament', { ...form, details, attachments, parishId });
+            const saved = res.data.data;
             setStatus('ok');
-            setMsg('Sacrament request submitted! The parish office will contact you soon.');
-            if (fee > 0) {
+            setMsg('Sacrament request submitted! Confirm below that you will settle the offering at the parish office.');
+            if (saved.fee > 0) {
                 setPayInfo({
-                    amount:      fee,
+                    amount:      saved.fee,
                     description: `${form.sacramentType} — ${form.recipientName}`,
                     serviceType: 'sacrament',
                     referenceId: res.data.data._id
                 });
             }
-            setForm(blank(auth));
+            setForm(blank(requestor, initialDate));
             setDetails({});
+            setAttachments([]);
         } catch (err) {
             setStatus('err');
             setMsg(err?.response?.data?.message || 'Submission failed. Please try again.');
+            // The hour went to someone else meanwhile: ask for the day's
+            // times again and go back to pick one.
+            if (err?.response?.data?.code === 'TIME_NOT_AVAILABLE') {
+                setForm(p => ({ ...p, preferredTime: '' }));
+                avail.refresh();
+                return 0;
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <form className="booking-form" onSubmit={handleSubmit}>
-            <h3 className="form-section-title">Sacrament Request</h3>
-
-            {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
-            {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
-            {status === 'ok' && payInfo && <PayButton {...payInfo} />}
-
-            {/* Priest datalist for minister fields */}
-            {priests.length > 0 && (
-                <datalist id="priest-list">
-                    {priests.map(p => <option key={p.name || p} value={p.name || p} />)}
-                </datalist>
-            )}
-
-            {/* ── Requestor Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Requestor Information</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Requestor Name <span className="req">*</span></label>
-                        <input className="form-input" type="text"
-                            value={form.requestorName} onChange={set('requestorName')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Email <span className="req">*</span></label>
-                        <input className="form-input" type="email"
-                            value={form.email} onChange={set('email')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Contact Number <span className="req">*</span></label>
-                        <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
-                            value={form.contactNumber} onChange={set('contactNumber')} required />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Sacrament Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Sacrament Information</h4>
-                <div className="form-grid">
+    const steps = [
+        {
+            title: 'Which sacrament, and for whom?',
+            sub: 'The fee shown is the offering the parish has set for it.',
+            validate: () => {
+                if (!form.sacramentType)        return 'Choose a sacrament.';
+                if (!form.recipientName.trim()) return 'Enter the name of the recipient.';
+                if (needsContact && !form.contactNumber.trim()) return 'Enter a contact number.';
+                return null;
+            },
+            render: () => (
+                <>
+                    {needsContact && (
+                        <div className="form-group form-group--full">
+                            <label className="form-label">Contact Number <span className="req">*</span></label>
+                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                                value={form.contactNumber} onChange={set('contactNumber')} required />
+                            <p className="form-hint">Your account has no number saved yet.</p>
+                        </div>
+                    )}
                     <div className="form-group">
                         <label className="form-label">Sacrament Type <span className="req">*</span></label>
                         <select className="form-select" value={form.sacramentType}
-                            onChange={handleTypeChange} required disabled={cfgLoading}>
+                            onChange={handleTypeChange} disabled={cfgLoading}>
                             <option value="">— Select sacrament type —</option>
                             {sacramentItems.map(i => (
                                 <option key={i.name} value={i.name}>
@@ -201,72 +143,78 @@ export default function SacramentForm({ parishId }) {
                         <label className="form-label">Recipient Name <span className="req">*</span></label>
                         <input className="form-input" type="text"
                             placeholder="Name of the recipient"
-                            value={form.recipientName} onChange={set('recipientName')} required />
+                            value={form.recipientName} onChange={set('recipientName')} />
                     </div>
-                </div>
-            </section>
+                </>
+            ),
+        },
+        {
+            title: 'When would you like it?',
+            sub: 'A wedding has its own fixed times; the rest follow office hours.',
+            validate: () => whenProblem(form, avail),
+            render: () => (
+                <WhenFields form={form} setForm={setForm} fixedDate={Boolean(initialDate)}
+                            avail={avail} months={months} />
+            ),
+        },
 
-            {/* ── Schedule ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Schedule</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Preferred Date <span className="req">*</span></label>
-                        <input className="form-input" type="date" min={todayStr()}
-                            value={form.preferredDate} onChange={set('preferredDate')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Preferred Time <span className="req">*</span></label>
-                        <select className="form-select"
-                            value={form.preferredTime} onChange={set('preferredTime')} required>
-                            <option value="">— Select time —</option>
-                            {TIME_SLOTS.map(s => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </section>
+        /* A baptism asks for the parents and godparents, a wedding for the
+           other party — the step only exists when the chosen sacrament has
+           extras. */
+        ...(detailFields.length > 0 ? [{
+            title: `${form.sacramentType} details`,
+            sub: 'These help the office prepare the record beforehand. All fields are required.',
+            validate: () => missingDetail(detailFields, details),
+            render: () => <DetailFields fields={detailFields} values={details} onChange={setDet} />,
+        }] : []),
 
-            {/* ── Type-specific Details ── */}
-            {detailFields.length > 0 && (
-                <section className="form-section">
-                    <h4 className="form-section__label">{form.sacramentType} Details</h4>
-                    <div className="form-grid">
-                        {detailFields.map(f => (
-                            <div key={f.key} className="form-group">
-                                <label className="form-label">{f.label}</label>
-                                <input
-                                    className="form-input"
-                                    type={f.type || 'text'}
-                                    value={details[f.key] || ''}
-                                    onChange={setDet(f.key)}
-                                    list={f.priest && priests.length > 0 ? 'priest-list' : undefined}
-                                    placeholder={f.priest ? 'Type or select a priest…' : undefined}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+        /* The papers the parish asks for with it — a birth certificate for
+           a baptism, and so on. Kept private; only the office can open them. */
+        {
+            title: 'Requirements',
+            sub: requirements.length
+                ? `The parish asks for the following with a ${form.sacramentType}. Image or PDF.`
+                : 'Attach anything the parish asked you to bring, if you have it handy. Image or PDF.',
+            render: () => (
+                <RequirementUploads requirements={requirements} value={attachments}
+                                    onChange={setAttachments} upload={upload} />
+            ),
+        },
 
-            {/* ── Additional Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Additional Information</h4>
-                <div className="form-grid">
+        {
+            title: 'Anything else we should know?',
+            sub: 'Optional — leave it blank if there is nothing to add.',
+            render: () => (
+                <>
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
                             value={form.additionalNotes} onChange={set('additionalNotes')} />
                     </div>
-                </div>
-            </section>
+                    <BookingNotice />
+                </>
+            ),
+        },
+    ];
 
-            <div className="form-actions">
-                <button type="submit" className="btn btn--primary" disabled={loading || cfgLoading}>
-                    {loading ? 'Submitting…' : 'Submit Request'}
-                </button>
-            </div>
-        </form>
+    return (
+        <BookingWizard
+            title="Sacrament Request"
+            steps={steps}
+            onSubmit={submit}
+            onExit={onExit}
+            onCalendar={onCalendar}
+            parish={config?.parish}
+            submitting={loading}
+            disabled={cfgLoading}
+            done={status === 'ok'}
+            banner={
+                <>
+                    {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
+                    {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
+                    {status === 'ok' && payInfo && <PayButton {...payInfo} />}
+                </>
+            }
+        />
     );
 }

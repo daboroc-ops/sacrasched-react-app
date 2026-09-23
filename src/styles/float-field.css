@@ -1,0 +1,69 @@
+/* ═══════════════════════════════════════════════════════════════
+   Floating label — components/FloatField.jsx
+   The label rests inside the field and lifts onto the border when
+   the input is focused or has a value. Driven entirely by
+   :placeholder-shown, so autofill animates it too.
+   ═══════════════════════════════════════════════════════════════ */
+
+.ff       { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ff__box  { position: relative; }
+
+/* Extends .auth-input — only what the floating label needs is redefined. */
+.ff__input {
+    width: 100%;
+    /* Room at the top for the lifted label to clear the typed value */
+    padding: 6px 22px 0;
+}
+.ff__input:focus { border-color: var(--brand); }
+
+/* ── The label ───────────────────────────────────────────────── */
+.ff__label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    /* Painted over the border when lifted, so it notches the outline */
+    padding: 0 6px;
+    background: var(--surface);
+
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: nowrap;
+    pointer-events: none;
+
+    transition: top 170ms ease, font-size 170ms ease,
+                color 170ms ease, font-weight 170ms ease;
+}
+
+.ff__input:focus + .ff__label,
+.ff__input:not(:placeholder-shown) + .ff__label {
+    top: 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+.ff__input:focus + .ff__label { color: var(--brand); }
+
+/* ── The example placeholder ─────────────────────────────────── */
+/* Hidden while the label rests over it; revealed once the label lifts. */
+.ff__input::placeholder {
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+.ff__input:focus::placeholder { opacity: 1; }
+
+/* ── Hint under the field ────────────────────────────────────── */
+.ff__hint {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    padding-left: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ff__label,
+    .ff__input::placeholder { transition: none; }
+}

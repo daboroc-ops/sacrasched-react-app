@@ -1,32 +1,4 @@
-/* ─── Book Services sub-tabs ── */
-.sub-tabs {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-.sub-tab {
-    padding: 7px 16px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: all var(--transition);
-}
-
-.sub-tab:hover        { background: var(--stone-100); color: var(--text-primary); }
-.sub-tab--active      { background: var(--stone-800); color: #fff; border-color: var(--stone-800); }
-
-.book-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow-sm);
-}
+/* ─── Book Services: parish picker and fee display ── */
 
 /* ─── My Requests filter tabs ── */
 .filter-tabs {
@@ -51,7 +23,7 @@
 }
 
 .filter-tab:hover       { background: var(--stone-100); }
-.filter-tab--active     { background: var(--stone-800); color: #fff; border-color: var(--stone-800); }
+.filter-tab--active     { background: var(--stone-800); color: var(--on-brand); border-color: var(--stone-800); }
 
 .filter-tab__count {
     background: rgba(255,255,255,.2);

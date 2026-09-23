@@ -1,57 +1,77 @@
 import { useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import useAuth from '../../hooks/useAuth';
 import useConfig from '../../hooks/useConfig';
+import useRequestor from './useRequestor';
+import BookingWizard from '../BookingWizard';
+import BookingNotice from './BookingNotice';
 import PayButton from '../PayButton';
+import DetailFields from './DetailFields';
+import RequirementUploads from './RequirementUploads';
+import { getDocumentFields, missingDetail } from '../../utils/documentDetails';
 
 function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
 }
 
-const blank = auth => ({
+const blank = requestor => ({
+    ...requestor,
     documentType:    '',
-    requestorName:   auth?.user ? `${auth.user.firstname} ${auth.user.lastname}` : '',
-    email:           auth?.user?.email          || '',
-    contactNumber:   auth?.user?.contactNumber  || '',
     purpose:         '',
     copies:          1,
     additionalNotes: ''
 });
 
-export default function DocumentRequestForm({ parishId }) {
-    const axios                              = useAxiosPrivate();
-    const { auth }                           = useAuth();
-    const { loading: cfgLoading, getCategoryItems } = useConfig();
-    const [form,    setForm]                 = useState(blank(auth));
-    const [status,  setStatus]               = useState(null);
-    const [msg,     setMsg]                  = useState('');
-    const [loading, setLoading]              = useState(false);
-    const [payInfo, setPayInfo]              = useState(null);
+export default function DocumentRequestForm({ parishId, onExit, onCalendar }) {
+    const axios = useAxiosPrivate();
+    const { requestor, needsContact } = useRequestor();
+    const { config, loading: cfgLoading, getCategoryItems } = useConfig(parishId);
+
+    const [form,    setForm]    = useState(() => blank(requestor));
+    const [status,  setStatus]  = useState(null);
+    const [msg,     setMsg]     = useState('');
+    const [loading, setLoading] = useState(false);
+    const [payInfo, setPayInfo] = useState(null);
+
+    const [details,     setDetails]     = useState({});
+    const [attachments, setAttachments] = useState([]);
+    const setDet = (k, v) => setDetails(p => ({ ...p, [k]: v }));
 
     const docItems     = getCategoryItems('document');
     const selectedItem = docItems.find(i => i.name === form.documentType);
     const baseFee      = selectedItem?.fee ?? 0;
     const copies       = Math.max(1, Number(form.copies) || 1);
     const totalFee     = baseFee * copies;
+    const detailFields = getDocumentFields(form.documentType);
+    const requirements = selectedItem?.requirements || [];
+
+    const upload = async (file, requirement) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('requirement', requirement);
+        const res = await axios.post('/user/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+        return res.data.file;
+    };
 
     const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
 
-    const handleSubmit = async e => {
-        e.preventDefault();
+    const submit = async () => {
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/document-request', { ...form, fee: totalFee, parishId });
+            const res = await axios.post('/document-request', { ...form, details, attachments, parishId });
+            const saved = res.data.data;
             setStatus('ok');
             setMsg('Document request submitted! Please allow 3–5 business days for processing.');
-            if (totalFee > 0) {
+            if (saved.fee > 0) {
                 setPayInfo({
-                    amount:      totalFee,
+                    amount:      saved.fee,
                     description: `${form.documentType} (${copies} ${copies === 1 ? 'copy' : 'copies'})`,
                     serviceType: 'documentRequest',
                     referenceId: res.data.data._id
                 });
             }
-            setForm(blank(auth));
+            setForm(blank(requestor));
+            setDetails({});
+            setAttachments([]);
         } catch (err) {
             setStatus('err');
             setMsg(err?.response?.data?.message || 'Submission failed. Please try again.');
@@ -60,44 +80,30 @@ export default function DocumentRequestForm({ parishId }) {
         }
     };
 
-    return (
-        <form className="booking-form" onSubmit={handleSubmit}>
-            <h3 className="form-section-title">Document Request</h3>
-
-            {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
-            {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
-            {status === 'ok' && payInfo && <PayButton {...payInfo} />}
-
-            {/* ── Requestor Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Requestor Information</h4>
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label className="form-label">Requestor Name <span className="req">*</span></label>
-                        <input className="form-input" type="text"
-                            value={form.requestorName} onChange={set('requestorName')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Email <span className="req">*</span></label>
-                        <input className="form-input" type="email"
-                            value={form.email} onChange={set('email')} required />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Contact Number <span className="req">*</span></label>
-                        <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
-                            value={form.contactNumber} onChange={set('contactNumber')} required />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Document Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Document Information</h4>
-                <div className="form-grid">
+    const steps = [
+        {
+            title: 'Which document do you need?',
+            sub: 'Pick the type and how many copies — the total updates as you go.',
+            validate: () => {
+                if (!form.documentType)   return 'Choose a document type.';
+                if (!form.purpose.trim()) return 'Tell us what the document is for.';
+                if (needsContact && !form.contactNumber.trim()) return 'Enter a contact number.';
+                return null;
+            },
+            render: () => (
+                <>
+                    {needsContact && (
+                        <div className="form-group form-group--full">
+                            <label className="form-label">Contact Number <span className="req">*</span></label>
+                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                                value={form.contactNumber} onChange={set('contactNumber')} required />
+                            <p className="form-hint">Your account has no number saved yet.</p>
+                        </div>
+                    )}
                     <div className="form-group">
                         <label className="form-label">Document Type <span className="req">*</span></label>
                         <select className="form-select" value={form.documentType}
-                            onChange={set('documentType')} required disabled={cfgLoading}>
+                            onChange={e => { set('documentType')(e); setDetails({}); setAttachments([]); }} disabled={cfgLoading}>
                             <option value="">— Select document type —</option>
                             {docItems.map(i => (
                                 <option key={i.name} value={i.name}>
@@ -130,28 +136,66 @@ export default function DocumentRequestForm({ parishId }) {
                         <label className="form-label">Purpose <span className="req">*</span></label>
                         <input className="form-input" type="text"
                             placeholder="e.g. For school enrollment, for employment…"
-                            value={form.purpose} onChange={set('purpose')} required />
+                            value={form.purpose} onChange={set('purpose')} />
                     </div>
-                </div>
-            </section>
+                </>
+            ),
+        },
+        /* The certificate's own particulars, from the parish's verification
+           slip for that certificate — the office needs them to find the record. */
+        ...(detailFields.length > 0 ? [{
+            title: `${form.documentType} details`,
+            sub: 'What the office needs to find the record.',
+            validate: () => missingDetail(detailFields, details),
+            render: () => <DetailFields fields={detailFields} values={details} onChange={setDet} />,
+        }] : []),
 
-            {/* ── Additional Information ── */}
-            <section className="form-section">
-                <h4 className="form-section__label">Additional Information</h4>
-                <div className="form-grid">
+        /* A baptismal certificate needs a birth certificate, and so on. */
+        {
+            title: 'Requirements',
+            sub: requirements.length
+                ? `The parish asks for the following with a ${form.documentType}. Image or PDF.`
+                : 'Attach anything the parish asked for, if you have it handy. Image or PDF.',
+            render: () => (
+                <RequirementUploads requirements={requirements} value={attachments}
+                                    onChange={setAttachments} upload={upload} />
+            ),
+        },
+
+        {
+            title: 'Anything else we should know?',
+            sub: 'Optional — leave it blank if there is nothing to add.',
+            render: () => (
+                <>
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
                             value={form.additionalNotes} onChange={set('additionalNotes')} />
                     </div>
-                </div>
-            </section>
+                    <BookingNotice />
+                </>
+            ),
+        },
+    ];
 
-            <div className="form-actions">
-                <button type="submit" className="btn btn--primary" disabled={loading || cfgLoading}>
-                    {loading ? 'Submitting…' : 'Submit Request'}
-                </button>
-            </div>
-        </form>
+    return (
+        <BookingWizard
+            title="Document Request"
+            steps={steps}
+            onSubmit={submit}
+            onExit={onExit}
+            onCalendar={onCalendar}
+            parish={config?.parish}
+            submitting={loading}
+            disabled={cfgLoading}
+            done={status === 'ok'}
+            banner={
+                <>
+                    {status === 'ok'  && <div className="form-alert form-alert--success">{msg}</div>}
+                    {status === 'err' && <div className="form-alert form-alert--error">{msg}</div>}
+                    {status === 'ok' && payInfo && <PayButton {...payInfo} />}
+                </>
+            }
+        />
     );
 }

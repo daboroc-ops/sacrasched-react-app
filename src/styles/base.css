@@ -39,8 +39,37 @@
     --yellow: #C8900A;   /* reuse gold */
     --red:    #B91C1C;   /* reuse brand red */
     --blue:   #2563eb;
-    --sidebar-w:  240px;
-    --header-h:   56px;
+
+    /* ── Themeable surfaces ── */
+    --on-brand:     #ffffff;   /* text/icons drawn on top of --brand */
+    --app-bg:       #F0F1F3;   /* devotee shell background */
+    --brand-tint:   color-mix(in srgb, var(--brand) 12%, transparent);
+    --brand-ring:   color-mix(in srgb, var(--brand) 14%, transparent);
+
+    /* ── Status palette (badges, banners, chips) ── */
+    --success-bg:     #dcfce7;
+    --success-fg:     #15803d;
+    --success-strong: #166534;
+    --success-border: #bbf7d0;
+    --danger-bg:      #fee2e2;
+    --danger-fg:      #b91c1c;
+    --danger-strong:  #991b1b;
+    --danger-border:  #fecaca;
+    --warning-bg:     var(--gold-light);
+    --warning-fg:     var(--gold-dark);
+    --info-bg:        #dbeafe;
+    --info-fg:        #1d4ed8;
+    --violet-bg:      #ede9fe;
+    --violet-fg:      #5b21b6;
+    --success-soft:   #f0fdf4;
+    --danger-soft:    #fef2f2;
+    --warning-soft:   #fef9c3;
+    --warning-strong: #ca8a04;
+    --amber-bg:       #fef3c7;
+    --amber-fg:       #92400e;
+    --indigo-bg:      #e0e7ff;
+    --indigo-fg:      #3730a3;
+
     --radius:     8px;
     --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
     --shadow-md:  0 4px 16px rgba(0,0,0,.10);
@@ -83,3 +112,15 @@ input, select, textarea { font-family: inherit; }
     color: var(--text-muted);
     margin-bottom: 12px;
 }
+
+/* ─── Photos that arrive after first paint ── */
+/* Paired with components/FadeImg.jsx, which adds --in once the image loads. */
+.img-fade      { opacity: 0; transition: opacity 400ms ease; }
+.img-fade--in  { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .img-fade { opacity: 1; transition: none; }
+}
+
+/* A page still on its way (lazy route): keep the ground, show nothing else */
+.app-lazy { min-height: 60vh; }

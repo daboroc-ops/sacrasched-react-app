@@ -1,0 +1,126 @@
+/* ═══════════════════════════════════════════════════════════════
+   The parish banner on every end-of-journey screen.
+   See components/ParishBanner.jsx
+   ═══════════════════════════════════════════════════════════════ */
+
+.pban {
+    position: relative;
+    overflow: hidden;
+    min-height: 168px;
+    border-radius: 18px;
+    background: linear-gradient(140deg, var(--brand-dark, #1f4d3a) 0%, var(--brand) 60%, var(--gold, #b98a2b) 130%);
+    color: #fff;
+    display: flex;
+    align-items: flex-end;
+    text-align: left;
+    isolation: isolate;
+}
+.pban__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+.pban__shade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, .05) 0%, rgba(0, 0, 0, .18) 45%, rgba(0, 0, 0, .72) 100%);
+}
+.pban--plain .pban__shade {
+    background:
+        radial-gradient(420px 220px at 85% -20%, rgba(255, 255, 255, .22) 0%, transparent 70%),
+        linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, .28) 100%);
+}
+.pban__mark {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .88);
+    object-fit: contain;
+}
+.pban__body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 18px 20px 16px;
+    min-width: 0;
+}
+.pban__badge,
+.pban__logo {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+}
+.pban__badge {
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .05em;
+}
+.pban__logo {
+    object-fit: contain;
+    background: rgba(255, 255, 255, .92);
+    padding: 5px;
+}
+.pban__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.3;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+.pban__text small {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .85;
+    margin-bottom: 3px;
+}
+.pban__text b {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+.pban__text span {
+    font-size: 12.5px;
+    opacity: .85;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Where it heads a card, it runs edge to edge across the top */
+.res__card .pban {
+    margin: -32px -34px 24px;
+    border-radius: 20px 20px 0 0;
+}
+.gb--done .pban,
+.gb .pban--result { margin: 0 0 22px; }
+.bk-wiz--done .pban { margin: 0 0 22px; }
+
+@media (max-width: 640px) {
+    .pban { min-height: 140px; }
+    .pban__text b { font-size: 16px; }
+    .pban__badge, .pban__logo { width: 44px; height: 44px; border-radius: 12px; }
+    .res__card .pban { margin: -24px -20px 20px; }
+}

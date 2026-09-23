@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════
+   Registration wizard — one question per step
+   Builds on auth.css; only the step chrome lives here.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Progress ────────────────────────────────────────────────── */
+.rw-progress {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+.rw-progress__bar {
+    flex: 1;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--stone-200);
+    transition: background var(--transition);
+}
+.rw-progress__bar--done { background: var(--brand); }
+
+.rw-progress__count {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+
+/* ── Step heading ────────────────────────────────────────────── */
+.rw-head { margin-bottom: 22px; }
+
+.rw-head__title {
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -.015em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+.rw-head__sub {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+/* ── Fields ──────────────────────────────────────────────────── */
+.rw-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Field labels and hints now live in components/FloatField.jsx (.ff__*) */
+
+/* ── Back / Next ─────────────────────────────────────────────── */
+.rw-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.rw-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 10px 4px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color var(--transition);
+}
+.rw-back:hover { color: var(--brand-dark); }
+.rw-back svg   { font-size: 12px; }
+
+/* The primary action keeps auth-btn's shape but stops being full-width,
+   so Back and Next can share a row the way a wizard expects. */
+.rw-next {
+    width: auto;
+    min-width: 150px;
+    padding: 0 30px;
+}
+
+@media (max-width: 420px) {
+    .rw-head__title { font-size: 22px; }
+    .rw-actions     { flex-direction: column-reverse; align-items: stretch; }
+    .rw-next        { width: 100%; }
+    .rw-back        { text-align: center; justify-content: center; }
+}
