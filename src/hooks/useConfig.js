@@ -1,26 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useAxiosPrivate from './useAxiosPrivate';
 
-// Module-level cache — fetched once per session
-let _cache = null;
+// Promise-level singleton — all hook instances share one in-flight request.
+// Cleared on error so a retry triggers a fresh fetch.
+let _configPromise = null;
+
+const FALLBACK = { massSchedule: { weekdays: [], saturdays: [], sundays: [] }, priests: [], venues: [], serviceCategories: [] };
 
 export default function useConfig() {
-    const axios = useAxiosPrivate();
-    const [config, setConfig]   = useState(_cache);
-    const [loading, setLoading] = useState(!_cache);
+    const axiosPrivate = useAxiosPrivate();
+    const [config, setConfig]   = useState(null);
+    const [loading, setLoading] = useState(true);
+    const mountedRef = useRef(true);
 
     useEffect(() => {
-        if (_cache) return;
-        axios.get('/user/config')
-            .then(r => { _cache = r.data; setConfig(r.data); })
-            .catch(() => {
-                // fallback so forms still render
-                const fallback = { massSchedule: { weekdays: [], saturdays: [], sundays: [] }, priests: [], venues: [], serviceCategories: [] };
-                _cache = fallback;
-                setConfig(fallback);
-            })
-            .finally(() => setLoading(false));
-    }, []); // eslint-disable-line
+        mountedRef.current = true;
+
+        if (!_configPromise) {
+            _configPromise = axiosPrivate.get('/user/config')
+                .then(r => r.data)
+                .catch(() => {
+                    _configPromise = null; // allow retry on next mount
+                    return FALLBACK;
+                });
+        }
+
+        _configPromise.then(data => {
+            if (mountedRef.current) {
+                setConfig(data);
+                setLoading(false);
+            }
+        });
+
+        return () => { mountedRef.current = false; };
+    }, []); // intentionally empty — fetch once per session, axiosPrivate is a stable singleton
 
     /**
      * Find service items for a category whose name contains `keyword`.

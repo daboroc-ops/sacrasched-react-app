@@ -80,6 +80,49 @@
     gap: 5px;
 }
 
+/* Button groups — online + cash side by side */
+.pay-prompt__btns {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.pay-compact__btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Cash recorded — confirmation block */
+.pay-cash-done {
+    margin-top: 16px;
+    border: 1.5px solid #16a34a;
+    border-radius: var(--radius);
+    background: #f0fdf4;
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+.pay-cash-done__icon {
+    color: #16a34a;
+    font-size: 26px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.pay-cash-done strong {
+    display: block;
+    font-size: 14px;
+    color: #166534;
+    margin-bottom: 4px;
+}
+.pay-cash-done p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
 /* ═══════════════════════════════════════════════════
    PAY RESULT PAGES  —  success / cancel / failure
    ═══════════════════════════════════════════════════ */

@@ -33,7 +33,7 @@ const blank = auth => ({
     additionalNotes: ''
 });
 
-export default function BlessingForm() {
+export default function BlessingForm({ parishId }) {
     const axios                              = useAxiosPrivate();
     const { auth }                           = useAuth();
     const { loading: cfgLoading, getCategoryItems } = useConfig();
@@ -53,7 +53,7 @@ export default function BlessingForm() {
         e.preventDefault();
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/blessing', { ...form, fee });
+            const res = await axios.post('/blessing', { ...form, fee, parishId });
             setStatus('ok');
             setMsg('Blessing request submitted! We will contact you to confirm.');
             if (fee > 0) {

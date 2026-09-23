@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useRefreshToken from '../hooks/useRefreshToken';
@@ -13,11 +13,23 @@ export default function PersistLogin() {
     const [checking, setChecking] = useState(true);
     const { auth } = useAuth();
     const refresh  = useRefreshToken();
+    const hasRun   = useRef(false);
 
     useEffect(() => {
+        // Guard against React StrictMode double-invocation in development
+        if (hasRun.current) return;
+        hasRun.current = true;
+
+        // Only call refresh if we don't already have a token in memory
+        // (avoids a redundant request right after a fresh login)
+        if (auth?.accessToken) {
+            setChecking(false);
+            return;
+        }
+
         const tryRefresh = async () => {
             try {
-                await refresh();          // restores auth.accessToken from cookie
+                await refresh(); // restores auth.accessToken from the httpOnly cookie
             } catch {
                 // cookie missing or expired — RequireAuth will redirect to /login
             } finally {
@@ -25,14 +37,8 @@ export default function PersistLogin() {
             }
         };
 
-        // Only call refresh if we don't already have a token in memory
-        // (avoids a redundant request right after a fresh login)
-        if (!auth?.accessToken) {
-            tryRefresh();
-        } else {
-            setChecking(false);
-        }
-    }, []); // eslint-disable-line
+        tryRefresh();
+    }, []); // intentionally empty — run once on mount only
 
     if (checking) {
         return (

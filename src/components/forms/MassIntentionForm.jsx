@@ -36,7 +36,7 @@ const blank = auth => ({
     additionalNotes: ''
 });
 
-export default function MassIntentionForm() {
+export default function MassIntentionForm({ parishId }) {
     const axios                              = useAxiosPrivate();
     const { auth }                           = useAuth();
     const { config, loading: cfgLoading, getCategoryItems } = useConfig();
@@ -61,7 +61,7 @@ export default function MassIntentionForm() {
         e.preventDefault();
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/mass-intention', { ...form, fee });
+            const res = await axios.post('/mass-intention', { ...form, fee, parishId });
             setStatus('ok');
             setMsg('Mass intention submitted! We will confirm your request shortly.');
             if (fee > 0) {

@@ -10,110 +10,123 @@
     top: 0; left: 0;
     width: var(--sidebar-w);
     height: 100vh;
-    background: var(--stone-800);
+    background: #F0F1F3;
     display: flex;
     flex-direction: column;
     z-index: 200;
     transition: transform var(--transition);
+    padding: 20px 16px 24px;
+    gap: 0;
+    border-right: 1px solid #E5E7EB;
 }
 
-.sidebar__logo {
+/* ─── Brand card (white pill at top of sidebar) ── */
+.sidebar__brand-card {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 20px 18px 16px;
-    border-bottom: 1px solid var(--stone-700);
+    background: #fff;
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
-
-.sidebar__cross {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--brand);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; color: #fff;
+.sidebar__brand-icon {
+    width: 40px; height: 40px;
+    object-fit: contain;
     flex-shrink: 0;
 }
-
-.sidebar__name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: .3px;
-}
-
-/* ─── Nav items ── */
-.sidebar__nav {
-    flex: 1;
-    padding: 12px 10px;
+.sidebar__brand-text {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow-y: auto;
+    min-width: 0;
 }
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 6px;
-    color: var(--stone-400);
-    font-size: 13px;
+.sidebar__brand-wordmark {
+    height: 16px;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.18));
+}
+.sidebar__brand-sub {
+    font-size: 11px;
+    color: #964B01;
     font-weight: 500;
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    transition: background var(--transition), color var(--transition);
 }
 
-.nav-item:hover      { background: var(--stone-700); color: #fff; }
-.nav-item--active    { background: var(--brand);     color: #fff; }
-
-.nav-item__icon  { font-size: 16px; flex-shrink: 0; }
-.nav-item__label { flex: 1; }
-
-/* ─── Sidebar footer / user ── */
-.sidebar__footer {
-    padding: 14px 14px 18px;
-    border-top: 1px solid var(--stone-700);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
+/* ─── User strip ── */
 .sidebar__user {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    padding: 0 6px 16px;
     min-width: 0;
 }
-
 .sidebar__avatar {
-    width: 32px; height: 32px;
+    width: 38px; height: 38px;
     border-radius: 50%;
-    background: var(--stone-600);
+    background: #D1D5DB;
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600; color: #fff;
+    font-size: 15px; font-weight: 600; color: #6B7280;
     flex-shrink: 0;
 }
-
 .sidebar__user-info { overflow: hidden; flex: 1; min-width: 0; }
-.sidebar__user-name { display: block; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sidebar__user-role { display: block; font-size: 11px; color: var(--stone-400); }
+.sidebar__user-name { display: block; font-size: 13px; font-weight: 600; color: #1C1917; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar__user-role { display: block; font-size: 11px; color: #9CA3AF; }
 
-.sidebar__logout {
+/* ─── Nav pills ── */
+.sidebar__nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+}
+
+.nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-radius: 99px;
+    background: #fff;
+    color: #964B01;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition), box-shadow var(--transition), transform 80ms ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.nav-pill:hover      { background: #FDF5EC; box-shadow: 0 2px 6px rgba(150,75,1,0.12); }
+.nav-pill--active    { background: #964B01; color: #fff; box-shadow: 0 2px 8px rgba(150,75,1,0.25); }
+.nav-pill--active .nav-pill__icon { color: #fff; }
+.nav-pill:active     { transform: scale(0.98); }
+.nav-pill__icon      { font-size: 16px; flex-shrink: 0; width: 18px; text-align: center; color: #964B01; }
+.nav-pill--active .nav-pill__icon { color: #fff; }
+.nav-pill__label     { flex: 1; }
+
+/* ─── Sign out button at sidebar bottom ── */
+.sidebar__signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 6px;
     background: none;
     border: none;
-    color: var(--stone-400);
-    font-size: 18px;
-    padding: 4px;
-    line-height: 1;
-    flex-shrink: 0;
+    color: #9CA3AF;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
     transition: color var(--transition);
+    margin-top: 8px;
+    flex-shrink: 0;
 }
-.sidebar__logout:hover { color: var(--red); }
+.sidebar__signout:hover { color: #964B01; }
 
 /* ─── Mobile backdrop ── */
 .sidebar-backdrop {
@@ -143,10 +156,22 @@
     display: none;
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 22px;
     color: var(--text-primary);
     padding: 4px;
     line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Wordmark — shown on mobile, hidden on desktop */
+.header-wordmark {
+    display: none;
+    height: 22px;
+    width: auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.15));
 }
 
 .header-title {
@@ -179,8 +204,93 @@
 
 .app-content {
     flex: 1;
-    padding: 24px;
+    padding: 24px 24px 180px;
     background: var(--stone-100);
+}
+
+/* ─── Mobile tab bar (hidden on desktop) ── */
+.mobile-tab-bar {
+    display: none;
+}
+
+/* ─── Profile page ── */
+.profile-page {
+    max-width: 560px;
+}
+
+.profile-page__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.profile-page__avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700;
+    flex-shrink: 0;
+}
+
+.profile-page__hero-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.profile-page__hero-role {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.profile-page__card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.profile-page__section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.profile-page__sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: -6px;
+}
+
+.profile-page__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.profile-page__error {
+    font-size: 13px;
+    color: var(--red);
+    margin: 0 0 4px;
+}
+
+.profile-page__success {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--green);
+    margin: 0 0 4px;
+}
+
+.profile-page__actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 /* ─── Page helpers ── */

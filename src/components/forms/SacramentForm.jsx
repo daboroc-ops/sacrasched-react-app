@@ -88,7 +88,7 @@ const blank = auth => ({
     additionalNotes: ''
 });
 
-export default function SacramentForm() {
+export default function SacramentForm({ parishId }) {
     const axios                              = useAxiosPrivate();
     const { auth }                           = useAuth();
     const { config, loading: cfgLoading, getCategoryItems } = useConfig();
@@ -117,7 +117,7 @@ export default function SacramentForm() {
         e.preventDefault();
         setLoading(true); setStatus(null);
         try {
-            const res = await axios.post('/sacrament', { ...form, fee, details });
+            const res = await axios.post('/sacrament', { ...form, fee, details, parishId });
             setStatus('ok');
             setMsg('Sacrament request submitted! The parish office will contact you soon.');
             if (fee > 0) {
