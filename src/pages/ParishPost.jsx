@@ -5,7 +5,7 @@ import { faArrowLeft, faChurch, faThumbtack } from '@fortawesome/free-solid-svg-
 import axiosPublic from '../api/axios';
 import useParish, { usePageTitle } from '../hooks/useParish';
 import { mediaUrl } from '../utils/media';
-import { fmtPostDate, postHtmlForPage } from '../utils/posts';
+import { fmtPostDate, postHtmlForPage, newsPath, postPath } from '../utils/posts';
 import { Skeleton, SkeletonBlock } from '../components/Skeleton';
 import ParishMark from '../components/ParishMark';
 
@@ -58,7 +58,7 @@ export default function ParishPost() {
                         {parish ? <ParishMark parish={parish} className="pl-nav__badge" /> : <span className="pl-nav__badge"><FontAwesomeIcon icon={faChurch} /></span>}
                         <span className="pl-nav__names"><b>{name}</b></span>
                     </Link>
-                    <Link to={`${home}#news`} className="lp-btn lp-btn--ghost lp-btn--sm post-page__back">
+                    <Link to={newsPath(subdomain)} className="lp-btn lp-btn--ghost lp-btn--sm post-page__back">
                         <FontAwesomeIcon icon={faArrowLeft} /> All news
                     </Link>
                 </div>
@@ -111,6 +111,35 @@ export default function ParishPost() {
                                     </figure>
                                 ))}
                             </div>
+                        )}
+
+                        {/* Straight on to the notice either side, without going
+                            back to the list for it. Each side is left out when
+                            there is nothing there — the oldest post has no
+                            previous — and the other keeps its own end of the
+                            row, so the remaining link does not drift inwards. */}
+                        {(post.prev || post.next) && (
+                            <nav className="post-nav" aria-label="More posts">
+                                {post.prev ? (
+                                    <Link
+                                        to={postPath(subdomain, post.prev.slug)}
+                                        className="post-nav__link post-nav__link--prev"
+                                        title={post.prev.title}
+                                    >
+                                        <span aria-hidden="true">&larr;</span> Previous Post
+                                    </Link>
+                                ) : <span />}
+
+                                {post.next ? (
+                                    <Link
+                                        to={postPath(subdomain, post.next.slug)}
+                                        className="post-nav__link post-nav__link--next"
+                                        title={post.next.title}
+                                    >
+                                        Next Post <span aria-hidden="true">&rarr;</span>
+                                    </Link>
+                                ) : <span />}
+                            </nav>
                         )}
                     </article>
                 )}

@@ -33,8 +33,6 @@ export default function Login() {
     // Set under Content in the admin dashboard; until then a themed panel shows
     const cover = slots['login-cover'];
 
-    if (auth?.accessToken) return <Navigate to="/dashboard" replace />;
-
     const handleSubmit = async e => {
         e.preventDefault();
         setErrMsg('');

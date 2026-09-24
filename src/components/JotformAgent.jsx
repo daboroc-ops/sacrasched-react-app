@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
-/** The JotForm AI agent embedded on parish sites. */
-const AGENT_ID = '019dfcd2d4fc73cab42fc9d7f051841af52a';
+/* No default agent on purpose. Each parish sets its own under
+   Configuration → Parish; a parish that has not set one shows no
+   assistant at all, rather than answering in another parish's voice. */
 
 /**
  * Loads the JotForm chat agent and cleans it up on unmount.
@@ -12,8 +13,10 @@ const AGENT_ID = '019dfcd2d4fc73cab42fc9d7f051841af52a';
  * a page someone has just arrived at: an unrequested panel covering the
  * content is the first thing a visitor closes.
  */
-export default function JotformAgent({ agentId = AGENT_ID, autoOpenMs = null }) {
+export default function JotformAgent({ agentId = '', autoOpenMs = null }) {
     useEffect(() => {
+        if (!agentId) return undefined;
+
         const src = `https://cdn.jotfor.ms/agent/embedjs/${agentId}/embed.js`
             + (autoOpenMs != null ? `?autoOpenChatIn=${autoOpenMs}` : '');
 

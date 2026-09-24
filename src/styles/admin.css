@@ -158,7 +158,7 @@
     font-size: 22px;
     font-weight: 700;
     letter-spacing: -.01em;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 /* ── Welcome banner ──────────────────────────────────────────── */
@@ -569,26 +569,6 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
 }
 
 /* ── Config sections ─────────────────────────────────────────── */
-.ad-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-}
-.ad-tab {
-    padding: 9px 15px;
-    background: none;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    transition: color var(--transition), border-color var(--transition);
-}
-.ad-tab:hover        { color: var(--text-primary); }
-.ad-tab--active      { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
-
 .ad-config-col__title {
     font-size: 11px;
     font-weight: 700;
@@ -724,7 +704,22 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
     transition: border-color var(--transition), background var(--transition);
 }
 .ad-cal__day:hover        { border-color: var(--gold); }
-.ad-cal__day--muted       { background: var(--surface-2); opacity: .6; }
+/* Out of this month: a box holding the grid's shape, nothing more.
+   Kept in the flow rather than hidden so the weeks stay aligned. */
+.ad-cal__day--blank {
+    background: var(--surface-2);
+    border-style: dashed;
+    border-color: var(--border);
+    pointer-events: none;
+}
+
+/* Gone by. Still clickable — the office looks back at what was booked —
+   so this greys the day without dimming it out of reach. */
+.ad-cal__day--past             { background: var(--surface-2); }
+.ad-cal__day--past .ad-cal__num { color: var(--text-muted); }
+.ad-cal__day--past .ad-cal__chip { opacity: .72; }
+/* Today and a picked day still speak over the grey */
+.ad-cal__day--past.ad-cal__day--selected { background: var(--brand-light); }
 .ad-cal__day--today       { border-color: var(--brand); }
 .ad-cal__day--selected    { background: var(--brand-light); border-color: var(--brand); }
 .ad-cal__num              { font-size: 12px; font-weight: 600; }
@@ -1180,31 +1175,74 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
 /* ── Tabs ───────────────────────────────────────────────────── */
 .ad-tabs {
     display: flex;
+    /* Every tab on the page. Ten kinds of intention are wider than the strip,
+       and on one scrolling line a third of them sat past the edge with no
+       scrollbar to say so — a tab nobody can see is a tab that does not
+       exist. They wrap instead; the second row costs less than the missing
+       ones did. */
+    flex-wrap: wrap;
     gap: 2px;
     width: 100%;
-    overflow-x: auto;
+    margin-bottom: 10px;
     border-bottom: 1px solid var(--border);
-    scrollbar-width: none;
 }
-.ad-tabs::-webkit-scrollbar { display: none; }
+
+/* On a phone, wrapping ten tabs makes four rows of them. There they scroll
+   instead — sideways is a natural gesture on a touch screen, and the
+   shadow at the edge says there is more. The first two layers scroll with
+   the content and cover the shadow once that end is reached, so it shows
+   exactly when there is something to reach. */
+@media (max-width: 720px) {
+    .ad-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        background:
+            linear-gradient(to right, var(--surface) 40%, transparent) left / 28px 100% no-repeat local,
+            linear-gradient(to left,  var(--surface) 40%, transparent) right / 28px 100% no-repeat local,
+            radial-gradient(farthest-side at 0 50%,    rgba(0, 0, 0, .10), transparent) left / 12px 100% no-repeat scroll,
+            radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .10), transparent) right / 12px 100% no-repeat scroll;
+    }
+    .ad-tabs::-webkit-scrollbar { display: none; }
+}
+
 .ad-tab {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 9px 13px 10px;
+    flex-shrink: 0;
+    padding: 9px 14px 10px;
     margin-bottom: -1px;
     border: 0;
     border-bottom: 2px solid transparent;
+    /* Rounded at the top only, so the tint sits on the rule rather than
+       floating above it */
+    border-radius: 8px 8px 0 0;
     background: none;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 550;
     color: var(--text-secondary);
     white-space: nowrap;
     cursor: pointer;
-    transition: color var(--transition), border-color var(--transition);
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
 }
-.ad-tab:hover        { color: var(--text-primary); }
-.ad-tab--active      { color: var(--brand); font-weight: 600; border-bottom-color: var(--brand); }
+.ad-tab:hover {
+    background: var(--stone-50);
+    color: var(--text-primary);
+}
+.ad-tab--active,
+.ad-tab--active:hover {
+    /* Tint as well as underline: in a row of ten, an underline alone is
+       easy to lose while reading the labels. */
+    background: var(--brand-light);
+    border-bottom-color: var(--brand);
+    color: var(--brand);
+    font-weight: 700;
+}
+
+/* A kind nobody has booked steps back rather than competing for the eye */
+.ad-tab--zero:not(.ad-tab--active) { opacity: .45; }
+
 .ad-tab__count {
     font-size: 11px;
     font-weight: 700;
@@ -1213,7 +1251,7 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
     background: var(--stone-100);
     color: var(--text-muted);
 }
-.ad-tab--active .ad-tab__count { background: var(--brand-light); color: var(--brand); }
+.ad-tab--active .ad-tab__count { background: var(--surface); color: var(--brand); }
 
 /* ── Segmented switch (Day / Week / Month / Year) ────────────── */
 .ad-seg {
@@ -1313,3 +1351,181 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
 .ad-venue__masses { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
 .ad-venue__masses-hd { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
 .ad-venue__masses .ad-inline .ad-input:not(.ad-input--short) { flex: 1; min-width: 200px; }
+
+/* ── Guest contacts: a row per person, opening to their bookings ── */
+.ad-toolbar--views { margin-bottom: 14px; }
+
+.gc-table .gc-th-toggle { width: 34px; }
+
+.gc-row { cursor: pointer; }
+.gc-row:hover { background: var(--stone-50); }
+.gc-row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.gc-row--open { background: var(--stone-50); }
+.gc-row--open > td { border-bottom-color: transparent; }
+
+.gc-toggle { text-align: center; color: var(--text-muted); }
+.gc-chevron { transition: transform .16s ease; }
+.gc-chevron--open { transform: rotate(90deg); }
+
+.gc-aliases {
+    font-size: 11px;
+    color: var(--text-muted);
+    /* One person, several spellings — kept quiet so the real name reads first */
+    font-style: italic;
+}
+
+.gc-count {
+    display: inline-block;
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background: var(--brand-light);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.gc-detail > td { padding-top: 0; background: var(--stone-50); }
+
+.gc-bookings {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    border-left: 2px solid var(--border);
+}
+.gc-booking {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 8px 0 8px 14px;
+}
+.gc-booking + .gc-booking { border-top: 1px solid var(--border); }
+
+.gc-booking__ref {
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 165px;
+    color: var(--text-primary);
+}
+.gc-booking__what { font-size: 13px; flex: 1; min-width: 180px; color: var(--text-secondary); }
+.gc-booking__when { font-size: 12px; color: var(--text-muted); min-width: 110px; }
+
+@media (max-width: 720px) {
+    .gc-booking { gap: 6px 12px; }
+    .gc-booking__ref  { min-width: 100%; }
+    .gc-booking__what { min-width: 0; }
+}
+
+/* ── Folding the sidebar ───────────────────────────────────────
+   The button sits at the foot of the column, after the navigation, so it
+   never comes between the office and where it is going. */
+.ad-sidebar { display: flex; flex-direction: column; }
+
+.ad-sidebar__fold {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    /* Pushed to the bottom of the column however short the navigation is */
+    margin-top: auto;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background var(--transition), color var(--transition);
+}
+.ad-sidebar__fold:hover { background: var(--stone-100); color: var(--text-primary); }
+
+/* Only where the sidebar is a column. Below 900px it is a drawer, and a
+   drawer that opened folded would be a drawer with nothing in it. */
+@media (min-width: 901px) {
+    .ad-sidebar {
+        /* The width itself animates, so the page does not jump */
+        transition: width var(--transition), padding var(--transition);
+    }
+
+    .ad-sidebar--collapsed {
+        width: 68px;
+        padding-left: 10px;
+        padding-right: 10px;
+        overflow-x: hidden;
+    }
+
+    /* The section headings name groups that are no longer readable */
+    .ad-sidebar--collapsed .ad-sidebar__label { display: none; }
+    .ad-sidebar--collapsed .ad-sidebar__divider { margin: 12px 4px; }
+
+    /* Icons centre in the remaining width; the words go to the tooltip */
+    .ad-sidebar--collapsed .ad-nav__item,
+    .ad-sidebar--collapsed .ad-sidebar__fold {
+        justify-content: center;
+        gap: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .ad-sidebar--collapsed .ad-nav__item > span,
+    .ad-sidebar--collapsed .ad-sidebar__fold > span { display: none; }
+}
+
+/* ── The one toolbar row ───────────────────────────────────────
+   Search, filters and actions on a line together, the search taking
+   whatever the others leave it. It wraps on a narrow screen, where a single
+   line would squeeze all three into uselessness. */
+.ad-toolbar--main {
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.ad-toolbar--main .ad-search { flex: 1 1 280px; min-width: 0; }
+.ad-toolbar--main .ad-filters { flex: 0 1 auto; }
+.ad-toolbar--main .ad-toolbar__actions { margin-left: auto; flex-shrink: 0; }
+
+/* A square button for an icon that carries no word */
+.ad-btn--icon { padding-left: 10px; padding-right: 10px; }
+
+/* How many rows, and what a search matched — a line of small print above
+   the table rather than a toolbar of its own. */
+.ad-count {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* ── The export panel, folded out over the page ────────────── */
+.ad-sheet {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+/* The actions box is the panel's anchor */
+.ad-toolbar__actions { position: relative; }
+.ad-sheet .ad-select { min-width: 190px; }
+.ad-sheet__close { margin-left: auto; }
+
+@media (max-width: 720px) {
+    .ad-toolbar--main .ad-toolbar__actions { margin-left: 0; }
+    .ad-sheet { right: auto; left: 0; }
+}
+
+/* A Mass intention's kind, above the name offered for it */
+.int-group__type { font-weight: 650; color: var(--text-primary); }

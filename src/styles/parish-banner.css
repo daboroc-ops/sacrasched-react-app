@@ -6,7 +6,12 @@
 .pban {
     position: relative;
     overflow: hidden;
+    /* A fixed slice of the photo at any width. With min-height alone the
+       banner grew wider without growing taller, so a portrait photo was
+       cropped to a letterbox strip across the middle. */
+    aspect-ratio: 16 / 5;
     min-height: 168px;
+    max-height: 260px;
     border-radius: 18px;
     background: linear-gradient(140deg, var(--brand-dark, #1f4d3a) 0%, var(--brand) 60%, var(--gold, #b98a2b) 130%);
     color: #fff;
@@ -21,6 +26,9 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Parish photos are usually the church front, and the subject sits
+       above the middle — hold the upper part rather than the floor. */
+    object-position: center 35%;
     z-index: 0;
 }
 .pban__shade {
@@ -123,4 +131,13 @@
     .pban__text b { font-size: 16px; }
     .pban__badge, .pban__logo { width: 44px; height: 44px; border-radius: 12px; }
     .res__card .pban { margin: -24px -20px 20px; }
+}
+
+/* Over the form, the banner is a heading rather than the subject of the
+   page, so it sits shorter and closer to what follows it. */
+.gb .pban--form {
+    aspect-ratio: 16 / 4;
+    min-height: 132px;
+    max-height: 190px;
+    margin: 0 0 20px;
 }

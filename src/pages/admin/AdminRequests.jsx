@@ -10,6 +10,9 @@ import {
 import { RESOURCES, optionsFor, tabsFor, tabCount } from './resources';
 import { getDetailFields, expandDetailFields, groupDetailFields } from '../../utils/sacramentDetails';
 import { getOccasionFields } from '../../utils/occasionalDetails';
+import IntentionFields from '../../components/forms/IntentionFields';
+import { summariseIntentions, missingIntentionNames, isNamedSouls, soulsProblem } from '../../utils/intentions';
+import { getDocumentFields } from '../../utils/documentDetails';
 import IntentionSheet from '../../components/admin/IntentionSheet';
 import useAvailability from '../../hooks/useAvailability';
 import { fmtTime } from '../../utils/format';
@@ -136,10 +139,14 @@ export default function AdminRequests({ resource }) {
                     </div>
                 )}
 
-                <div className="ad-toolbar">
-                    {cfg.noStatusFilter ? (
-                        <span className="ad-muted">{list.total} {cfg.singular}{list.total === 1 ? '' : 's'}</span>
-                    ) : (
+                {/* Searching, filtering and acting on the list all belong to
+                    the same thought, so they share one line. The search box
+                    takes whatever width the rest leaves it. */}
+                <div className="ad-toolbar ad-toolbar--main">
+                    <SearchBox value={list.search} onSearch={list.setSearch}
+                               placeholder={`Search ${cfg.plural || cfg.singular + 's'} — name, reference, number, kind…`} />
+
+                    {!cfg.noStatusFilter && (
                         <FilterBar
                             options={['all', ...(cfg.filterStatuses || cfg.statuses)]}
                             value={list.status}
@@ -148,9 +155,10 @@ export default function AdminRequests({ resource }) {
                             total={Object.values(list.statusCounts || {}).reduce((a, b) => a + b, 0) || list.total}
                         />
                     )}
+
                     <div className="ad-toolbar__actions">
                         {cfg.exportSheet && <IntentionSheet />}
-                        <button className="ad-btn ad-btn--ghost" onClick={list.reload} title="Refresh">
+                        <button className="ad-btn ad-btn--ghost ad-btn--icon" onClick={list.reload} title="Refresh">
                             <FontAwesomeIcon icon={faRotate} />
                         </button>
                         <button className="ad-btn ad-btn--filled" onClick={() => setShowNew(true)}>
@@ -159,11 +167,13 @@ export default function AdminRequests({ resource }) {
                     </div>
                 </div>
 
-                <div className="ad-toolbar ad-toolbar--search">
-                    <SearchBox value={list.search} onSearch={list.setSearch}
-                               placeholder={`Search ${cfg.plural || cfg.singular + 's'} — name, reference, number, kind…`} />
-                    {list.search && <span className="ad-muted">{list.total} match{list.total === 1 ? '' : 'es'} for “{list.search}”</span>}
-                </div>
+                {/* How many, and what the search matched — a quiet line rather
+                    than a row of its own. */}
+                <p className="ad-count">
+                    {list.search
+                        ? `${list.total} match${list.total === 1 ? '' : 'es'} for “${list.search}”`
+                        : `${list.total} ${cfg.singular}${list.total === 1 ? '' : 's'}`}
+                </p>
             </div>
 
             <Banner {...(notice || {})} onDismiss={() => setNotice(null)} />
@@ -292,6 +302,14 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
     const initial = useMemo(() => {
         const base = { status: 'pending' };
         cfg.fields.forEach(f => { base[f.name] = f.defaultValue ?? ''; });
+        /* The intention block keeps its own shapes, which a flat field list
+           cannot seed: the kinds ticked, a name per kind, and the souls. */
+        if (cfg.intentionFields) {
+            Object.assign(base, {
+                intentionType: '', intentionTypes: [], intentionNames: {},
+                intentionFor: '', souls: [], purpose: '',
+            });
+        }
         return base;
     }, [cfg]);
 
@@ -304,8 +322,9 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
 
     // Sacraments show extra fields once a type is picked (baptism, wedding, …);
     // an occasional Mass the details of its occasion
-    const detailFields = cfg.hasDetails    ? expandDetailFields(getDetailFields(form.sacramentType), details)
-                       : cfg.hasOccasion   ? getOccasionFields(form.massType)
+    const detailFields = cfg.hasDetails     ? expandDetailFields(getDetailFields(form.sacramentType), details)
+                       : cfg.hasOccasion    ? getOccasionFields(form.massType)
+                       : cfg.hasDocDetails  ? getDocumentFields(form.documentType)
                        : [];
 
     /* The times the parish offers on the chosen day — the same rules the
@@ -344,12 +363,26 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
 
     const submit = async e => {
         e.preventDefault();
+        /* The same checks the parishioner's form makes, before anything is
+           sent: a kind chosen, every soul named, and a name against each
+           kind that takes one. */
+        if (cfg.intentionFields) {
+            const kinds = form.intentionTypes || [];
+            if (!kinds.length) { setError('Choose at least one kind of intention.'); return; }
+            if (kinds.some(isNamedSouls)) {
+                const problem = soulsProblem(form.souls || []);
+                if (problem) { setError(problem); return; }
+            }
+            const unnamed = missingIntentionNames(kinds, form.intentionNames);
+            if (unnamed.length) { setError('Say who the ' + unnamed[0] + ' is offered for.'); return; }
+        }
+
         setSaving(true);
         setError('');
         try {
             await axios.post(cfg.path, {
                 ...form,
-                ...(cfg.hasDetails || cfg.hasOccasion ? { details } : {}),
+                ...(cfg.hasDetails || cfg.hasOccasion || cfg.hasDocDetails ? { details } : {}),
             });
             onCreated();
         } catch (err) {
@@ -362,6 +395,33 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
     return (
         <form className="ad-form" onSubmit={submit}>
             {error && <Banner tone="bad" message={error} />}
+
+            {/* The kinds, their names and the departed — the same block the
+                parishioner fills in, so the counter records the same thing. */}
+            {cfg.intentionFields && (
+                <div className="ad-form__grid ad-form__grid--intentions">
+                    <IntentionFields
+                        items={(config?.serviceCategories || []).find(c => /mass intention/i.test(c.name))?.items || []}
+                        types={form.intentionTypes || []}
+                        souls={form.souls || []}
+                        names={form.intentionNames || {}}
+                        purpose={form.purpose || ''}
+                        onTypes={v => setForm(f => ({
+                            ...f, intentionTypes: v, intentionType: v.join(', '),
+                            intentionFor: summariseIntentions(v, f.intentionNames, f.souls),
+                        }))}
+                        onSouls={v => setForm(f => ({
+                            ...f, souls: v,
+                            intentionFor: summariseIntentions(f.intentionTypes, f.intentionNames, v),
+                        }))}
+                        onNames={v => setForm(f => ({
+                            ...f, intentionNames: v,
+                            intentionFor: summariseIntentions(f.intentionTypes, v, f.souls),
+                        }))}
+                        onPurpose={v => setForm(f => ({ ...f, purpose: v }))}
+                    />
+                </div>
+            )}
 
             <div className="ad-form__grid">
                 {cfg.fields.map(field => {

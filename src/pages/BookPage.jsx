@@ -6,7 +6,6 @@ import axiosPublic from '../api/axios';
 import useParish, { usePageTitle } from '../hooks/useParish';
 import GuestBooking from '../components/GuestBooking';
 import ParishMark from '../components/ParishMark';
-import ParishBanner from '../components/ParishBanner';
 import { SERVICES } from '../utils/services';
 
 /**
@@ -77,8 +76,11 @@ export default function BookPage() {
                         </div>
                     ) : (
                         <>
-                            {parish && <ParishBanner parish={parish} eyebrow="Booking with" className="book-page__banner" />}
+                            {/* The banner is GuestBooking's to draw: it knows whether
+                                this is still a form, a filed request or a paid one, and
+                                the wording differs for each. */}
                             <GuestBooking
+                                banner
                                 key={`${service}:${date}`}
                                 parishName={name}
                                 parishId={parish?._id}

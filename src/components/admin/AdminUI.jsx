@@ -84,7 +84,7 @@ export function FilterBar({ options, value, onChange, counts = {}, total }) {
 export function Tabs({ tabs, value, onChange, counts = {}, total }) {
     const tab = (key, label, count) => (
         <button type="button" role="tab" key={key} aria-selected={value === key}
-                className={`ad-tab ${value === key ? 'ad-tab--active' : ''}`} onClick={() => onChange(key)}>
+                className={`ad-tab ${value === key ? 'ad-tab--active' : ''}${count === 0 ? ' ad-tab--zero' : ''}`} onClick={() => onChange(key)}>
             {label}{count != null && <span className="ad-tab__count">{count}</span>}
         </button>
     );

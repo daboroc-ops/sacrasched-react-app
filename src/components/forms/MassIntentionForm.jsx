@@ -11,7 +11,10 @@ import MassVenueSelect from './MassVenueSelect';
 import OfferingStep from './OfferingStep';
 import BookingNotice from './BookingNotice';
 import { whenProblem } from '../../utils/booking';
-import { intentionFee, isNamedSouls, soulsProblem, needsForWhom, amountDue, offeringProblem } from '../../utils/intentions';
+import {
+    intentionFee, isNamedSouls, soulsProblem, needsForWhom, amountDue, offeringProblem,
+    missingIntentionNames, summariseIntentions,
+} from '../../utils/intentions';
 
 function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
@@ -23,6 +26,7 @@ const blank = (requestor, date = '') => ({
     intentionTypes:  [],
     souls:           [],
     intentionFor:    '',
+    intentionNames:  {},
     purpose:         '',
     venue:           '',
     wantsDonation:   false,
@@ -114,6 +118,8 @@ export default function MassIntentionForm({ parishId, onExit, initialDate, onCal
                 const kinds = form.intentionTypes.filter(Boolean);
                 if (!kinds.length) return 'Choose at least one kind of intention.';
                 if (kinds.some(isNamedSouls)) { const p = soulsProblem(form.souls); if (p) return p; }
+                const unnamed = missingIntentionNames(kinds, form.intentionNames);
+                if (unnamed.length) return `Say who the ${unnamed[0]} is offered for.`;
                 if (needsForWhom(kinds) && !form.intentionFor.trim()) return 'Enter who the intention is for.';
                 if (needsContact && !form.contactNumber.trim()) return 'Enter a contact number.';
                 return null;
@@ -136,11 +142,20 @@ export default function MassIntentionForm({ parishId, onExit, initialDate, onCal
                         items={intentionItems}
                         types={form.intentionTypes}
                         souls={form.souls}
-                        forWhom={form.intentionFor}
+                        names={form.intentionNames}
                         purpose={form.purpose}
-                        onTypes={v => setForm(p => ({ ...p, intentionTypes: v, intentionType: v.join(', ') }))}
-                        onSouls={v => setForm(p => ({ ...p, souls: v }))}
-                        onForWhom={v => setForm(p => ({ ...p, intentionFor: v }))}
+                        onTypes={v => setForm(p => ({
+                            ...p, intentionTypes: v, intentionType: v.join(', '),
+                            intentionFor: summariseIntentions(v, p.intentionNames, p.souls),
+                        }))}
+                        onSouls={v => setForm(p => ({
+                            ...p, souls: v,
+                            intentionFor: summariseIntentions(p.intentionTypes, p.intentionNames, v),
+                        }))}
+                        onNames={v => setForm(p => ({
+                            ...p, intentionNames: v,
+                            intentionFor: summariseIntentions(p.intentionTypes, v, p.souls),
+                        }))}
                         onPurpose={v => setForm(p => ({ ...p, purpose: v }))}
                     />
                 </>

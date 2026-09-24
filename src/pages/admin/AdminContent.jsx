@@ -137,7 +137,7 @@ export default function AdminContent() {
                 <span>One image per slot</span>
             </div>
 
-            <div className="ad-grid ad-grid--2">
+            <div className="ad-grid cms-slots">
                 {data.slots.map(slot => (
                     <section className="ad-card cms-slot" key={slot.key}>
                         <header className="ad-card__head">

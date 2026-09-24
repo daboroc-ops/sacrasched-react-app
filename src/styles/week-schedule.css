@@ -84,7 +84,24 @@
 
 @media (max-width: 640px) {
     .ws__row { grid-template-columns: 1fr; gap: 8px; padding: 12px 16px; }
-    .ws__time { width: 96px; padding: 4px 6px; }
+
+    /* Two 96px tiles were all that fitted beside the AM/PM label, so a
+       Sunday morning wrapped — and the wrapped tiles started under the
+       label instead of lining up with the ones above. The label takes its
+       own line here and the times become a grid, so the tiles line up in
+       columns and each one is wide enough to spell out the Mass. */
+    .ws__line {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(104px, 100%), 1fr));
+        gap: 6px;
+    }
+    .ws__ampm {
+        grid-column: 1 / -1;
+        width: auto;
+        align-self: start;
+        margin-bottom: -1px;
+    }
+    .ws__time { width: auto; padding: 5px 6px; }
 }
 
 /* ─── Special Masses this month, under the week ──────────────────── */

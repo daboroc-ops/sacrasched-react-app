@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-<<<<<<< HEAD
 import { faChevronLeft, faChevronRight, faCircleInfo, faCalendarPlus } from '@fortawesome/free-solid-svg-icons';
-=======
-import { faChevronLeft, faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import LiturgicalStrip from './LiturgicalStrip';
 import { CalendarSkeleton } from './Skeleton';
@@ -48,16 +44,18 @@ function isPastKey(dateKey) {
 }
 
 /* ── Day cell — shows total event count only ────────────────── */
-function CalCell({ dayNum, isCurrentMonth, isToday, totalEvents, onClick }) {
+function CalCell({ dayNum, isCurrentMonth, isToday, isArmed, totalEvents, onClick }) {
     return (
         <div
             className={[
                 'cal-cell',
                 !isCurrentMonth && 'cal-cell--dim',
                 isToday         && 'cal-cell--today',
+                isArmed         && 'cal-cell--armed',
                 isCurrentMonth  && 'cal-cell--clickable'
             ].filter(Boolean).join(' ')}
             onClick={isCurrentMonth ? onClick : undefined}
+            title={isArmed ? 'Click again to open this day' : undefined}
         >
             <div className="cal-cell__num">{dayNum}</div>
             {totalEvents > 0 && (
@@ -71,24 +69,14 @@ function CalCell({ dayNum, isCurrentMonth, isToday, totalEvents, onClick }) {
 }
 
 /* ── Day detail modal — 5 AM to 8 PM hourly slot grid ───────── */
-<<<<<<< HEAD
 function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose, onBook }) {
-=======
-function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myEvents, onClose }) {
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
     /* Combine every event into one list with normalised shape */
     const allEvents = [
         ...massSlots.map(m => ({
             time:  m.time,
-<<<<<<< HEAD
             type:  m.special ? 'Scheduled Mass' : 'Mass',
             label: m.label || 'Regular Mass',
             kind:  m.special ? 'special' : 'mass'
-=======
-            type:  'Mass',
-            label: m.label || 'Regular Mass',
-            kind:  'mass'
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
         })),
         ...sacEvents.map(ev => ({
             time:  ev.preferredTime || '',
@@ -135,7 +123,6 @@ function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myE
             <div className="modal__box modal__box--lg">
                 <div className="cal-day-header">
                     <h3 className="t-modal-title" style={{ margin: 0 }}>{day.label}</h3>
-<<<<<<< HEAD
 
                     <div className="cal-day-header__actions">
                         {/* The day is already chosen — carry it into the form rather
@@ -155,11 +142,6 @@ function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myE
                             ×
                         </button>
                     </div>
-=======
-                    <button className="cal-day-header__close" onClick={onClose} aria-label="Close">
-                        ×
-                    </button>
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
                 </div>
 
                 <div className="time-slots">
@@ -205,31 +187,18 @@ function DayModal({ day, massSlots, blessEvents, intentionEvents, sacEvents, myE
 export default function CalendarView({ onBook }) {
     const axios = useAxiosPrivate();
 
-<<<<<<< HEAD
-=======
-    /* ── Inject JotForm AI agent chat widget ─────────────────── */
-    useEffect(() => {
-        const SRC = 'https://cdn.jotfor.ms/agent/embedjs/019dfcd2d4fc73cab42fc9d7f051841af52a/embed.js?autoOpenChatIn=1';
-        if (document.querySelector(`script[src="${SRC}"]`)) return;
-
-        const script = document.createElement('script');
-        script.src   = SRC;
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            const existing = document.querySelector(`script[src="${SRC}"]`);
-            if (existing) document.body.removeChild(existing);
-            document.querySelectorAll('[id^="JotFormAgent"], [class*="jotform-agent"]')
-                .forEach(el => el.remove());
-        };
-    }, []);
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
 
     const now   = new Date();
     const [year,  setYear]  = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth());
     const [selectedDay, setSelectedDay] = useState(null);
+
+    /* A first click marks a day; a second opens it. Kept as the day's key,
+       and dropped as soon as the month changes so a mark cannot survive
+       into a month where it would open the wrong day. */
+    const [armed, setArmed] = useState(null);
+    const [armedIn, setArmedIn] = useState(`${year}-${month}`);
+    if (armedIn !== `${year}-${month}`) { setArmedIn(`${year}-${month}`); setArmed(null); }
 
     const [massSchedule,     setMassSchedule]     = useState({ weekdays: [], saturdays: [], sundays: [] });
     const [scheduledMasses,  setScheduledMasses]  = useState([]); // one-off Masses set by the parish office
@@ -368,6 +337,11 @@ export default function CalendarView({ onBook }) {
                      totalEvents, masses, sacs, bless, intents, mine });
     }
 
+    const pickDay = cell => {
+        if (armed === cell.key) { setArmed(null); openDay(cell); }
+        else setArmed(cell.key);
+    };
+
     const openDay = cell => {
         setSelectedDay({
             ...cell,
@@ -388,11 +362,6 @@ export default function CalendarView({ onBook }) {
     return (
         <div>
             <LiturgicalStrip />
-
-            <p className="cal-hint">
-                <FontAwesomeIcon icon={faCircleInfo} className="cal-hint__icon" />
-                Click a date to view the day's schedules.
-            </p>
 
             <p className="cal-hint">
                 <FontAwesomeIcon icon={faCircleInfo} className="cal-hint__icon" />
@@ -436,7 +405,8 @@ export default function CalendarView({ onBook }) {
                             isCurrentMonth={cell.cm}
                             isToday={cell.isToday}
                             totalEvents={cell.totalEvents}
-                            onClick={() => openDay(cell)}
+                            isArmed={armed === cell.key}
+                            onClick={() => pickDay(cell)}
                         />
                     ))}
                 </div>

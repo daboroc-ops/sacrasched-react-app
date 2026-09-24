@@ -734,6 +734,7 @@ function ParishSection({ value, saving, onSave }) {
                 </div>
             </section>
 
+            <ChatbotCard value={value?.chatbot} saving={saving} onSave={c => onSave({ chatbot: c })} />
             <MessengerCard value={value?.messenger} saving={saving} onSave={m => onSave({ messenger: m })} />
             <SmsCard />
 
@@ -779,6 +780,65 @@ function ParishSection({ value, saving, onSave }) {
    id says which parish a message is for; the page access token lets the
    bot answer as the page. The token is written here and never shown
    again — the API only says whether one is on file. */
+/**
+ * The parish's own JotForm assistant.
+ *
+ * Only the id is kept. The office may paste the whole embed link — that is
+ * what JotForm gives them to copy — so the server takes the id out of it.
+ */
+function ChatbotCard({ value, saving, onSave }) {
+    const saved = value?.jotformAgentId || '';
+    const [agentId, setAgentId] = useState(saved);
+
+    /* What was saved is the truth: when it changes under us — a reload, a
+       save from another tab — the box follows it. Adjusted during the
+       render that brings the new value rather than in an effect afterwards,
+       so there is no first paint showing the old one. */
+    const [lastSaved, setLastSaved] = useState(saved);
+    if (lastSaved !== saved) { setLastSaved(saved); setAgentId(saved); }
+
+    const changed = agentId.trim() !== saved;
+
+    return (
+        <section className="ad-card">
+            <header className="ad-card__head">
+                <h3>Parish assistant (chatbot)</h3>
+                <span className="ad-card__meta">{saved ? 'Showing on your parish page' : 'Not set up'}</span>
+            </header>
+
+            <p className="ad-muted" style={{ fontSize: 13, marginBottom: 12 }}>
+                A chat bubble on your parish page that answers visitors&rsquo; questions — Mass times, requirements,
+                office hours — in your parish&rsquo;s own words. Build the agent at <b>jotform.com</b> under AI Agents,
+                then paste its link or id here. It appears on your parish page only, never on the booking
+                pages or the dashboard. Leave this empty and no bubble shows.
+            </p>
+
+            <label className="ad-field">
+                <span>JotForm agent link or ID</span>
+                <input className="ad-input" autoComplete="off"
+                       placeholder="https://agent.jotform.com/0198… — or just the id"
+                       value={agentId} onChange={e => setAgentId(e.target.value)} />
+                <small>
+                    From the agent&rsquo;s Publish tab. Pasting the whole link is fine; the id is taken out of it.
+                </small>
+            </label>
+
+            <div className="ad-form__actions">
+                {saved && (
+                    <button className="ad-btn ad-btn--ghost" disabled={saving}
+                            onClick={() => { if (window.confirm('Remove the assistant from your parish page?')) { setAgentId(''); onSave({ jotformAgentId: '' }); } }}>
+                        Remove
+                    </button>
+                )}
+                <button className="ad-btn ad-btn--filled" disabled={saving || !changed}
+                        onClick={() => onSave({ jotformAgentId: agentId.trim() })}>
+                    {saving ? 'Saving…' : saved ? 'Update assistant' : 'Add assistant'}
+                </button>
+            </div>
+        </section>
+    );
+}
+
 function MessengerCard({ value, saving, onSave }) {
     const [pageId, setPageId] = useState(value?.pageId || '');
     const [token,  setToken]  = useState('');

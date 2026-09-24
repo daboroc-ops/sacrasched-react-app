@@ -1,6 +1,9 @@
 /** Where a post opens: under /parish/<subdomain> on the platform, /news on the parish's own site. */
 export const postPath = (subdomain, slug) => (subdomain ? `/parish/${subdomain}/news/${slug}` : `/news/${slug}`);
 
+/** The list of everything published — the same address without a slug. */
+export const newsPath = subdomain => (subdomain ? `/parish/${subdomain}/news` : '/news');
+
 /** "13 September 2026" */
 export const fmtPostDate = iso => new Date(iso).toLocaleDateString('en-PH', { day: 'numeric', month: 'long', year: 'numeric' });
 

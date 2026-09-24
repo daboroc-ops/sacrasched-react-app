@@ -192,6 +192,16 @@
     .lp-nav__parish { flex-shrink: 1; }
     .pl-nav__names b,
     .pl-nav__names small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* The post, news, booking and track pages hang a back button off this
+       same bar, and their brand is the mark and the parish's name together.
+       That brand is flex-shrink: 0 by default, so a long parish name held
+       its full width and pushed the button off the screen. Here it gives
+       way — which is also what lets the ellipsis above finally apply — and
+       the button keeps its own width whatever the name does. */
+    .lp-nav__brand.pl-nav__brand { flex-shrink: 1; min-width: 0; }
+    .lp-nav__inner  { gap: 14px; }
+    .post-page__back { flex-shrink: 0; }
 }
 
 /* ── The parish's mark: its logo, or its initials until it has one ── */

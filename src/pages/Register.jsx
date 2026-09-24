@@ -164,16 +164,7 @@ export default function Register() {
                     <p className="rw-head__sub">{STEPS[step].sub}</p>
                 </div>
 
-                <div className="auth-field">
-                    <label className="auth-field__label">Contact number</label>
-                    <input
-                        className="auth-input"
-                        type="tel"
-                        placeholder="09XX XXX XXXX"
-                        value={form.contactNumber}
-                        onChange={set('contactNumber')}
-                    />
-                </div>
+                {errMsg && <div className="auth-error">{errMsg}</div>}
 
                 <form onSubmit={handleSubmit} className="rw-form">
 

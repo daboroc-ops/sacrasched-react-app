@@ -73,3 +73,45 @@
 /* The admin sidebar is tighter than the devotee one */
 .ad-sidebar .sb-banner        { margin-bottom: 16px; }
 .ad-sidebar .sb-banner__media { aspect-ratio: 16 / 6; }
+
+/* ── Folded: the parish's mark instead of the banner ───────────
+   A 16:7 picture with a name beneath it cannot shrink to an icon and stay
+   legible, so the folded sidebar shows the square the parish is known by
+   everywhere else. The name it loses moves to the tooltip.
+
+   The panel the full banner draws is reset away here: at this size the
+   border and shadow would frame a single icon. */
+.sb-banner--mark {
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+}
+
+/* ParishMark brings no size of its own — every caller dresses it (see
+   .pl-nav__badge) — so the whole square is drawn here, gradient included
+   for the parishes that have uploaded no logo and show their initials. */
+.sb-banner__mark {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(140deg, var(--brand) 0%, var(--gold) 100%);
+    color: var(--on-brand);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+/* The platform host has no parish to show, so it shows the product's seal */
+.sb-banner__mark--platform {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+.sb-banner__mark--platform img { width: 24px; height: 24px; object-fit: contain; }

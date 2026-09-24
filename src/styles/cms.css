@@ -5,6 +5,14 @@
 /* ── Slot cards ──────────────────────────────────────────────── */
 .cms-slot { display: flex; flex-direction: column; }
 
+/* The published slots. Two hard columns made each preview half the page
+   across on a wide monitor; at this width a wide screen shows three or four
+   and a laptop two, while a phone still drops to one. The 16:9 frame stays
+   — these are banners, and a preview in the wrong shape tells you nothing. */
+.cms-slots {
+    grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+}
+
 .cms-slot__frame {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -83,10 +91,13 @@
 .cms-drop__link:disabled { opacity: .6; cursor: not-allowed; }
 
 /* ── Library grid ────────────────────────────────────────────── */
+/* The library is scanned, not read: smaller cards put more of it on screen
+   at once. auto-fill rather than a fixed count so the row fills whatever
+   width the sidebar leaves — folded or not. */
 .cms-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(min(168px, 100%), 1fr));
+    gap: 12px;
 }
 .cms-item {
     display: flex;
@@ -160,3 +171,17 @@
 @media (max-width: 640px) {
     .cms-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Upload from inside the picker ─────────────────────────────
+   Above the library, because someone who opened this while writing is more
+   likely to have the picture on their machine than already filed. */
+.mp__upload {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+}
+.mp__upload-hint { font-size: 12.5px; color: var(--text-muted); }

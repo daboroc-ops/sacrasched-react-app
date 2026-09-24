@@ -52,7 +52,7 @@ const CELL_SHOW = 2;
    A cell outside this month keeps its box so the grid stays square, but
    loses its number: it belongs to a month this page is not showing, and
    a date you cannot click only invites the attempt. */
-function CalCell({ dayNum, isCurrentMonth, isToday, isPast, events = [], onClick }) {
+function CalCell({ dayNum, isCurrentMonth, isToday, isPast, isArmed, events = [], onClick }) {
     const shown = events.slice(0, CELL_SHOW);
     const more  = events.length - shown.length;
     return (
@@ -62,10 +62,12 @@ function CalCell({ dayNum, isCurrentMonth, isToday, isPast, events = [], onClick
                 !isCurrentMonth && 'cal-cell--dim',
                 isPast          && 'cal-cell--past',
                 isToday         && 'cal-cell--today',
+                isArmed         && 'cal-cell--armed',
                 isCurrentMonth  && 'cal-cell--clickable'
             ].filter(Boolean).join(' ')}
             onClick={isCurrentMonth ? onClick : undefined}
-            title={isToday ? 'Today' : undefined}
+            // Says what the second click will do, once the first has marked the day
+            title={isArmed ? 'Click again to open this day' : (isToday ? 'Today' : undefined)}
         >
             {isCurrentMonth && (
                 <div className="cal-cell__top">
@@ -148,11 +150,16 @@ function DayPanel({ day, events, lit, slots, onClose, onBook }) {
         return t >= r && t < r + 30;
     });
 
-    /* Only the part of the day with anything in it, so an empty morning
-       does not push the one wedding below the fold. */
+    /* The whole day once anything is on it: the office is reading this to
+       see what is still free, and an hour that is not drawn cannot be read
+       as free. A day with nothing on it says so in words instead (below) —
+       thirty-one empty rows state it no more clearly.
+
+       An empty morning used to be trimmed away so it could not push the one
+       wedding below the fold; the grid now opens scrolled to the first
+       thing on instead, which keeps that without hiding the day. */
     const busyRows = rows.filter(r => inRow(r).length);
-    const first = busyRows[0], last = busyRows[busyRows.length - 1];
-    const shown = first ? rows.slice(Math.max(0, rows.indexOf(first) - 1), rows.indexOf(last) + 2) : [];
+    const shown = busyRows.length ? rows : [];
 
     /* ── Jump to what is off screen ────────────────────────────
        The grid scrolls inside the card, so the page stays put. It can run
@@ -198,6 +205,19 @@ function DayPanel({ day, events, lit, slots, onClose, onBook }) {
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- busyRows/inRow are derived from `events` each render
     }, [events, picking]);
+
+    /* Opening the day lands on its first entry, not on an empty 5 AM. It
+       is set outright rather than smoothly, so the day looks as though it
+       opened there instead of scrolling once someone is already reading.
+       Only on opening a day: after that the scroll belongs to the reader. */
+    const firstBusy = busyRows[0];
+    useEffect(() => {
+        if (picking || !firstBusy) return;
+        const grid = gridRef.current, el = rowRefs.current[firstBusy];
+        if (!grid || !el) return;
+        // A third of the way down, so the rows before it stay visible as context
+        grid.scrollTop = Math.max(0, el.offsetTop - grid.clientHeight / 3);
+    }, [day.key, firstBusy, picking]);
 
     const jumpTo = row => {
         const el = rowRefs.current[row], grid = gridRef.current;
@@ -330,6 +350,13 @@ export default function ParishCalendar({ onBook, onUnavailable, subdomain }) {
     const [month, setMonth] = useState(now.getMonth());
     const [selectedDay, setSelectedDay] = useState(null);
 
+    /* A first click marks a day; a second opens it. Kept as the day's key,
+       and dropped as soon as the month changes so a mark cannot survive
+       into a month where it would open the wrong day. */
+    const [armed, setArmed] = useState(null);
+    const [armedIn, setArmedIn] = useState(`${year}-${month}`);
+    if (armedIn !== `${year}-${month}`) { setArmedIn(`${year}-${month}`); setArmed(null); }
+
     const [data,    setData]    = useState(null);
     const [lit,     setLit]     = useState({ days: {} });
     const [loading, setLoading] = useState(true);
@@ -380,6 +407,20 @@ export default function ParishCalendar({ onBook, onUnavailable, subdomain }) {
 
     /* No parish on this host, or the feed is down — the section that owns
        this takes itself off the page rather than heading an empty space. */
+    /* The bar above the calendar describes today, so it must not come and go
+       with the month on screen. `lit` only carries the month being shown,
+       and today falls outside every month but this one — so the first time
+       today's entry arrives it is kept, and shown from then on.
+
+       Declared here, above the early returns below, because a hook must run
+       on every render. Adjusted during the render that brings the value
+       rather than in an effect, which would paint once without the bar and
+       again with it. */
+    const liveToday = lit.days?.[isoKey(now)];
+    const [keptToday, setKeptToday] = useState(null);
+    if (liveToday && liveToday !== keptToday) setKeptToday(liveToday);
+    const todayLit = liveToday || keptToday;
+
     if (failed) return null;
     if (loading) return <CalendarSkeleton />;
 
@@ -418,12 +459,19 @@ export default function ParishCalendar({ onBook, onUnavailable, subdomain }) {
     for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
     const shown = weeks.filter(w => w.some(c => c.cm)).flat();
 
+    /* The day marked by a first click, waiting for the second to open it.
+       Held by key rather than by cell so it survives the month's cells being
+       rebuilt on every render. */
+    const pickDay = cell => {
+        if (armed === cell.key) { setArmed(null); openDay(cell); }
+        else setArmed(cell.key);
+    };
+
     const openDay = cell => setSelectedDay({
         ...cell,
         label: `${DAY_NAMES[cell.dow]}, ${MONTH_NAMES[cell.cm2]} ${cell.dn}, ${cell.cy}`
     });
 
-    const todayLit = lit.days?.[isoKey(now)];
 
     /* The day takes the section over rather than floating above it. */
     if (selectedDay) return (
@@ -490,7 +538,8 @@ export default function ParishCalendar({ onBook, onUnavailable, subdomain }) {
                             isToday={cell.isToday}
                             isPast={cell.isPast}
                             events={cell.events}
-                            onClick={() => openDay(cell)}
+                            isArmed={armed === cell.key}
+                            onClick={() => pickDay(cell)}
                         />
                     ))}
                 </div>

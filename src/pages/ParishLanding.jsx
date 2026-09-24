@@ -125,8 +125,11 @@ function ParishSite({ subdomain }) {
     return (
         <div className="lp pl">
 
-            {/* Parish assistant — launcher only; it does not open by itself */}
-            <JotformAgent />
+            {/* Parish assistant — launcher only; it does not open by itself.
+                This parish's own agent, set by its office; nothing if unset. */}
+            {parish?.chatbot?.jotformAgentId && (
+                <JotformAgent agentId={parish.chatbot.jotformAgentId} />
+            )}
 
             {/* ── Navigation ── */}
             {/* SacraSched at the top; once the hero has scrolled by, the bar
@@ -221,10 +224,9 @@ function ParishSite({ subdomain }) {
                 </section>
             )}
 
-            {/* ── News, activities and the Mass schedule — the office's own ── */}
+            {/* ── News and activities — the office's own ── */}
             <ParishPosts subdomain={subdomain} />
             <ParishActivities subdomain={subdomain} />
-            <ParishSchedule subdomain={subdomain} />
 
             {/* ── The calendar, and the booking it leads to ──
                 One region: pick the day, then the service, and the form opens
@@ -235,6 +237,11 @@ function ParishSite({ subdomain }) {
                 parishId={parish._id}
                 subdomain={subdomain}
             />
+
+            {/* ── The week of Masses ──
+                Under the calendar: the calendar is what the page is for, and
+                the week reads as the standing note that follows it. */}
+            <ParishSchedule subdomain={subdomain} />
 
             {/* ── How it works ── */}
             <section className="lp-section" id="how">

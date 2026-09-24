@@ -1,3 +1,4 @@
+import { intentionGroups } from '../utils/intentions';
 import { useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faDownload } from '@fortawesome/free-solid-svg-icons';
@@ -20,6 +21,9 @@ const stamp    = d => new Date(d).toLocaleString('en-PH', { month: 'short', day:
  */
 export default function Invoice({ r, parish, service }) {
     const card = useRef(null);
+
+    /* A Mass intention lists each kind with its own name */
+    const groups = r?.kind === 'intention' ? intentionGroups(r) : [];
     const [saving, setSaving] = useState(false);
     const [problem, setProblem] = useState('');
     const due = (r.fee || 0) + (r.donation || 0);
@@ -69,7 +73,17 @@ export default function Invoice({ r, parish, service }) {
                 </div>
 
                 <dl className="inv__facts">
-                    <div><dt>Request</dt><dd>{r.type}{r.what ? ` — ${r.what}` : ''}</dd></div>
+                    {/* A Mass intention may carry several kinds; each is shown
+                        with the name it was offered for, so the office and the
+                        parishioner read the same thing. */}
+                    {groups.length > 0 ? groups.map(g => (
+                        <div key={g.type}>
+                            <dt>{g.type}</dt>
+                            <dd>{g.allSouls ? 'Offered for all souls — no name' : (g.names.join(', ') || '—')}</dd>
+                        </div>
+                    )) : (
+                        <div><dt>Request</dt><dd>{r.type}{r.what ? ` — ${r.what}` : ''}</dd></div>
+                    )}
                     <div><dt>{r.kind === 'intention' ? 'Offered by' : 'Requested by'}</dt><dd>{r.requestorName}</dd></div>
                     {r.preferredDate && (
                         <div><dt>Schedule</dt><dd>{longDate(r.preferredDate)}{r.preferredTime ? `, ${fmtTime(r.preferredTime)}` : ''}</dd></div>

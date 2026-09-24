@@ -4,13 +4,25 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faTableColumns, faUsers, faCalendarDays, faCreditCard, faHandsPraying,
     faChurch, faDove, faFileLines, faBuildingColumns, faGear, faImages, faNewspaper, faCross,
-    faBars, faXmark, faRightFromBracket, faArrowUpRightFromSquare, faShieldHalved,
+    faBars, faXmark, faRightFromBracket, faShieldHalved,
+    faAnglesLeft, faAnglesRight,
 } from '@fortawesome/free-solid-svg-icons';
 import useAuth from '../../hooks/useAuth';
 import useParish from '../../hooks/useParish';
 import useLogout from '../../hooks/useLogout';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import SidebarBanner from '../../components/SidebarBanner';
+
+/* Whether the sidebar was left folded. Kept per browser, like the fold
+   state of the Configuration cards: a choice about this screen, on this
+   machine, that nobody else needs to know about. */
+const FOLD_KEY = 'sacrasched.admin.sidebarCollapsed';
+const recallFold = () => {
+    try { return JSON.parse(localStorage.getItem(FOLD_KEY)) === true; } catch { return false; }
+};
+const rememberFold = v => {
+    try { localStorage.setItem(FOLD_KEY, JSON.stringify(v)); } catch { /* private mode */ }
+};
 
 /* adminOnly items are hidden from editors — the API rejects them too. */
 const NAV = [
@@ -60,6 +72,9 @@ export default function AdminLayout() {
     const location = useLocation();
     const axios = useAxiosPrivate();
     const [menuOpen, setMenu] = useState(false);
+    const [collapsed, setCollapsed] = useState(recallFold);
+
+    const toggleFold = () => setCollapsed(c => { rememberFold(!c); return !c; });
 
     // null while the probe is in flight — the dashboard renders as usual until
     // we know, so the common case never flickers through a warning.
@@ -94,6 +109,8 @@ export default function AdminLayout() {
             key={item.to}
             to={item.to}
             end={item.end}
+            // Folded, the label is hidden and the tooltip is all there is
+            title={item.label}
             className={({ isActive }) => `ad-nav__item ${isActive ? 'ad-nav__item--active' : ''}`}
             onClick={() => setMenu(false)}
         >
@@ -123,10 +140,6 @@ export default function AdminLayout() {
                 </div>
 
                 <div className="ad-header__right">
-                    <NavLink to="/devotee" className="ad-header__link" title="Open the devotee dashboard">
-                        <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-                        <span>Devotee view</span>
-                    </NavLink>
                     <span className="ad-header__user">
                         <span className="ad-header__avatar">{initials}</span>
                         {name}
@@ -142,8 +155,8 @@ export default function AdminLayout() {
                 {menuOpen && <div className="ad-backdrop" onClick={() => setMenu(false)} />}
 
                 {/* ── Sidebar ── */}
-                <aside className={`ad-sidebar ${menuOpen ? 'ad-sidebar--open' : ''}`}>
-                    <SidebarBanner subtitle={roleLabel} />
+                <aside className={`ad-sidebar ${menuOpen ? 'ad-sidebar--open' : ''}${collapsed ? ' ad-sidebar--collapsed' : ''}`}>
+                    <SidebarBanner subtitle={roleLabel} collapsed={collapsed} />
 
                     <p className="ad-sidebar__label">Navigation</p>
                     <nav className="ad-nav">{visible.map(link)}</nav>
@@ -155,6 +168,19 @@ export default function AdminLayout() {
                             <nav className="ad-nav">{SETTINGS.map(link)}</nav>
                         </>
                     )}
+
+                    {/* At the foot, out of the way of the navigation itself */}
+                    <button
+                        type="button"
+                        className="ad-sidebar__fold"
+                        onClick={toggleFold}
+                        title={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar'}
+                        aria-label={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar'}
+                        aria-expanded={!collapsed}
+                    >
+                        <FontAwesomeIcon icon={collapsed ? faAnglesRight : faAnglesLeft} className="ad-nav__icon" />
+                        <span>Collapse</span>
+                    </button>
                 </aside>
 
                 {/* ── Page ── */}

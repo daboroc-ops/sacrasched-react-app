@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faFilePowerpoint } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faFilePowerpoint, faXmark } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import { fmtTime } from '../../utils/format';
 
@@ -21,6 +21,23 @@ export default function IntentionSheet() {
     const [time, setTime] = useState('');
     const [busy, setBusy] = useState('');     // which format is being made
     const [error, setError] = useState('');
+
+    /* Folded away until wanted. Clicking anywhere else puts it away again —
+       it sits over the table, and a panel left open would hide the rows it
+       was opened to print. */
+    const [open, setOpen] = useState(false);
+    const panel = useRef(null);
+    useEffect(() => {
+        if (!open) return undefined;
+        const away = e => { if (panel.current && !panel.current.contains(e.target)) setOpen(false); };
+        const esc  = e => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('mousedown', away);
+        document.addEventListener('keydown', esc);
+        return () => {
+            document.removeEventListener('mousedown', away);
+            document.removeEventListener('keydown', esc);
+        };
+    }, [open]);
 
     // The parish's week of Masses; the sheet is for whichever was said on
     // that day — past days included, for yesterday's sheet.
@@ -50,8 +67,20 @@ export default function IntentionSheet() {
         }
     };
 
+    /* Open only while someone is actually printing a sheet: the date, the
+       Mass and the two buttons are three controls that otherwise sit on the
+       page all day taking the table's room. */
+    if (!open) {
+        return (
+            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => setOpen(true)}
+                    title="Print the intentions booked for one Mass">
+                <FontAwesomeIcon icon={faFilePdf} /> Sheet
+            </button>
+        );
+    }
+
     return (
-        <div className="ad-sheet" title="The intentions booked for one Mass — a PDF to print, or a PowerPoint for the screen">
+        <div className="ad-sheet" ref={panel} title="The intentions booked for one Mass — a PDF to print, or a PowerPoint for the screen">
             <input className="ad-input ad-input--short" type="date" value={date} onChange={e => { setDate(e.target.value); setTime(''); }} />
             <select className="ad-select" value={time} onChange={e => setTime(e.target.value)} disabled={!masses.length}>
                 <option value="">{!week ? 'Loading Masses…' : masses.length ? 'Which Mass?' : 'No Mass that day'}</option>
@@ -62,6 +91,10 @@ export default function IntentionSheet() {
             </button>
             <button type="button" className="ad-btn ad-btn--ghost" onClick={() => download('pptx')} disabled={!time || Boolean(busy)}>
                 <FontAwesomeIcon icon={faFilePowerpoint} /> {busy === 'pptx' ? 'Preparing…' : 'PPT'}
+            </button>
+            <button type="button" className="ad-btn ad-btn--ghost ad-btn--icon ad-sheet__close"
+                    onClick={() => setOpen(false)} title="Close" aria-label="Close">
+                <FontAwesomeIcon icon={faXmark} />
             </button>
             {error && <span className="ad-field__problem">{error}</span>}
         </div>

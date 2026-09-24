@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import { Modal, Loading, Empty, ErrorText, Pagination } from './AdminUI';
 import { mediaUrl } from '../../utils/media';
@@ -13,6 +15,32 @@ export default function MediaPicker({ onPick, onClose, title = 'Choose a picture
     const [page,    setPage]    = useState(1);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState('');
+
+    /* Uploading from here as well as choosing: a post is usually written
+       about something that has just happened, and its pictures are on the
+       writer's machine, not in the library yet. */
+    const fileInput = useRef(null);
+    const [uploading, setUploading] = useState(false);
+
+    const upload = async file => {
+        if (!file) return;
+        setUploading(true);
+        setError('');
+        try {
+            const body = new FormData();
+            body.append('image', file);
+            const res = await axios.post('/admin-api/media', body, {
+                headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000
+            });
+            // Straight into the post — uploading it was the whole intent
+            onPick(res.data);
+        } catch (err) {
+            setError(err?.response?.data?.message || 'That picture could not be uploaded.');
+        } finally {
+            setUploading(false);
+            if (fileInput.current) fileInput.current.value = '';
+        }
+    };
 
     useEffect(() => {
         let alive = true;
@@ -32,9 +60,22 @@ export default function MediaPicker({ onPick, onClose, title = 'Choose a picture
 
     return (
         <Modal title={title} onClose={onClose} wide>
+            <div className="mp__upload">
+                <button type="button" className="ad-btn ad-btn--filled ad-btn--sm"
+                        disabled={uploading} onClick={() => fileInput.current?.click()}>
+                    <FontAwesomeIcon icon={faUpload} />
+                    {uploading ? ' Uploading…' : ' Upload a picture'}
+                </button>
+                <span className="mp__upload-hint">or choose one already in the library</span>
+                <input ref={fileInput} type="file" accept="image/*" hidden
+                       onChange={e => upload(e.target.files?.[0])} />
+            </div>
+
+            {error && <ErrorText>{error}</ErrorText>}
+
             {loading ? <Loading label="Loading the library…" rows={3} />
-             : error ? <ErrorText>{error}</ErrorText>
-             : data.items.length === 0 ? <Empty>No pictures yet — upload some under Content first.</Empty>
+             : error ? null
+             : data.items.length === 0 ? <Empty>Nothing in the library yet — upload a picture above.</Empty>
              : (
                 <>
                     <div className="mp__grid">

@@ -105,8 +105,11 @@ export default function Landing() {
         // parish subdomain it follows that parish's theme like every other page.
         <div className={isTenant ? 'lp' : 'lp lp--platform'}>
 
-            {/* Parish assistant — only on a parish site, not the platform page */}
-            {isTenant && <JotformAgent />}
+            {/* Parish assistant — this parish's own, and only on a parish
+                site: the platform's own front page has no parish to speak for */}
+            {isTenant && parish?.chatbot?.jotformAgentId && (
+                <JotformAgent agentId={parish.chatbot.jotformAgentId} />
+            )}
 
             {/* ── Navigation ── */}
             {/* Minimises once the hero has scrolled by — see useCompactNav */}
@@ -299,8 +302,9 @@ export default function Landing() {
                 <>
                     <ParishPosts />
                     <ParishActivities />
-                    <ParishSchedule />
                     <ParishBooking parishName={parish.name} parishId={parish._id} />
+                    {/* Under the calendar — see ParishLanding, which orders it the same */}
+                    <ParishSchedule />
                     <WhereToFindUs parish={parish} />
                 </>
             )}

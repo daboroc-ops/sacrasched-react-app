@@ -118,8 +118,9 @@
    easy to read as "selected". Comes after the past rules so a run of
    spent days ends on something unmistakable. */
 #calendar .cal-cell--today {
+    /* No outline: the number is already circled in the parish's colour, and
+       a ring here would compete with the one a picked day wears. */
     background: var(--brand-light);
-    box-shadow: inset 0 0 0 1.5px var(--brand);
 }
 #calendar .cal-cell--today .cal-cell__num {
     width: 22px;
@@ -190,6 +191,21 @@
     .pc-pick             { padding: 4px 12px 14px; }
     .pc-pick__grid       { grid-template-columns: 1fr; }
     .pc-pick .bk-card    { min-height: 108px; }
+
+    /* One column means five cards stacked — taller than the pane the
+       calendar fixes for itself. Let the pane grow for the picker and the
+       page scroll, rather than clipping the last services out of reach.
+       Scoped to the picker with :has(), so the calendar and the day's
+       timeline keep the fixed height they need. */
+    #calendar .pb__pane:has(.pc-pick) { height: auto; }
+    #calendar .pc-day:has(.pc-pick),
+    #calendar .pc-day__card:has(.pc-pick) { flex: none; min-height: 0; }
+    #calendar .pc-pick { flex: none; }
+
+    /* The card clips its corners for the timeline; with the picker there is
+       nothing to clip and everything to lose by clipping it. */
+    .pc-day__card:has(.pc-pick) { overflow: visible; }
+    .pc-pick:has(.bk-card) { overflow: visible; }
 }
 
 /* ─── Calendar ⇄ booking form ────────────────────────────────────

@@ -77,31 +77,130 @@ export const resizeSouls = (souls, n) =>
     Array.from({ length: Math.min(MAX_SOULS, Math.max(1, n)) }, (_, i) => souls[i] || { name: '', spouseOfPrevious: false });
 
 /**
- * The souls for a choice of "individual" or "couple" and a count, keeping
- * the names already typed. A couple is two entries, the second marked as
- * the spouse of the first — the shape the API and the fee already know.
+ * The souls for a number of individuals and a number of couples, keeping
+ * the names already typed.
+ *
+ * Both at once, because a family books both: "for my mother, and for my
+ * grandparents". Individuals come first, then the couples in pairs, the
+ * second of each marked as sharing the offering before it — the shape the
+ * fee and the API already read.
  */
-export function soulsFor(mode, count, existing = []) {
-    const names = existing.map(s => s?.name || '');
-    if (mode === 'couple') {
-        const n = Math.min(Math.floor(MAX_SOULS / 2), Math.max(1, count || 1));
-        return Array.from({ length: n * 2 }, (_, i) => ({ name: names[i] || '', spouseOfPrevious: i % 2 === 1 }));
+export function soulsFor(individuals, couples, existing = []) {
+    const was = splitSouls(existing);
+    const nI = Math.max(0, Math.min(MAX_SOULS, individuals || 0));
+    const nC = Math.max(0, Math.min(Math.floor(MAX_SOULS / 2), couples || 0));
+
+    const out = [];
+    for (let i = 0; i < nI; i += 1) {
+        out.push({ name: was.individuals[i]?.name || '', spouseOfPrevious: false });
     }
-    const n = Math.min(MAX_SOULS, Math.max(1, count || 1));
-    return Array.from({ length: n }, (_, i) => ({ name: names[i] || '', spouseOfPrevious: false }));
+    for (let c = 0; c < nC; c += 1) {
+        out.push({ name: was.couples[c]?.[0]?.name || '', spouseOfPrevious: false });
+        out.push({ name: was.couples[c]?.[1]?.name || '', spouseOfPrevious: true });
+    }
+    return out;
 }
 
-/** What shape a list of souls is in: { mode, count } — couples when every second one is a spouse. */
-export function soulsShape(souls) {
+/**
+ * A flat list of souls read back as what it is: the individuals, and the
+ * couples as pairs. A soul marked spouseOfPrevious belongs to the one
+ * before it; everything else stands alone.
+ */
+export function splitSouls(souls) {
     const list = souls || [];
-    const couple = list.length >= 2 && list.length % 2 === 0 && list.every((s, i) => Boolean(s?.spouseOfPrevious) === (i % 2 === 1));
-    return couple ? { mode: 'couple', count: list.length / 2 } : { mode: 'individual', count: Math.max(1, list.length) };
+    const individuals = [];
+    const couples = [];
+    for (let i = 0; i < list.length; i += 1) {
+        if (list[i + 1]?.spouseOfPrevious) { couples.push([list[i], list[i + 1]]); i += 1; }
+        else if (!list[i]?.spouseOfPrevious) individuals.push(list[i]);
+    }
+    return { individuals, couples };
+}
+
+/** How many of each a list holds: { individuals, couples }. */
+export function soulsShape(souls) {
+    const { individuals, couples } = splitSouls(souls);
+    return { individuals: individuals.length, couples: couples.length };
 }
 
 /** The first missing name, as a message — or null when every soul is named. */
 export function soulsProblem(souls) {
-    const { mode } = soulsShape(souls);
-    if (!(souls || []).length)              return 'Enter at least one name.';
-    if (souls.some(s => !s.name.trim()))   return mode === 'couple' ? 'Fill in both names of every couple.' : 'Fill in every name.';
+    const list = souls || [];
+    if (!list.length) return 'Add at least one soul or couple.';
+
+    const { couples } = splitSouls(list);
+    if (couples.some(([a, b]) => !a?.name?.trim() || !b?.name?.trim())) {
+        return 'Fill in both names of every couple.';
+    }
+    if (list.some(s => !s?.name?.trim())) return 'Fill in every name.';
     return null;
+}
+
+/**
+ * Which name was offered for which kind.
+ *
+ * A booking may carry several kinds at once, and until now they shared one
+ * "for whom" line, so there was no telling whether the name belonged to the
+ * Thanksgiving or to the Good Health. Each kind keeps its own name here.
+ *
+ * "All Souls in Purgatory" is left out on purpose: it is offered for the
+ * departed generally and asks for nobody by name. The departed by name are
+ * the souls list, which is grouped separately.
+ *
+ * @param {string[]} types  the kinds chosen
+ * @param {object}   names  { [kind]: name }
+ * @returns {{type: string, name: string}[]}
+ */
+export function namedIntentions(types, names = {}) {
+    return (types || [])
+        .filter(t => t && !isForSouls(t))
+        .map(type => ({ type, name: String(names?.[type] || '').trim() }));
+}
+
+/** The kinds that still want a name typed into them. */
+export function missingIntentionNames(types, names = {}) {
+    return namedIntentions(types, names).filter(x => !x.name).map(x => x.type);
+}
+
+/** The one-line summary kept for search and for older bookings. */
+export function summariseIntentions(types, names = {}, souls = []) {
+    const parts = namedIntentions(types, names).filter(x => x.name).map(x => `${x.type}: ${x.name}`);
+    const { individuals, couples } = splitSouls(souls);
+    const departed = [...individuals.map(s => s?.name), ...couples.map(([a, b]) => `${a?.name} & ${b?.name}`)]
+        .filter(Boolean);
+    if (departed.length) parts.push(`For the soul of: ${departed.join(', ')}`);
+    return parts.join('  ·  ');
+}
+
+/**
+ * A saved booking as the parish reads it: every kind with the names
+ * offered for it. Mirrors utils/fees.intentionGroups on the server, so the
+ * screen, the invoice, the receipt and the printed sheet agree.
+ */
+export function intentionGroups(doc = {}) {
+    const kinds = (doc.intentionTypes?.length ? doc.intentionTypes : String(doc.intentionType || '').split(','))
+        .map(k => String(k || '').trim()).filter(Boolean);
+
+    const paired = Object.fromEntries(
+        (Array.isArray(doc.intentionNames) ? doc.intentionNames : [])
+            .filter(Boolean).map(p => [String(p.type || ''), String(p.name || '')]));
+
+    const legacy = String(doc.intentionFor || '').trim();
+
+    return kinds.map(type => {
+        if (isAllSouls(type)) return { type, names: [], allSouls: true };
+
+        if (isForSouls(type)) {
+            const { individuals, couples } = splitSouls(doc.souls);
+            const names = [
+                ...individuals.map(s => s?.name),
+                ...couples.map(([a, b]) => [a?.name, b?.name].filter(Boolean).join(' & ')),
+            ].filter(Boolean);
+            return { type, names: names.length ? names : (legacy ? [legacy] : []), allSouls: false };
+        }
+
+        const name = paired[type];
+        if (!name && kinds.length === 1 && legacy) return { type, names: [legacy], allSouls: false };
+        return { type, names: name ? [name] : [], allSouls: false };
+    });
 }

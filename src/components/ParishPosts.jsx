@@ -5,22 +5,27 @@ import { faThumbtack, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import axiosPublic from '../api/axios';
 import { mediaUrl } from '../utils/media';
 import { PostsSkeleton } from './Skeleton';
-import { postPath, fmtPostDate as fmtDate } from '../utils/posts';
+import { postPath, newsPath, fmtPostDate as fmtDate } from '../utils/posts';
 
 /**
  * The parish's news and announcements on its landing page — whatever the
  * office has published from Admin → Posts, newest first, pinned on top.
  * The section is absent until there is something to read.
  */
+/* Three: enough to show the parish is active, few enough that the news
+   does not become the landing page. The rest are a click away. */
+const ON_LANDING = 3;
+
 export default function ParishPosts({ subdomain = '' }) {
     const [posts, setPosts] = useState(null);
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
         let alive = true;
         (async () => {
             try {
-                const res = await axiosPublic.get('/site/posts', { params: { limit: 6, ...(subdomain && { subdomain }) } });
-                if (alive) setPosts(res.data?.items || []);
+                const res = await axiosPublic.get('/site/posts', { params: { limit: ON_LANDING, ...(subdomain && { subdomain }) } });
+                if (alive) { setPosts(res.data?.items || []); setTotal(res.data?.total || 0); }
             } catch {
                 if (alive) setPosts([]);
             }
@@ -59,6 +64,17 @@ export default function ParishPosts({ subdomain = '' }) {
                         </Link>
                     ))}
                 </div>
+                )}
+
+                {/* Older notices are not lost, just not on the front page */}
+                {posts && posts.length > 0 && (
+                    <div className="pp__all">
+                        <Link to={newsPath(subdomain)} className="lp-btn lp-btn--outline">
+                            See all news and announcements
+                            {total > posts.length && ` (${total})`}
+                            <FontAwesomeIcon icon={faArrowRight} />
+                        </Link>
+                    </div>
                 )}
             </div>
         </section>

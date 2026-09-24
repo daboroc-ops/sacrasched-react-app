@@ -13,6 +13,7 @@
  *                and a Regular Wedding); a string names a config category
  *                whose items become the tabs instead
  */
+import { intentionGroups } from '../../utils/intentions';
 import { fmtDate, fmtDateTime, fmtStamp, fmtPeso, shortId } from '../../utils/format';
 
 const REQUEST_STATUSES = ['pending', 'approved', 'completed', 'cancelled'];
@@ -44,7 +45,6 @@ const bookedCol    = { key: 'createdAt', label: 'Booked on',  render: r => fmtSt
 
 /* The name alone — the office asked the contact number off the intention
    and document forms */
-const nameField = (label = 'Requestor Name', key = 'requestorName') => [{ name: key, label, required: true }];
 
 /* Fields every request form starts with */
 const contactFields = (nameLabel = 'Requestor Name', nameKey = 'requestorName') => ([
@@ -106,20 +106,34 @@ export const RESOURCES = {
             idCol,
             requestorCol('requestorName', 'Offered by'),
             { key: 'intentionType', label: 'Type',          render: r => r.intentionType || '—' },
-            { key: 'intentionFor',  label: 'Intention For', render: r => (
-                <div className="ad-cell-stack">
-                    <span>{r.intentionFor || '—'}</span>
-                    {r.purpose && <span className="ad-muted">{r.purpose}</span>}
-                    {r.venue   && <span className="ad-muted">at {r.venue}</span>}
-                </div>
-            ) },
+            { key: 'intentionFor',  label: 'Intention For', render: r => {
+                /* Each kind with the name offered for it, so a booking
+                   carrying two kinds does not read as one run of names. */
+                const groups = intentionGroups(r);
+                return (
+                    <div className="ad-cell-stack">
+                        {groups.length ? groups.map(g => (
+                            <span key={g.type}>
+                                <b className="int-group__type">{g.type}</b>
+                                {g.allSouls ? '' : ` — ${g.names.join(', ') || '—'}`}
+                            </span>
+                        )) : <span>{r.intentionFor || '—'}</span>}
+                        {r.purpose && <span className="ad-muted">{r.purpose}</span>}
+                        {r.venue   && <span className="ad-muted">at {r.venue}</span>}
+                    </div>
+                );
+            } },
             { key: 'donation',      label: 'Donation',      render: r => (r.donation > 0 ? fmtPeso(r.donation) : '—') },
             scheduleCol,
         ],
+        /* The kinds, their names and the souls come from the same block the
+           public form uses, rather than a single type and a line of text. */
+        intentionFields: true,
         fields: [
-            ...nameField('Offered by'),
-            { name: 'intentionType', label: 'Intention Type', required: true, source: 'Mass Intention' },
-            { name: 'intentionFor',  label: 'Intention For',  required: true, placeholder: 'e.g. For the soul of Juan Dela Cruz' },
+            /* The contact number is not optional: the model requires it, and
+               a walk-in booking was refused outright without it. */
+            ...contactFields('Offered by'),
+            { name: 'venue',         label: 'Venue',          placeholder: 'Parish, or the cemetery for Undas' },
             ...scheduleFields,
             notesField,
         ],
@@ -197,8 +211,12 @@ export const RESOURCES = {
             submittedCol,
         ],
         attachments: true,
+        /* The same particulars the public form asks for, by document type */
+        hasDocDetails: true,
         fields: [
-            ...nameField(),
+            /* A contact number is required by the model: without it every
+               walk-in document request was refused. */
+            ...contactFields(),
             { name: 'documentType', label: 'Document Type', required: true, source: 'Document Request' },
             { name: 'purpose',      label: 'Purpose',       required: true },
             { name: 'copies',       label: 'Copies',        type: 'number', min: 1, defaultValue: 1 },

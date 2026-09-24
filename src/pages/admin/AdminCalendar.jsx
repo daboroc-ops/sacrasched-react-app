@@ -85,6 +85,10 @@ export default function AdminCalendar() {
     const shift  = n => setCursor(c => new Date(c.getFullYear(), c.getMonth() + n, 1));
     const inMonth = d => d.getMonth() === cursor.getMonth();
 
+    /* Measured from midnight, so today is not itself past */
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const isPast = d => d < startOfToday;
+
     const selectedEvents = selected ? (eventsByDay[dayKey(selected)] || []) : [];
 
     return (
@@ -113,6 +117,14 @@ export default function AdminCalendar() {
                     {WEEKDAYS.map(d => <span className="ad-cal__dow" key={d}>{d}</span>)}
 
                     {cells.map(d => {
+                        /* A day of the month before or after keeps its box so the
+                           grid stays square, and carries nothing: it is not this
+                           month's to show, and a number you can click would open a
+                           day the grid is not displaying. */
+                        if (!inMonth(d)) {
+                            return <span className="ad-cal__day ad-cal__day--blank" key={d.toISOString()} aria-hidden="true" />;
+                        }
+
                         const events = eventsByDay[dayKey(d)] || [];
                         const isToday = dayKey(d) === dayKey(today);
                         const isSel   = selected && dayKey(d) === dayKey(selected);
@@ -122,7 +134,7 @@ export default function AdminCalendar() {
                                 key={d.toISOString()}
                                 className={[
                                     'ad-cal__day',
-                                    inMonth(d) ? '' : 'ad-cal__day--muted',
+                                    isPast(d) ? 'ad-cal__day--past' : '',
                                     isToday ? 'ad-cal__day--today' : '',
                                     isSel ? 'ad-cal__day--selected' : '',
                                 ].join(' ')}

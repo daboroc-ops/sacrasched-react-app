@@ -3,7 +3,6 @@ import BlessingForm        from './forms/BlessingForm';
 import MassIntentionForm   from './forms/MassIntentionForm';
 import SacramentForm       from './forms/SacramentForm';
 import DocumentRequestForm from './forms/DocumentRequestForm';
-<<<<<<< HEAD
 import OccasionalMassForm  from './forms/OccasionalMassForm';
 import ServicePicker       from './ServicePicker';
 import useParishes         from '../hooks/useParishes';
@@ -34,21 +33,6 @@ export default function BookServices({ initialDate = '', onCalendar }) {
     // On a parish's own site there is nothing to choose — the host decides
     const parishId = isTenant ? parish._id : picked;
     const ActiveForm = chosen ? FORMS[chosen] : null;
-=======
-import useParishes         from '../hooks/useParishes';
-
-const TABS = [
-    { id: 'blessing',  label: 'Blessing'        },
-    { id: 'intention', label: 'Mass Intention'   },
-    { id: 'sacrament', label: 'Sacrament'        },
-    { id: 'document',  label: 'Document Request' },
-];
-
-export default function BookServices() {
-    const [active, setActive] = useState('blessing');
-    const { parishes, loading: parishLoading } = useParishes();
-    const [parishId, setParishId] = useState('');
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
 
     return (
         <div>
@@ -59,7 +43,6 @@ export default function BookServices() {
                         confirm your booking.
                     </p>
 
-<<<<<<< HEAD
                     {/* ── Parish ── */}
                     {isTenant ? (
                         <div className="parish-picker parish-picker--fixed">
@@ -111,50 +94,6 @@ export default function BookServices() {
                     <ActiveForm parishId={parishId} initialDate={initialDate} onExit={() => setChosen(null)} onCalendar={onCalendar} />
                 </div>
             )}
-=======
-            {/* ── Parish selector ── */}
-            <div className="parish-picker">
-                <label className="parish-picker__label">Parish</label>
-                <select
-                    className="form-select"
-                    value={parishId}
-                    onChange={e => setParishId(e.target.value)}
-                    disabled={parishLoading}
-                >
-                    <option value="">
-                        {parishLoading ? 'Loading parishes…' : '— Select a parish —'}
-                    </option>
-                    {parishes.map(p => (
-                        <option key={p._id} value={p._id}>
-                            {p.name}{p.code ? ` (${p.code})` : ''}
-                        </option>
-                    ))}
-                </select>
-                <p className="parish-picker__hint">
-                    Choose which parish you are booking with.
-                </p>
-            </div>
-
-            {/* Sub-tab bar */}
-            <div className="sub-tabs">
-                {TABS.map(t => (
-                    <button
-                        key={t.id}
-                        className={`sub-tab ${active === t.id ? 'sub-tab--active' : ''}`}
-                        onClick={() => setActive(t.id)}
-                    >
-                        {t.label}
-                    </button>
-                ))}
-            </div>
-
-            <div className="book-panel">
-                {active === 'blessing'  && <BlessingForm        parishId={parishId} />}
-                {active === 'intention' && <MassIntentionForm   parishId={parishId} />}
-                {active === 'sacrament' && <SacramentForm       parishId={parishId} />}
-                {active === 'document'  && <DocumentRequestForm parishId={parishId} />}
-            </div>
->>>>>>> 9a48b48d9592d57729d0890b0d9825e5321113a5
         </div>
     );
 }

@@ -19,7 +19,10 @@ import { mediaUrl } from '../utils/media';
 import { getDetailFields, expandDetailFields } from '../utils/sacramentDetails';
 import { getDocumentFields, missingDetail } from '../utils/documentDetails';
 import { MASS_TYPES, REQUESTER_FIELDS, getOccasionFields, isForDeceased, asksWhere } from '../utils/occasionalDetails';
-import { intentionFee, isNamedSouls, needsForWhom, amountDue, offeringProblem, soulsProblem } from '../utils/intentions';
+import {
+    intentionFee, isNamedSouls, needsForWhom, amountDue, offeringProblem, soulsProblem,
+    missingIntentionNames, summariseIntentions,
+} from '../utils/intentions';
 import OfferingStep from './forms/OfferingStep';
 import DetailFields from './forms/DetailFields';
 import ContactConfirm from './forms/ContactConfirm';
@@ -70,7 +73,7 @@ const SERVICES = {
         typeKey:  'intentionType',
         done:     'Your Mass intention has been received',
         again:    'Offer another intention',
-        fields:   { intentionType: '', intentionTypes: [], souls: [], intentionFor: '', purpose: '', venue: '', wantsDonation: false, offering: '', preferredDate: '', preferredTime: '' },
+        fields:   { intentionType: '', intentionTypes: [], souls: [], intentionNames: {}, intentionFor: '', purpose: '', venue: '', wantsDonation: false, offering: '', preferredDate: '', preferredTime: '' },
     },
     blessing: {
         label:    'blessing',
@@ -174,6 +177,10 @@ export default function GuestBooking({
     // The calendar asks for the day before this form opens, so it arrives
     // already answered rather than being asked for a second time.
     initialDate = '',
+    // Draw the parish banner over the form as well as over the finished
+    // screens. The page that owns the layout asks for it; the
+    // Track-a-request form does not, where it would overstate the page.
+    banner = false,
     // Where "Cancel" goes when something outside owns the way back — the
     // calendar, in the case of a parish landing page.
     onExit,
@@ -562,6 +569,8 @@ export default function GuestBooking({
                     if (!kinds.length) return 'Choose at least one kind of intention.';
                     // Names only for the departed by name — "All Souls in Purgatory" asks none
                     if (kinds.some(isNamedSouls)) { const p = soulsProblem(form.souls); if (p) return p; }
+                    const unnamed = missingIntentionNames(kinds, form.intentionNames);
+                    if (unnamed.length) return `Say who the ${unnamed[0]} is offered for.`;
                     if (needsForWhom(kinds) && !form.intentionFor.trim()) return 'Tell us who the intention is for.';
                     return null;
                 },
@@ -570,11 +579,11 @@ export default function GuestBooking({
                         items={items}
                         types={form.intentionTypes}
                         souls={form.souls}
-                        forWhom={form.intentionFor}
+                        names={form.intentionNames}
                         purpose={form.purpose}
-                        onTypes={v => { setForm(f => ({ ...f, intentionTypes: v, intentionType: v.join(', ') })); setError(''); }}
-                        onSouls={v => { setForm(f => ({ ...f, souls: v })); setError(''); }}
-                        onForWhom={v => { setForm(f => ({ ...f, intentionFor: v })); setError(''); }}
+                        onTypes={v => { setForm(f => ({ ...f, intentionTypes: v, intentionType: v.join(', '), intentionFor: summariseIntentions(v, f.intentionNames, f.souls) })); setError(''); }}
+                        onSouls={v => { setForm(f => ({ ...f, souls: v, intentionFor: summariseIntentions(f.intentionTypes, f.intentionNames, v) })); setError(''); }}
+                        onNames={v => { setForm(f => ({ ...f, intentionNames: v, intentionFor: summariseIntentions(f.intentionTypes, v, f.souls) })); setError(''); }}
                         onPurpose={v => setForm(f => ({ ...f, purpose: v }))}
                     />
                 ),
@@ -1084,6 +1093,11 @@ export default function GuestBooking({
 
     return (
         <div className="gb">
+            {banner && (
+                <ParishBanner parish={config.parish || { name: parishName }}
+                              eyebrow="Booking with" className="pban--form" />
+            )}
+
             {autoState === 'failed' && (
                 <p className="gb__error">
                     That link could not be opened — it may have been changed in transit.

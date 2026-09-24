@@ -2,6 +2,7 @@ import useSiteContent from '../hooks/useSiteContent';
 import useParish from '../hooks/useParish';
 import { mediaUrl } from '../utils/media';
 import FadeImg from './FadeImg';
+import ParishMark from './ParishMark';
 
 /**
  * Identity block at the top of a dashboard sidebar: the picture published to
@@ -11,11 +12,29 @@ import FadeImg from './FadeImg';
  * SacraSched. With no picture uploaded a themed panel with the seal stands in,
  * so the sidebar looks finished either way.
  */
-export default function SidebarBanner({ subtitle }) {
-    const { slots }    = useSiteContent();
-    const { siteName } = useParish();
+export default function SidebarBanner({ subtitle, collapsed = false }) {
+    const { slots }            = useSiteContent();
+    const { siteName, parish } = useParish();
 
     const banner = slots['sidebar-banner'];
+
+    /* Folded: the parish's mark alone. A wide picture and a name cannot be
+       shrunk into an icon's width and stay legible, so this shows the one
+       thing that still reads at that size — and it is the same square the
+       parish is known by elsewhere. The name moves to the tooltip. */
+    if (collapsed) {
+        return (
+            <div className="sb-banner sb-banner--mark" title={siteName}>
+                {parish
+                    ? <ParishMark parish={parish} className="sb-banner__mark" />
+                    : (
+                        <span className="sb-banner__mark sb-banner__mark--platform">
+                            <img src="/favicon.svg" alt="" />
+                        </span>
+                    )}
+            </div>
+        );
+    }
 
     return (
         <div className="sb-banner">

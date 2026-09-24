@@ -4,7 +4,8 @@ import { faTrash, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import useAdminList from '../../hooks/useAdminList';
 import useAuth from '../../hooks/useAuth';
-import { Pagination, ConfirmDialog, Banner, Loading, ErrorText, Empty } from '../../components/admin/AdminUI';
+import { Pagination, ConfirmDialog, Banner, Loading, ErrorText, Empty, Segmented } from '../../components/admin/AdminUI';
+import GuestContacts from './GuestContacts';
 import { fmtDate, fullName } from '../../utils/format';
 import { ROLES } from '../../utils/roles';
 
@@ -16,8 +17,17 @@ const roleOf = user => {
     return 'User';
 };
 
+/* Accounts and guests are both "users" to the office, but only one of
+   them has a role to grant, so they are listed side by side rather than
+   merged into one table. */
+const VIEWS = [
+    { value: 'accounts', label: 'Accounts' },
+    { value: 'guests',   label: 'Guest contacts' }
+];
+
 export default function AdminUsers() {
     const axios = useAxiosPrivate();
+    const [view, setView] = useState('accounts');
     const { auth } = useAuth();
     const list = useAdminList('/admin-api/users');
 
@@ -58,6 +68,12 @@ export default function AdminUsers() {
 
     return (
         <>
+            <div className="ad-toolbar ad-toolbar--views">
+                <Segmented options={VIEWS} value={view} onChange={setView} label="Which people to show" />
+            </div>
+
+            {view === 'guests' ? <GuestContacts /> : (
+            <>
             <div className="ad-toolbar">
                 <form
                     className="ad-search"
@@ -152,6 +168,8 @@ export default function AdminUsers() {
             )}
 
             <Pagination page={list.page} totalPages={list.totalPages} total={list.total} onChange={list.setPage} />
+            </>
+            )}
 
             {toDelete && (
                 <ConfirmDialog

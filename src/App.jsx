@@ -14,6 +14,7 @@ import PersistLogin   from './components/PersistLogin';
 /* Every page but the public landing loads on demand — a visitor to a
    parish page never downloads the admin, the console or the dashboard. */
 const ParishPost = lazy(() => import('./pages/ParishPost'));
+const ParishNews = lazy(() => import('./pages/ParishNews'));
 const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
 const TrackRequest = lazy(() => import('./pages/TrackRequest'));
 const BookPage = lazy(() => import('./pages/BookPage'));
@@ -156,6 +157,12 @@ function App() {
                     <Route path="/news/:slug" element={<ParishPost />} />
                     <Route path="/parish/:subdomain/news/:slug" element={<ParishPost />} />
 
+                    {/* Everything published, as a list — public, like the posts
+                        themselves. Declared after :slug for readability; React
+                        Router ranks the static segment first either way. */}
+                    <Route path="/news" element={<ParishNews />} />
+                    <Route path="/parish/:subdomain/news" element={<ParishNews />} />
+
                     {/* The booking wizard on its own page — the calendar sends
                         the day and the service along in the query string */}
                     <Route path="/book" element={<BookPage />} />
@@ -171,10 +178,56 @@ function App() {
                         <Route path="/parish/:subdomain" element={<ParishLanding />} />
 
                         <Route element={<RequireAuth />}>
-                            <Route path="/"                  element={<Dashboard />} />
-                            <Route path="/dashboard"         element={<Dashboard />} />
-                            <Route path="/payment/success"   element={<PaymentSuccess />} />
-                            <Route path="/payment/cancel"    element={<PaymentCancel />} />
+                            <Route path="/dashboard"       element={<DashboardRouter />} />
+
+                            {/* The devotee dashboard itself. /dashboard decides
+                                where a person belongs and would send staff
+                                straight back to their own console, so the
+                                "Devotee view" links point here instead. */}
+                            <Route path="/devotee"         element={<Dashboard />} />
+                            <Route path="/payment/success" element={<PaymentSuccess />} />
+                            <Route path="/payment/cancel"  element={<PaymentCancel />} />
+
+                            {/* ── Platform (superadmin) area ── */}
+                            <Route element={<RequireSuperAdmin />}>
+                                <Route path="/superadmin" element={<SuperAdminLayout />}>
+                                    <Route index             element={<SuperAdminOverview />} />
+                                    <Route path="logs"      element={<SuperAdminLogs />} />
+                                    {/* The parish list lives on the overview now; the old
+                                        address still works so saved links do not break. */}
+                                    <Route path="parishes"  element={<Navigate to="/superadmin" replace />} />
+                                    <Route path="accounts"  element={<SuperAdminAccounts />} />
+                                    <Route path="offerings" element={<SuperAdminOfferings />} />
+                                    <Route path="appearance" element={<SuperAdminThemes />} />
+                                    <Route path="*" element={<Navigate to="/superadmin" replace />} />
+                                </Route>
+                            </Route>
+
+                            {/* ── Admin area ── */}
+                            <Route element={<RequireStaff />}>
+                                <Route path="/admin" element={<AdminLayout />}>
+                                    <Route index element={<AdminDashboard />} />
+
+                                    <Route path="blessings"         element={<AdminRequests key="blessings" resource="blessings" />} />
+                                    <Route path="mass-intentions"   element={<AdminRequests key="mass-intentions" resource="mass-intentions" />} />
+                                    <Route path="occasional-masses" element={<AdminRequests key="occasional-masses" resource="occasional-masses" />} />
+                                    <Route path="sacraments"        element={<AdminRequests key="sacraments" resource="sacraments" />} />
+                                    <Route path="document-requests" element={<AdminRequests key="document-requests" resource="document-requests" />} />
+                                    <Route path="facility-bookings" element={<AdminRequests key="facility-bookings" resource="facility-bookings" />} />
+                                    <Route path="calendar"          element={<AdminCalendar />} />
+                                    <Route path="content"           element={<AdminContent />} />
+                                    <Route path="posts"             element={<AdminPosts />} />
+
+                                    {/* Admin-only sections */}
+                                    <Route element={<RequireAdmin />}>
+                                        <Route path="users"    element={<AdminUsers />} />
+                                        <Route path="payments" element={<AdminPayments />} />
+                                        <Route path="config"   element={<AdminConfig />} />
+                                    </Route>
+
+                                    <Route path="*" element={<Navigate to="/admin" replace />} />
+                                </Route>
+                            </Route>
                         </Route>
                     </Route>
 

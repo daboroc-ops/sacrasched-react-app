@@ -44,6 +44,10 @@ function ToolBtn({ on, title, icon, cmd, arg, run, onClick }) {
 export default function RichEditor({ value = '', onChange, placeholder = 'Write the post…', minHeight = 320 }) {
     const box = useRef(null);
     const last = useRef(null);            // the HTML we last emitted or set
+    /* Where the caret was the last time it was inside the editor. Opening
+       a dialog moves the selection out of the editor entirely, so without
+       this an inserted picture lands wherever the browser left off. */
+    const caret = useRef(null);
     const [picking, setPicking] = useState(false);
     const [state, setState] = useState({});  // which toolbar buttons read "on"
 
@@ -65,6 +69,12 @@ export default function RichEditor({ value = '', onChange, placeholder = 'Write 
     /* Reflect the selection in the toolbar */
     const refresh = useCallback(() => {
         if (!box.current || !box.current.contains(document.activeElement)) return;
+        /* Keep the caret while it is ours to keep */
+        const sel = window.getSelection();
+        if (sel?.rangeCount && box.current.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+            caret.current = sel.getRangeAt(0).cloneRange();
+        }
+
         const block = String(document.queryCommandValue('formatBlock') || '').toLowerCase().replace(/[<>]/g, '');
         setState({
             bold: document.queryCommandState('bold'),
@@ -94,12 +104,37 @@ export default function RichEditor({ value = '', onChange, placeholder = 'Write 
         if (url) run('createLink', /^(https?:|mailto:|tel:)/.test(url) ? url : `https://${url}`);
     };
 
+    /* Put the caret back where the writer left it, so the picture goes
+       between the paragraphs they were standing in rather than at the top.
+       If there is nothing to restore — the picker was opened before the
+       editor was ever clicked — it goes at the end, which is where someone
+       who has not placed a caret would expect it. */
+    const restoreCaret = () => {
+        box.current?.focus();
+        const range = caret.current;
+        const sel = window.getSelection();
+        if (!sel) return;
+
+        if (range && box.current?.contains(range.commonAncestorContainer)) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+            return;
+        }
+        const end = document.createRange();
+        end.selectNodeContents(box.current);
+        end.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(end);
+    };
+
     const insertImage = asset => {
         setPicking(false);
-        box.current?.focus();
+        restoreCaret();
         const src = toPublic(asset.url);
         exec('insertHTML', `<figure><img src="${src}" alt="${(asset.alt || '').replace(/"/g, '&quot;')}"></figure><p><br></p>`);
         emit();
+        // The insertion moved the caret; that is the one worth keeping now
+        refresh();
     };
 
     /* Pasted text comes in clean */
@@ -136,7 +171,7 @@ export default function RichEditor({ value = '', onChange, placeholder = 'Write 
                 <span className="rte__sep" />
                 <ToolBtn run={run} title="Link"        icon={faLink}      onClick={link} />
                 <ToolBtn run={run} title="Remove link" icon={faLinkSlash} cmd="unlink" />
-                <ToolBtn run={run} title="Picture from the library" icon={faImage} onClick={() => setPicking(true)} />
+                <ToolBtn run={run} title="Put a picture here" icon={faImage} onClick={() => setPicking(true)} />
                 <ToolBtn run={run} title="Divider"     icon={faMinus}     cmd="insertHorizontalRule" />
                 <span className="rte__sep" />
                 <ToolBtn run={run} title="Undo" icon={faRotateLeft}  cmd="undo" />
@@ -158,7 +193,13 @@ export default function RichEditor({ value = '', onChange, placeholder = 'Write 
                 onMouseUp={refresh}
             />
 
-            {picking && <MediaPicker onPick={insertImage} onClose={() => setPicking(false)} />}
+            {picking && (
+                <MediaPicker
+                    title="Put a picture in the post"
+                    onPick={insertImage}
+                    onClose={() => setPicking(false)}
+                />
+            )}
         </div>
     );
 }
