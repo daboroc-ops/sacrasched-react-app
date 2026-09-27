@@ -6,9 +6,14 @@
 .pban {
     position: relative;
     overflow: hidden;
-    /* A fixed slice of the photo at any width. With min-height alone the
-       banner grew wider without growing taller, so a portrait photo was
-       cropped to a letterbox strip across the middle. */
+    /* The width is whatever the column gives it — stated outright, because
+       a bare aspect-ratio resolves in whichever direction it can. Once a
+       min-height overrides the height the ratio asked for, it will stretch
+       the width to match instead: 140px tall at 16/5 is 448px wide, which
+       on a 360px phone hangs off the side of the page.
+
+       So: width fixed, ratio proposes the height, min and max decide. */
+    width: 100%;
     aspect-ratio: 16 / 5;
     min-height: 168px;
     max-height: 260px;
@@ -136,6 +141,7 @@
 /* Over the form, the banner is a heading rather than the subject of the
    page, so it sits shorter and closer to what follows it. */
 .gb .pban--form {
+    width: 100%;
     aspect-ratio: 16 / 4;
     min-height: 132px;
     max-height: 190px;

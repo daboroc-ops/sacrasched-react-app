@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════
+   A booking, as its owner sees it — after the wizard, from the
+   booking email's link, or looked up by reference.
+   See components/BookingSummary.jsx
+
+   The frame is the wizard's own (booking.css: .bk-wiz, .bk-step,
+   .bk-wiz__actions, .bk-wiz__back), so the finished step looks like
+   every step before it. What is here is only what a question step
+   never needs: the paid-or-not bar, the details, the reference.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Paid or not — where the progress bar ran ─────────────── */
+
+.bsum__status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 18px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+.bsum__status svg { flex-shrink: 0; font-size: 16px; }
+.bsum__status--paid    { background: var(--success-bg); color: var(--success-strong); }
+/* Orange: something is still to be done, and it is theirs to do */
+.bsum__status--owed    { background: #ffedd5; color: #c2410c; }
+.bsum__status--free    { background: var(--surface-2);  color: var(--text-secondary); }
+.bsum__status--stopped { background: var(--danger-bg);  color: var(--danger-fg); }
+
+/* ─── The details ──────────────────────────────────────────── */
+
+.bsum .bk-step__head { margin-bottom: 12px; }
+
+.bsum__rows {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+.bsum__rows > div {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.4;
+}
+.bsum__rows dt { color: var(--text-muted); }
+.bsum__rows dd { margin: 0; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.bsum__rows dd small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+
+/* ─── The reference, last before the buttons ───────────────── */
+
+.bsum__refline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    border: 1.5px dashed var(--brand);
+    border-radius: 10px;
+    background: var(--brand-light);
+}
+.bsum__refline span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--brand-dark);
+}
+.bsum__ref {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--brand-dark);
+}
+
+.bsum .bk-wiz__actions { margin-top: 16px; }
+
+@media (max-width: 480px) {
+    .bsum__rows > div { grid-template-columns: 92px 1fr; gap: 8px; font-size: 13px; }
+    .bsum__ref { font-size: 15px; }
+}
+
+/* ─── The invoice: saved as a picture, shown at the office ──── */
+
+.bsum__sheet { background: var(--surface, #fff); }
+.bsum__notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fef9c3;
+    color: #854d0e;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.bsum__notice svg { flex-shrink: 0; margin-top: 2px; }
+.bsum__problem { margin: 10px 0 0; font-size: 12.5px; color: var(--danger-fg); }
+.bsum__sheet--capture, .bsum__sheet--capture * { animation: none !important; transition: none !important; }
+
+/* ─── The slide after Submit: how to pay ───────────────────── */
+
+.bsum__due {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--surface-2);
+}
+.bsum__due span  { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.bsum__due b     { font-size: 20px; color: var(--text-primary); }
+.bsum__due small { margin-left: auto; font-size: 12.5px; color: var(--text-muted); }
+
+.bsum__ways { display: grid; gap: 10px; }
+.bsum__way {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.bsum__way:hover { border-color: var(--brand); }
+.bsum__way--on   { border-color: var(--brand); background: var(--brand-light); }
+.bsum__way input { margin: 3px 0 0; accent-color: var(--brand); flex-shrink: 0; }
+.bsum__way-icon  { font-size: 18px; margin-top: 1px; color: var(--brand); flex-shrink: 0; width: 20px; }
+.bsum__way span  { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bsum__way b     { font-size: 14.5px; color: var(--text-primary); }
+.bsum__way small { font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+
+.bsum__rechoose {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 12px 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--brand);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+.bsum__rechoose:hover { text-decoration: underline; }
+.bsum__only { margin: -4px 0 10px; font-size: 13px; color: var(--text-secondary); }

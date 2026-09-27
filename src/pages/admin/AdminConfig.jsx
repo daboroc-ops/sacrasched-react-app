@@ -6,6 +6,7 @@ import { mediaUrl } from '../../utils/media';
 import { Banner, Loading, ErrorText, Empty } from '../../components/admin/AdminUI';
 import { fmtPeso } from '../../utils/format';
 import SpecificMassesPanel from './SpecificMassesPanel';
+import MassRosterPanel from './MassRosterPanel';
 
 /* Sunday first, matching Date#getDay() and the API's `days` object. */
 const DAYS = [
@@ -105,16 +106,26 @@ export default function AdminConfig() {
                         saving={saving === 'mass-schedule'}
                         onSave={v => save('mass-schedule', v, 'Mass schedule')}
                     />
+                    {/* Who presides at each of those Masses, date by date — drawn by lot */}
+                    <MassRosterPanel priests={config.priests || []} />
                     {/* One-off Masses, kept separate from the recurring pattern */}
-                    <SpecificMassesPanel />
+                    <SpecificMassesPanel priests={config.priests || []} />
                 </>
             )}
             {tab === 'priests' && (
-                <PriestsSection
-                    value={config.priests}
-                    saving={saving === 'priests'}
-                    onSave={v => save('priests', { priests: v }, 'Priests')}
+                <>
+                <PriestDefaultCard
+                    value={config.parish?.settings?.priestDefault}
+                    parishPriest={(config.priests || []).find(p => p.parishPriest)}
+                    saving={saving === 'parish'}
+                    onSave={v => save('parish', { settings: { priestDefault: v } }, 'Presiding priest default')}
                 />
+                <PriestsSection
+                    value={config.priests || []}
+                    onSaved={priests => setConfig(c => ({ ...c, priests }))}
+                    setNotice={setNotice}
+                />
+                </>
             )}
             {tab === 'services' && (
                 <ServicesSection
@@ -185,7 +196,7 @@ function MassScheduleSection({ value, saving, onSave }) {
                                 />
                                 <input
                                     className="ad-input"
-                                    placeholder="Label — English, Bikol…"
+                                    placeholder="Enter a label (English, Bikol…)"
                                     value={row.label || ''}
                                     onChange={e => update(day, i, { label: e.target.value })}
                                 />
@@ -213,68 +224,127 @@ function MassScheduleSection({ value, saving, onSave }) {
 
 /* ── Priests ─────────────────────────────────────────────────── */
 
-function PriestsSection({ value, saving, onSave }) {
-    const [rows, setRows] = useState(value || []);
+/**
+ * The parish's priests are accounts the platform owner creates and assigns
+ * here; the parish sets only which days each one has off.
+ */
+function PriestsSection({ value, onSaved, setNotice }) {
+    const axios = useAxiosPrivate();
+    const [daysOff, setDaysOff] = useState(() => Object.fromEntries(value.map(p => [p._id, p.daysOff || []])));
+    const [busy, setBusy] = useState('');
 
-    const update = (i, patch) => setRows(r => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+    const toggle = (id, dow) => setDaysOff(d => {
+        const list = d[id] || [];
+        return { ...d, [id]: list.includes(dow) ? list.filter(x => x !== dow) : [...list, dow].sort() };
+    });
+
+    const save = async p => {
+        setBusy(p._id);
+        setNotice(null);
+        try {
+            const res = await axios.put(`/admin-api/config/priests/${p._id}/days-off`, { daysOff: daysOff[p._id] || [] });
+            onSaved(res.data.priests);
+            setNotice({ tone: 'ok', message: `${p.label}'s days off saved — he has been notified.` });
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not save the days off.' });
+        } finally {
+            setBusy('');
+        }
+    };
+
+    const changed = p => JSON.stringify(daysOff[p._id] || []) !== JSON.stringify(p.daysOff || []);
 
     return (
         <section className="ad-card">
             <header className="ad-card__head">
                 <h3>Priests</h3>
                 <span className="ad-card__meta">
-                    Requesters do not pick a priest — the office assigns one. The parish priest is the default,
-                    and nothing that needs him is booked on his day off.
+                    The priests assigned to this parish by the SacraSched platform owner. Each month&rsquo;s
+                    Masses are drawn among them at random, never on a day off; bookings follow the choice above.
+                    Change one on the Mass roster or the request list when priests exchange. A day off never
+                    closes a day to bookings. Changing a priest&rsquo;s days off hands his Masses on those days to
+                    another priest.
                 </span>
             </header>
 
-            {rows.length === 0 && <p className="ad-config-col__empty">No priests configured yet.</p>}
+            {value.length === 0 && (
+                <p className="ad-config-col__empty">
+                    No priests are assigned to this parish yet. Ask the platform owner to create their accounts.
+                </p>
+            )}
 
-            {rows.map((row, i) => (
-                <div className="ad-repeat-row" key={i}>
-                    <input
-                        className="ad-input ad-input--short"
-                        placeholder="Title (Fr., Msgr.)"
-                        value={row.title || ''}
-                        onChange={e => update(i, { title: e.target.value })}
-                    />
-                    <input
-                        className="ad-input"
-                        placeholder="Full name"
-                        value={row.name || ''}
-                        onChange={e => update(i, { name: e.target.value })}
-                    />
-                    <label className="ad-check" title="The kura paroko — the default celebrant">
-                        <input type="radio" name="parish-priest" checked={Boolean(row.parishPriest)}
-                               onChange={() => setRows(r => r.map((x, idx) => ({ ...x, parishPriest: idx === i })))} />
-                        Parish priest
+            <ul className="ad-priests">
+                {value.map(p => (
+                    <li className="ad-priests__row" key={p._id}>
+                        <div className="ad-cell-stack ad-priests__who">
+                            <b>{p.label}</b>
+                            <span className="ad-muted">{p.parishPriest ? 'Parish priest' : 'Priest'}</span>
+                        </div>
+
+                        <div className="ad-priests__days" role="group" aria-label={`${p.label}'s days off`}>
+                            <span className="ad-priests__days-label">Days off</span>
+                            {DAYS.map(([k, label]) => {
+                                const dow = DAY_INDEX[k];
+                                const on  = (daysOff[p._id] || []).includes(dow);
+                                return (
+                                    <label key={k} className={`ad-chip${on ? ' ad-chip--on' : ''}`} title={label}>
+                                        <input type="checkbox" checked={on} onChange={() => toggle(p._id, dow)} />
+                                        {label.slice(0, 3)}
+                                    </label>
+                                );
+                            })}
+                        </div>
+
+                        <button
+                            className="ad-btn ad-btn--filled ad-btn--sm"
+                            disabled={busy === p._id || !changed(p)}
+                            onClick={() => save(p)}
+                        >
+                            {busy === p._id ? 'Saving…' : 'Save'}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
+}
+
+/* ── Who presides by default ─────────────────────────────────── */
+
+const PRIEST_DEFAULTS = [
+    { id: 'parish', title: 'The parish priest',
+      text: 'Every sacrament, blessing and occasional Mass starts with the parish priest. Change it on the booking when another priest will preside.' },
+    { id: 'random', title: 'Drawn at random',
+      text: "Each booking gets one of the parish's priests by lot at month's end, sharing them out evenly and skipping days off." }
+];
+
+/** Sacraments, blessings and occasional Masses: the parish priest by default, or a random draw. */
+function PriestDefaultCard({ value, parishPriest, saving, onSave }) {
+    const [pick, setPick] = useState(value === 'random' ? 'random' : 'parish');
+    const saved = value === 'random' ? 'random' : 'parish';
+    return (
+        <section className="ad-card">
+            <header className="ad-card__head">
+                <h3>Presiding priest</h3>
+                <span className="ad-card__meta">Who presides at sacraments, blessings and occasional Masses unless you change it</span>
+            </header>
+            <div className="ad-choice">
+                {PRIEST_DEFAULTS.map(o => (
+                    <label key={o.id} className={`ad-choice__opt${pick === o.id ? ' ad-choice__opt--on' : ''}`}>
+                        <input type="radio" name="priest-default" value={o.id} checked={pick === o.id} onChange={() => setPick(o.id)} />
+                        <span>
+                            <b>{o.title}{o.id === 'parish' && parishPriest ? ` (${parishPriest.label || parishPriest.name})` : ''}</b>
+                            <small>{o.text}</small>
+                        </span>
                     </label>
-                    <select
-                        className="ad-input ad-input--short"
-                        value={row.dayOff ?? ''}
-                        onChange={e => update(i, { dayOff: e.target.value === '' ? null : Number(e.target.value) })}
-                        title="Day off"
-                    >
-                        <option value="">No day off</option>
-                        {DAYS.map(([k, label]) => <option key={k} value={DAY_INDEX[k]}>Off on {label}s</option>)}
-                    </select>
-                    <button
-                        className="ad-icon-btn ad-icon-btn--danger"
-                        onClick={() => setRows(r => r.filter((_, idx) => idx !== i))}
-                        aria-label="Remove"
-                    >
-                        <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                </div>
-            ))}
-
-            <button className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => setRows(r => [...r, { title: '', name: '' }])}>
-                <FontAwesomeIcon icon={faPlus} /> Add priest
-            </button>
-
+                ))}
+            </div>
+            {pick === 'parish' && !parishPriest && (
+                <p className="ad-card__note">No priest is marked as parish priest yet, so the first priest listed below is used. The platform owner marks the parish priest.</p>
+            )}
             <div className="ad-form__actions">
-                <button className="ad-btn ad-btn--filled" disabled={saving} onClick={() => onSave(rows)}>
-                    {saving ? 'Saving…' : 'Save priests'}
+                <button className="ad-btn ad-btn--filled" disabled={saving || pick === saved} onClick={() => onSave(pick)}>
+                    {saving ? 'Saving…' : 'Save'}
                 </button>
             </div>
         </section>
@@ -283,16 +353,24 @@ function PriestsSection({ value, saving, onSave }) {
 
 /* ── Services & fees ─────────────────────────────────────────── */
 
+/* Occasional Masses' four kinds are fixed in the form and the database:
+   only their fees and rules change (models/ServiceCategory) */
+const fixedKinds = cat => Boolean(cat?.fixedItems) || /occasional/i.test(cat?.name || '');
+
 function ServicesSection({ value, saving, onSave }) {
     const [cats, setCats] = useState(value || []);
 
-    const updateCat  = (ci, patch) => setCats(c => c.map((cat, i) => (i === ci ? { ...cat, ...patch } : cat)));
     const updateItem = (ci, ii, patch) => setCats(c => c.map((cat, i) =>
         i !== ci ? cat : { ...cat, items: cat.items.map((it, j) => (j === ii ? { ...it, ...patch } : it)) }
     ));
+    // A service of the parish's own, added at the foot of its category
     const addItem = ci => setCats(c => c.map((cat, i) =>
-        i !== ci ? cat : { ...cat, items: [...(cat.items || []), { name: '', fee: 0, slots: [], days: [], requirements: [] }] }
+        i !== ci ? cat : { ...cat, items: [...(cat.items || []), { name: '', fee: 0, slots: [], days: [], requirements: [], minLeadDays: 0 }] }
     ));
+    const removeItem = (ci, ii) => {
+        setOpen(null);
+        setCats(c => c.map((cat, i) => (i !== ci ? cat : { ...cat, items: cat.items.filter((_, j) => j !== ii) })));
+    };
     const [open, setOpen] = useState(null);   // "ci-ii" of the item whose extras are showing
     // Categories minimised out of the way — by name, and remembered, so they
     // stay minimised across visits until the office opens them again
@@ -302,9 +380,6 @@ function ServicesSection({ value, saving, onSave }) {
     /* "08:00, 09:30, 11:00" ⇄ ['08:00', '09:30', '11:00'] */
     const parseTimes = text => text.split(/[,\s]+/).map(t => t.trim()).filter(t => /^\d{2}:\d{2}$/.test(t));
     const parseLines = text => text.split('\n').map(t => t.trim()).filter(Boolean);
-    const removeItem = (ci, ii) => setCats(c => c.map((cat, i) =>
-        i !== ci ? cat : { ...cat, items: cat.items.filter((_, j) => j !== ii) }
-    ));
 
     const total = cats.reduce((sum, c) => sum + (c.items?.length || 0), 0);
 
@@ -314,28 +389,20 @@ function ServicesSection({ value, saving, onSave }) {
                 <h3>Services & fees</h3>
                 <span className="ad-card__meta">{cats.length} categories · {total} services</span>
             </header>
+            {/* The five categories are built into the booking forms, so they are
+                fixed; the services inside them are the parish's own — except
+                Occasional Masses, whose four kinds the form itself knows */}
+            <p className="ad-card__note">The categories are fixed. Add, rename or remove the services in each, and set their fees. Occasional Masses has four fixed kinds; only their fees can change.</p>
 
             {cats.map((cat, ci) => (
                 <div className="ad-config-group" key={ci}>
                     <div className="ad-repeat-row">
-                        <input
-                            className="ad-input ad-input--bold"
-                            placeholder="Category name"
-                            value={cat.name || ''}
-                            onChange={e => updateCat(ci, { name: e.target.value })}
-                        />
+                        <span className="ad-fixed-name ad-fixed-name--bold">{cat.name}</span>
                         <button type="button" className="ad-cat__toggle"
                                 onClick={() => setFolded(f => ({ ...f, [cat.name || ci]: !f[cat.name || ci] }))}
                                 title={folded[cat.name || ci] ? 'Show the services' : 'Minimise'}>
                             <FontAwesomeIcon icon={folded[cat.name || ci] ? faChevronDown : faChevronUp} />
                             {folded[cat.name || ci] ? `${(cat.items || []).length} services` : 'Minimise'}
-                        </button>
-                        <button
-                            className="ad-icon-btn ad-icon-btn--danger"
-                            onClick={() => setCats(c => c.filter((_, i) => i !== ci))}
-                            aria-label="Remove category"
-                        >
-                            <FontAwesomeIcon icon={faTrash} />
                         </button>
                     </div>
 
@@ -343,17 +410,21 @@ function ServicesSection({ value, saving, onSave }) {
                         {(cat.items || []).map((item, ii) => (
                             <div className="ad-item" key={ii}>
                                 <div className="ad-repeat-row">
-                                <input
-                                    className="ad-input"
-                                    placeholder="Service name"
-                                    value={item.name || ''}
-                                    onChange={e => updateItem(ci, ii, { name: e.target.value })}
-                                />
+                                {fixedKinds(cat) ? (
+                                    <span className="ad-fixed-name">{item.name}</span>
+                                ) : (
+                                    <input
+                                        className="ad-input"
+                                        placeholder="Enter the service name"
+                                        value={item.name || ''}
+                                        onChange={e => updateItem(ci, ii, { name: e.target.value })}
+                                    />
+                                )}
                                 <input
                                     className="ad-input ad-input--short"
                                     type="number"
                                     min="0"
-                                    placeholder="Fee"
+                                    placeholder="Enter the fee"
                                     value={item.fee ?? 0}
                                     onChange={e => updateItem(ci, ii, { fee: e.target.value })}
                                 />
@@ -366,13 +437,19 @@ function ServicesSection({ value, saving, onSave }) {
                                 >
                                     <FontAwesomeIcon icon={faSliders} /> Rules
                                 </button>
-                                <button
-                                    className="ad-icon-btn ad-icon-btn--danger"
-                                    onClick={() => removeItem(ci, ii)}
-                                    aria-label="Remove service"
-                                >
-                                    <FontAwesomeIcon icon={faTrash} />
-                                </button>
+                                {/* A category keeps at least one service, or it could not be booked */}
+                                {!fixedKinds(cat) && (
+                                    <button
+                                        type="button"
+                                        className="ad-icon-btn ad-icon-btn--danger"
+                                        onClick={() => removeItem(ci, ii)}
+                                        disabled={(cat.items || []).length < 2}
+                                        aria-label="Remove service"
+                                        title={(cat.items || []).length < 2 ? 'A category needs at least one service' : 'Remove service'}
+                                    >
+                                        <FontAwesomeIcon icon={faTrash} />
+                                    </button>
+                                )}
                                 </div>
 
                                 {/* When it can be booked, and what it needs. Empty means
@@ -384,7 +461,7 @@ function ServicesSection({ value, saving, onSave }) {
                                             <span>Fixed times</span>
                                             <input
                                                 className="ad-input"
-                                                placeholder="e.g. 08:00, 09:30, 11:00, 13:30, 15:00 — blank for office hours"
+                                                placeholder="Enter the times (e.g. 08:00, 09:30, 11:00) — leave blank for office hours"
                                                 defaultValue={(item.slots || []).join(', ')}
                                                 onBlur={e => updateItem(ci, ii, { slots: parseTimes(e.target.value) })}
                                             />
@@ -413,7 +490,7 @@ function ServicesSection({ value, saving, onSave }) {
                                             <div className="ad-inline">
                                                 <span>at least</span>
                                                 <input className="ad-input ad-input--short" type="number" min={0} max={365}
-                                                       value={item.minLeadDays || 0}
+                                                       value={item.minLeadDays || 0} placeholder="Enter the days of notice"
                                                        onChange={e => updateItem(ci, ii, { minLeadDays: parseInt(e.target.value, 10) || 0 })} />
                                                 <span>days ahead</span>
                                                 <small>60 for two months; 0 for none</small>
@@ -424,7 +501,7 @@ function ServicesSection({ value, saving, onSave }) {
                                             <textarea
                                                 className="ad-input"
                                                 rows={3}
-                                                placeholder={'e.g.\nBirth certificate\nParents\' marriage certificate'}
+                                                placeholder={'Enter one requirement per line, e.g.\nBirth certificate\nParents\' marriage certificate'}
                                                 defaultValue={(item.requirements || []).join('\n')}
                                                 onBlur={e => updateItem(ci, ii, { requirements: parseLines(e.target.value) })}
                                             />
@@ -433,19 +510,14 @@ function ServicesSection({ value, saving, onSave }) {
                                 )}
                             </div>
                         ))}
-                        <button className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => addItem(ci)}>
-                            <FontAwesomeIcon icon={faPlus} /> Add service
-                        </button>
+                        {!fixedKinds(cat) && (
+                            <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => addItem(ci)}>
+                                <FontAwesomeIcon icon={faPlus} /> Add service
+                            </button>
+                        )}
                     </div>}
                 </div>
             ))}
-
-            <button
-                className="ad-btn ad-btn--ghost ad-btn--sm"
-                onClick={() => setCats(c => [...c, { name: '', items: [] }])}
-            >
-                <FontAwesomeIcon icon={faPlus} /> Add category
-            </button>
 
             <div className="ad-form__actions">
                 <button className="ad-btn ad-btn--filled" disabled={saving} onClick={() => onSave(cats)}>
@@ -477,13 +549,13 @@ function VenuesSection({ value, saving, onSave }) {
                     <div className="ad-repeat-row">
                         <input
                             className="ad-input ad-input--short"
-                            placeholder="Venue name"
+                            placeholder="Enter the venue name"
                             value={row.name || ''}
                             onChange={e => update(i, { name: e.target.value })}
                         />
                         <input
                             className="ad-input"
-                            placeholder="Description (optional)"
+                            placeholder="Enter a description (optional)"
                             value={row.description || ''}
                             onChange={e => update(i, { description: e.target.value })}
                         />
@@ -526,7 +598,7 @@ function VenuesSection({ value, saving, onSave }) {
                             <div className="ad-inline" key={mi}>
                                 <input className="ad-input ad-input--short" type="date" value={m.date ? String(m.date).slice(0, 10) : ''}
                                        onChange={e => update(i, { masses: row.masses.map((x, k) => (k === mi ? { ...x, date: e.target.value } : x)) })} />
-                                <input className="ad-input" placeholder="Times, 24-hour — e.g. 17:00, 18:30"
+                                <input className="ad-input" placeholder="Enter the times in 24-hour format (e.g. 17:00, 18:30)"
                                        value={Array.isArray(m.times) ? m.times.join(', ') : (m.times || '')}
                                        onChange={e => update(i, { masses: row.masses.map((x, k) => (k === mi ? { ...x, times: e.target.value } : x)) })} />
                                 <button className="ad-icon-btn" onClick={() => update(i, { masses: row.masses.filter((_, k) => k !== mi) })} aria-label="Remove this day">
@@ -613,12 +685,33 @@ function LogoCard({ logo, onUploaded }) {
     );
 }
 
+/* The services, and how the parish lets each be paid (utils/payWays) */
+const PAY_SERVICES = [
+    ['intention',  'Mass Intentions'],
+    ['blessing',   'Blessings'],
+    ['sacrament',  'Sacraments'],
+    ['occasional', 'Occasional Masses'],
+    ['document',   'Document Requests']
+];
+const payWaysFrom = saved => Object.fromEntries(PAY_SERVICES.map(([k]) => [k, {
+    online: saved?.[k]?.online !== false,
+    onsite: saved?.[k]?.onsite !== false
+}]));
+
 function ParishSection({ value, saving, onSave }) {
     const [logo, setLogo] = useState(value?.logo || '');
     const [settings, setSettings] = useState(() => ({
         advanceMonths:        value?.settings?.advanceMonths ?? 3,
         intentionsPaidOnline: value?.settings?.intentionsPaidOnline !== false,
+        payWays:              payWaysFrom(value?.settings?.payWays),
     }));
+    // A service keeps at least one way to be paid: the last one on cannot be turned off
+    const toggleWay = (kind, way) => setSettings(s => {
+        const cur = s.payWays[kind];
+        const other = way === 'online' ? 'onsite' : 'online';
+        if (cur[way] && !cur[other]) return s;
+        return { ...s, payWays: { ...s.payWays, [kind]: { ...cur, [way]: !cur[way] } } };
+    });
     const [diocese, setDiocese] = useState(value?.diocese || '');
     // Where to find us — shown at the foot of the parish's landing page
     const [visit, setVisit] = useState(() => ({
@@ -659,7 +752,7 @@ function ParishSection({ value, saving, onSave }) {
                         <div className="ad-inline">
                             <span>up to</span>
                             <input className="ad-input ad-input--short" type="number" min={1} max={24}
-                                   value={settings.advanceMonths}
+                                   value={settings.advanceMonths} placeholder="Enter the number of months"
                                    onChange={e => setSettings(s => ({ ...s, advanceMonths: e.target.value }))} />
                             <span>months ahead</span>
                         </div>
@@ -668,10 +761,45 @@ function ParishSection({ value, saving, onSave }) {
 
                     <label className="ad-field">
                         <span>Diocese</span>
-                        <input className="ad-input" placeholder="e.g. Diocese of Legazpi" value={diocese}
+                        <input className="ad-input" placeholder="Enter the diocese (e.g. Diocese of Legazpi)" value={diocese}
                                onChange={e => setDiocese(e.target.value)} />
                         <small>Printed on receipts, between the parish's logo and the diocese's (Content → logos).</small>
                     </label>
+                </div>
+
+                {/* After Submit the visitor picks from what is ticked here */}
+                <div className="ad-payways">
+                    <div className="ad-payways__head">
+                        <span>How each service can be paid</span>
+                        <small>The visitor chooses after submitting. Each service needs at least one.</small>
+                    </div>
+                    <div className="ad-payways__grid" role="table">
+                        <div className="ad-payways__row ad-payways__row--head" role="row">
+                            <span role="columnheader">Service</span>
+                            <span role="columnheader">Online</span>
+                            <span role="columnheader">At the parish office</span>
+                        </div>
+                        {PAY_SERVICES.map(([k, label]) => {
+                            const w = settings.payWays[k];
+                            return (
+                                <div className="ad-payways__row" role="row" key={k}>
+                                    <span role="cell">{label}</span>
+                                    {['online', 'onsite'].map(way => {
+                                        const last = w[way] && !w[way === 'online' ? 'onsite' : 'online'];
+                                        return (
+                                            <label role="cell" key={way} className="ad-payways__tick"
+                                                   title={last ? 'At least one way to pay must stay on' : undefined}>
+                                                <input type="checkbox" checked={w[way]} disabled={last}
+                                                       onChange={() => toggleWay(k, way)}
+                                                       aria-label={`${label}: ${way === 'online' ? 'online' : 'at the parish office'}`} />
+                                                <span className="ad-payways__word">{way === 'online' ? 'Online' : 'At the parish office'}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <div className="ad-form__actions">
@@ -691,37 +819,37 @@ function ParishSection({ value, saving, onSave }) {
                 <div className="ad-grid ad-grid--2">
                     <label className="ad-field ad-field--full">
                         <span>Address</span>
-                        <input className="ad-input" placeholder="Street, barangay, city, province" value={visit.address} onChange={setV('address')} />
+                        <input className="ad-input" placeholder="Enter the address (street, barangay, city, province)" value={visit.address} onChange={setV('address')} />
                     </label>
                     <label className="ad-field">
                         <span>Office hours</span>
-                        <input className="ad-input" placeholder="e.g. Monday to Saturday, 8:00 AM – 5:00 PM" value={visit.officeHours} onChange={setV('officeHours')} />
+                        <input className="ad-input" placeholder="Enter the office hours (e.g. Monday to Saturday, 8:00 AM – 5:00 PM)" value={visit.officeHours} onChange={setV('officeHours')} />
                     </label>
                     <label className="ad-field">
                         <span>Phone</span>
-                        <input className="ad-input" type="tel" placeholder="Landline — e.g. (052) 123 4567" value={visit.contactPhone} onChange={setV('contactPhone')} />
+                        <input className="ad-input" type="tel" placeholder="Enter the landline number (e.g. (052) 123 4567)" value={visit.contactPhone} onChange={setV('contactPhone')} />
                     </label>
                     <label className="ad-field">
                         <span>Mobile number</span>
-                        <input className="ad-input" type="tel" placeholder="e.g. 0917 000 0000" value={visit.mobile} onChange={setV('mobile')} />
+                        <input className="ad-input" type="tel" placeholder="Enter the mobile number (e.g. 0917 000 0000)" value={visit.mobile} onChange={setV('mobile')} />
                     </label>
                     <label className="ad-field">
                         <span>Email</span>
-                        <input className="ad-input" type="email" placeholder="office@parish.ph" value={visit.contactEmail} onChange={setV('contactEmail')} />
+                        <input className="ad-input" type="email" placeholder="Enter the email address (e.g. office@parish.ph)" value={visit.contactEmail} onChange={setV('contactEmail')} />
                     </label>
                     <label className="ad-field">
                         <span>Facebook page</span>
-                        <input className="ad-input" type="url" placeholder="https://www.facebook.com/…" value={visit.facebook} onChange={setV('facebook')} />
+                        <input className="ad-input" type="url" placeholder="Enter the Facebook page link (https://www.facebook.com/…)" value={visit.facebook} onChange={setV('facebook')} />
                     </label>
                     <label className="ad-field ad-field--full">
                         <span>Map</span>
-                        <input className="ad-input" placeholder="Google Maps embed link, or coordinates like 13.2409, 123.5321 — blank uses the address"
+                        <input className="ad-input" placeholder="Enter a Google Maps embed link or coordinates (e.g. 13.2409, 123.5321) — leave blank to use the address"
                                value={visit.map} onChange={setV('map')} />
                         <small>In Google Maps: Share → Embed a map → copy the link inside src="…". Coordinates or a place name work too.</small>
                     </label>
                     <label className="ad-field ad-field--full">
                         <span>How to get there</span>
-                        <textarea className="ad-input" rows={3} placeholder="Landmarks and directions — e.g. Beside the public market, jeepneys bound for Guilid stop at the gate."
+                        <textarea className="ad-input" rows={3} placeholder="Enter landmarks and directions (e.g. beside the public market; jeepneys bound for Guilid stop at the gate)"
                                   value={visit.directions} onChange={setV('directions')} />
                     </label>
                 </div>
@@ -748,9 +876,9 @@ function ParishSection({ value, saving, onSave }) {
 
                 {acts.map((row, i) => (
                     <div className="ad-repeat-row" key={i}>
-                        <input className="ad-input" placeholder="Activity — e.g. SAKOP"
+                        <input className="ad-input" placeholder="Enter the activity (e.g. SAKOP)"
                                value={row.name} onChange={e => update(i, { name: e.target.value })} />
-                        <input className="ad-input" placeholder="When, in words — e.g. Every Saturday | 5:15 PM"
+                        <input className="ad-input" placeholder="Enter when it is held (e.g. Every Saturday | 5:15 PM)"
                                value={row.schedule} onChange={e => update(i, { schedule: e.target.value })} />
                         <button className="ad-icon-btn ad-icon-btn--danger"
                                 onClick={() => setActs(r => r.filter((_, idx) => idx !== i))} aria-label="Remove">
@@ -816,7 +944,7 @@ function ChatbotCard({ value, saving, onSave }) {
             <label className="ad-field">
                 <span>JotForm agent link or ID</span>
                 <input className="ad-input" autoComplete="off"
-                       placeholder="https://agent.jotform.com/0198… — or just the id"
+                       placeholder="Enter the Jotform agent link or ID (https://agent.jotform.com/0198…)"
                        value={agentId} onChange={e => setAgentId(e.target.value)} />
                 <small>
                     From the agent&rsquo;s Publish tab. Pasting the whole link is fine; the id is taken out of it.
@@ -865,14 +993,14 @@ function MessengerCard({ value, saving, onSave }) {
             <div className="ad-grid ad-grid--2">
                 <label className="ad-field">
                     <span>Facebook Page ID</span>
-                    <input className="ad-input" placeholder="e.g. 103456789012345" value={pageId}
+                    <input className="ad-input" placeholder="Enter the Facebook Page ID (e.g. 103456789012345)" value={pageId}
                            onChange={e => setPageId(e.target.value)} inputMode="numeric" />
                     <small>Page → About → Page transparency, or the Meta app's Messenger settings.</small>
                 </label>
                 <label className="ad-field">
                     <span>Page access token</span>
                     <input className="ad-input" type="password" autoComplete="off"
-                           placeholder={connected ? 'On file — paste a new one to replace it' : 'Paste the token from the Meta app'}
+                           placeholder={connected ? 'Enter a new token to replace the one on file' : 'Enter the token from the Meta app'}
                            value={token} onChange={e => setToken(e.target.value)} />
                     <small>Generated in the Meta app under Messenger → Access Tokens. Kept on the server only.</small>
                 </label>
@@ -954,7 +1082,7 @@ function SmsCard() {
             </p>
 
             <div className="ad-inline" style={{ marginBottom: 12 }}>
-                <input className="ad-input ad-input--short" placeholder="09XXXXXXXXX" value={to} onChange={e => setTo(e.target.value)} inputMode="numeric" style={{ maxWidth: 180 }} />
+                <input className="ad-input ad-input--short" placeholder="Enter a mobile number (09XXXXXXXXX)" value={to} onChange={e => setTo(e.target.value)} inputMode="numeric" style={{ maxWidth: 180 }} />
                 <button className="ad-btn ad-btn--ghost ad-btn--sm" disabled={busy || !to.trim()} onClick={test}>{busy ? 'Sending…' : 'Send a test text'}</button>
                 {note && <span className="ad-muted" style={{ fontSize: 12.5 }}>{note}</span>}
             </div>

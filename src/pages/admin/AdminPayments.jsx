@@ -1,9 +1,7 @@
-import { useState } from 'react';
-import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import useAdminList from '../../hooks/useAdminList';
 import {
-    StatusBadge, FilterBar, Pagination, Banner, Loading, ErrorText, Empty, SearchBox } from '../../components/admin/AdminUI';
-import { fmtDate, fmtPeso, fullName, shortId } from '../../utils/format';
+    StatusBadge, FilterBar, Pagination, Loading, ErrorText, Empty, SearchBox, Tabs } from '../../components/admin/AdminUI';
+import { fmtDate, fmtPeso, fullName, refOf } from '../../utils/format';
 
 const STATUSES = ['pending', 'paid', 'failed', 'refunded'];
 
@@ -11,33 +9,30 @@ const SERVICE_LABEL = {
     massIntention:   'Mass Intention',
     blessing:        'Blessing',
     sacrament:       'Sacrament',
+    occasionalMass:  'Occasional Mass',
     documentRequest: 'Document Request',
     facilityBooking: 'Facility Booking',
     other:           'Other',
 };
 
-export default function AdminPayments() {
-    const axios = useAxiosPrivate();
-    const list  = useAdminList('/admin-api/payments');
+/* One tab per service, in the order the sidebar lists them */
+const SERVICE_TABS = [
+    { label: 'Blessings',         match: 'blessing' },
+    { label: 'Mass Intentions',   match: 'massIntention' },
+    { label: 'Occasional Masses', match: 'occasionalMass' },
+    { label: 'Sacraments',        match: 'sacrament' },
+    { label: 'Document Requests', match: 'documentRequest' },
+];
 
-    const [busyId, setBusyId] = useState(null);
-    const [notice, setNotice] = useState(null);
+/**
+ * Every payment, read-only. A payment's status is not changed here: the
+ * office marks a booking paid on the booking itself (the "Paid" tick).
+ */
+export default function AdminPayments() {
+    const list = useAdminList('/admin-api/payments');
 
     const summary = list.summary || {};
-
-    const changeStatus = async (row, status) => {
-        setBusyId(row._id);
-        setNotice(null);
-        try {
-            await axios.patch(`/admin-api/payments/${row._id}/status`, { status });
-            setNotice({ tone: 'ok', message: `Payment marked "${status}".` });
-            list.reload();
-        } catch (err) {
-            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Failed to update payment.' });
-        } finally {
-            setBusyId(null);
-        }
-    };
+    const typeCounts = list.typeCounts || {};
 
     return (
         <>
@@ -57,6 +52,17 @@ export default function AdminPayments() {
                 ))}
             </section>
 
+            {/* Which service's payments — the totals above follow it */}
+            <div className="ad-toolbar ad-toolbar--tabs">
+                <Tabs
+                    tabs={SERVICE_TABS}
+                    value={list.type}
+                    onChange={list.setType}
+                    counts={typeCounts}
+                    total={Object.values(typeCounts).reduce((a, b) => a + b, 0)}
+                />
+            </div>
+
             <div className="ad-toolbar">
                 <FilterBar
                     options={['all', ...STATUSES]}
@@ -69,11 +75,9 @@ export default function AdminPayments() {
 
             <div className="ad-toolbar ad-toolbar--search">
                 <SearchBox value={list.search} onSearch={list.setSearch}
-                           placeholder="Search payments — reference, description, PayMongo ID, method…" />
+                           placeholder="Enter a reference, description, PayMongo ID or method" />
                 {list.search && <span className="ad-muted">{list.total} match{list.total === 1 ? '' : 'es'} for “{list.search}”</span>}
             </div>
-
-            <Banner {...(notice || {})} onDismiss={() => setNotice(null)} />
 
             {list.loading ? <Loading /> :
              list.error   ? <ErrorText>{list.error}</ErrorText> :
@@ -82,20 +86,19 @@ export default function AdminPayments() {
                     <table className="ad-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>Reference</th>
                                 <th>User</th>
                                 <th>Amount</th>
                                 <th>Service</th>
                                 <th>Method</th>
                                 <th>Date</th>
                                 <th>Status</th>
-                                <th className="ad-table__actions-hd">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {list.items.map(p => (
-                                <tr key={p._id} className={busyId === p._id ? 'ad-row--busy' : ''}>
-                                    <td className="ad-mono">{shortId(p._id)}</td>
+                                <tr key={p._id}>
+                                    <td className="ad-mono">{refOf(p)}</td>
                                     <td>
                                         {/* A guest payment has no account behind it —
                                             the address they booked with is who it is. */}
@@ -114,16 +117,6 @@ export default function AdminPayments() {
                                     <td className="ad-mono">{p.paymentMethod || '—'}</td>
                                     <td>{fmtDate(p.transactionDate || p.createdAt)}</td>
                                     <td><StatusBadge status={p.status} /></td>
-                                    <td>
-                                        <select
-                                            className="ad-select ad-select--sm"
-                                            value={p.status}
-                                            disabled={busyId === p._id}
-                                            onChange={e => changeStatus(p, e.target.value)}
-                                        >
-                                            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </td>
                                 </tr>
                             ))}
                         </tbody>

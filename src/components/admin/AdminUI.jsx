@@ -35,7 +35,7 @@ export function StatusBadge({ status }) {
  * The search bar over a list: type, press Enter (or Search), and the list
  * asks the API again with ?search=. Clear puts everything back.
  */
-export function SearchBox({ value, onSearch, placeholder = 'Search…' }) {
+export function SearchBox({ value, onSearch, placeholder = 'Enter a search term' }) {
     const [query, setQuery] = useState(value || '');
     return (
         <form className="ad-search" onSubmit={e => { e.preventDefault(); onSearch(query.trim()); }} role="search">

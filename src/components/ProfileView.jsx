@@ -4,8 +4,10 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import useAuth from '../hooks/useAuth';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 
-export default function ProfileView() {
-    const { auth, setAuth } = useAuth();
+/** `staff`: shown in the admin, under the account's own role (Admin, Editor…) */
+export default function ProfileView({ staff = false }) {
+    const { auth, setAuth, roleLabel } = useAuth();
+    const role = staff ? roleLabel : 'Parishioner';
     const axiosPrivate = useAxiosPrivate();
     const user = auth?.user;
 
@@ -63,7 +65,7 @@ export default function ProfileView() {
                 <div className="profile-page__avatar">{initial}</div>
                 <div className="profile-page__hero-info">
                     <p className="profile-page__hero-name">{displayName}</p>
-                    <p className="profile-page__hero-role">Parishioner</p>
+                    <p className="profile-page__hero-role">{role}</p>
                 </div>
             </div>
 
@@ -74,23 +76,23 @@ export default function ProfileView() {
                 <div className="profile-page__row">
                     <div className="form-group">
                         <label className="form-label">First Name</label>
-                        <input className="form-input" value={form.firstname} onChange={set('firstname')} />
+                        <input className="form-input" value={form.firstname} onChange={set('firstname')} placeholder="Enter your first name" />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Last Name</label>
-                        <input className="form-input" value={form.lastname} onChange={set('lastname')} />
+                        <input className="form-input" value={form.lastname} onChange={set('lastname')} placeholder="Enter your last name" />
                     </div>
                 </div>
 
                 <div className="form-group">
                     <label className="form-label">Email</label>
-                    <input className="form-input" type="email" value={form.email} onChange={set('email')} />
+                    <input className="form-input" type="email" value={form.email} onChange={set('email')} placeholder="Enter your email address" />
                 </div>
 
                 <div className="form-group">
                     <label className="form-label">Contact Number</label>
                     <input className="form-input" type="tel" value={form.contactNumber} onChange={set('contactNumber')}
-                        placeholder="e.g. 09171234567" />
+                        placeholder="Enter your mobile number (e.g. 09171234567)" />
                 </div>
             </div>
 
@@ -101,11 +103,11 @@ export default function ProfileView() {
 
                 <div className="form-group">
                     <label className="form-label">New Password</label>
-                    <input className="form-input" type="password" value={form.password} onChange={set('password')} />
+                    <input className="form-input" type="password" value={form.password} onChange={set('password')} placeholder="Enter a new password" />
                 </div>
                 <div className="form-group">
                     <label className="form-label">Confirm New Password</label>
-                    <input className="form-input" type="password" value={form.confirm} onChange={set('confirm')} />
+                    <input className="form-input" type="password" value={form.confirm} onChange={set('confirm')} placeholder="Enter the new password again" />
                 </div>
             </div>
 

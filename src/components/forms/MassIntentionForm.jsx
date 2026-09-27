@@ -129,7 +129,7 @@ export default function MassIntentionForm({ parishId, onExit, initialDate, onCal
                     {needsContact && (
                         <div className="form-group form-group--full">
                             <label className="form-label">Contact Number <span className="req">*</span></label>
-                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                            <input className="form-input" type="tel" placeholder="Enter your mobile number (09XXXXXXXXX)"
                                 value={form.contactNumber} onChange={set('contactNumber')} required />
                             <p className="form-hint">Your account has no number saved yet.</p>
                         </div>
@@ -193,7 +193,8 @@ export default function MassIntentionForm({ parishId, onExit, initialDate, onCal
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
-                            value={form.additionalNotes} onChange={set('additionalNotes')} />
+                            value={form.additionalNotes} onChange={set('additionalNotes')}
+                            placeholder="Enter anything else the office should know (optional)" />
                     </div>
                     <BookingNotice />
                 </>

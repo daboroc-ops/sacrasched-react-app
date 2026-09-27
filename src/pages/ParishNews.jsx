@@ -95,7 +95,7 @@ export default function ParishNews() {
             </header>
 
             <main className="post news-index">
-                <h1 className="post__title news-index__title">News and announcements</h1>
+                <h1 className="post__title news-index__title">News and Announcements</h1>
                 <p className="news-index__sub">
                     {state === 'ok' && total > 0
                         ? `${total} ${total === 1 ? 'post' : 'posts'} from ${name}.`

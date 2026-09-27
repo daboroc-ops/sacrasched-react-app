@@ -48,7 +48,7 @@ export default function OfferingStep({ items, types, souls, wants, offering, onW
                     <div className="int-offering">
                         <span className="int-offering__sign">₱</span>
                         <input className="form-input" type="number" inputMode="decimal" min={fee} step="1"
-                               value={offering} placeholder={fee.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                               value={offering} placeholder={`Enter the amount (at least ${fee.toLocaleString('en-PH', { minimumFractionDigits: 2 })})`}
                                onChange={e => onOffering(e.target.value)} autoFocus />
                     </div>
                     <p className={`form-hint${problem ? ' form-hint--error' : ''}`}>

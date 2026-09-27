@@ -18,6 +18,7 @@
 @import './styles/parish-calendar.css';
 @import './styles/week-schedule.css';
 @import './styles/guest-booking.css';
+@import './styles/booking-summary.css';
 @import './styles/admin.css';
 @import './styles/cms.css';
 @import './styles/sidebar-banner.css';
@@ -28,4 +29,5 @@
 @import './styles/result.css';
 @import './styles/parish-banner.css';
 @import './styles/superadmin.css';
+@import './styles/priest.css';
 @import './styles/theme-editor.css';

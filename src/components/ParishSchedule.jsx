@@ -58,7 +58,7 @@ export default function ParishSchedule({ subdomain = '' }) {
     if (loading) return (
         <section className="lp-section" id="schedule">
             <div className="lp-section__inner">
-                <div className="lp-section__hd"><h2>Mass schedule</h2></div>
+                <div className="lp-section__hd"><h2>Mass Schedule</h2></div>
                 <WeekScheduleSkeleton />
             </div>
         </section>
@@ -84,7 +84,7 @@ export default function ParishSchedule({ subdomain = '' }) {
         <section className="lp-section" id="schedule">
             <div className="lp-section__inner">
                 <div className="lp-section__hd">
-                    <h2>Mass schedule</h2>
+                    <h2>Mass Schedule</h2>
                 </div>
 
                 {hasWeek && <WeekSchedule days={days} />}

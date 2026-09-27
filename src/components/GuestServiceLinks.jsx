@@ -22,7 +22,7 @@ export default function GuestServiceLinks() {
     return (
         <section className="gsl">
             <div className="gsl__hd">
-                <h3>Also available from this parish</h3>
+                <h3>Also Available from This Parish</h3>
                 <p>
                     These need an account, so the parish can keep your records together
                     and you can follow every request in one place.
@@ -44,7 +44,7 @@ export default function GuestServiceLinks() {
             </div>
 
             <p className="gsl__foot">
-                No account yet? <Link to="/register">Create one</Link> — it takes a minute.
+                No account? You can still book as a guest — accounts are created by the parish office.
             </p>
         </section>
     );

@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faTableColumns, faUsers, faCalendarDays, faCreditCard, faHandsPraying,
-    faChurch, faDove, faFileLines, faBuildingColumns, faGear, faImages, faNewspaper, faCross,
+    faChurch, faDove, faFileLines, faGear, faImages, faNewspaper, faCross,
     faBars, faXmark, faRightFromBracket, faShieldHalved,
-    faAnglesLeft, faAnglesRight,
+    faAnglesLeft, faAnglesRight, faHeadset,
 } from '@fortawesome/free-solid-svg-icons';
 import useAuth from '../../hooks/useAuth';
 import useParish from '../../hooks/useParish';
 import useLogout from '../../hooks/useLogout';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import SidebarBanner from '../../components/SidebarBanner';
+import useTableLabels from '../../hooks/useTableLabels';
 
 /* Whether the sidebar was left folded. Kept per browser, like the fold
    state of the Configuration cards: a choice about this screen, on this
@@ -35,8 +36,16 @@ const NAV = [
     { to: '/admin/occasional-masses',  label: 'Occasional Masses', icon: faCross },
     { to: '/admin/sacraments',         label: 'Sacraments',        icon: faDove },
     { to: '/admin/document-requests',  label: 'Document Requests', icon: faFileLines },
-    { to: '/admin/facility-bookings',  label: 'Facility Bookings', icon: faBuildingColumns },
+    { to: '/admin/live-agent',         label: 'Live Agent',        icon: faHeadset, badge: true },
 ];
+
+/* Pages reached from the header rather than the sidebar */
+const HEADER_PAGES = [
+    { to: '/admin/profile', label: 'Admin Profile' },
+];
+
+/* How often the Live Agent badge checks for parishioners waiting */
+const LIVE_POLL_MS = 15000;
 
 const SETTINGS = [
     { to: '/admin/posts',   label: 'Posts',   icon: faNewspaper },
@@ -76,6 +85,10 @@ export default function AdminLayout() {
 
     const toggleFold = () => setCollapsed(c => { rememberFold(!c); return !c; });
 
+    // Tables become labelled cards on a phone (admin.css)
+    const mainRef = useRef(null);
+    useTableLabels(mainRef);
+
     // null while the probe is in flight — the dashboard renders as usual until
     // we know, so the common case never flickers through a warning.
     const [scope, setScope] = useState(null);
@@ -93,6 +106,22 @@ export default function AdminLayout() {
         return () => { alive = false; };
     }, [axios]);
 
+    /* Parishioners waiting for the office in Live Agent — the badge on its button */
+    const [live, setLive] = useState({ open: 0, unread: 0 });
+    useEffect(() => {
+        let alive = true;
+        const check = async () => {
+            try {
+                const res = await axios.get('/admin-api/live-chats/count');
+                if (alive) setLive(res.data || { open: 0, unread: 0 });
+            } catch { /* the badge just stays as it was */ }
+        };
+        const first = setTimeout(check, 0);
+        const timer = setInterval(check, LIVE_POLL_MS);
+        return () => { alive = false; clearTimeout(first); clearInterval(timer); };
+    }, [axios]);
+    const liveCount = live.unread || live.open;
+
     const user = auth?.user;
     const name = user ? `${user.firstname} ${user.lastname}` : (user?.username || 'Admin');
     const initials = (user?.firstname?.[0] || 'A').toUpperCase();
@@ -100,7 +129,7 @@ export default function AdminLayout() {
     const handleLogout = useLogout();
 
     const visible = NAV.filter(item => !item.adminOnly || isAdmin);
-    const current = [...NAV, ...SETTINGS].find(i =>
+    const current = [...NAV, ...SETTINGS, ...HEADER_PAGES].find(i =>
         i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)
     );
 
@@ -116,6 +145,7 @@ export default function AdminLayout() {
         >
             <FontAwesomeIcon icon={item.icon} className="ad-nav__icon" />
             <span>{item.label}</span>
+            {item.badge && liveCount > 0 && <span className="ad-nav__count">{liveCount}</span>}
         </NavLink>
     );
 
@@ -140,10 +170,17 @@ export default function AdminLayout() {
                 </div>
 
                 <div className="ad-header__right">
-                    <span className="ad-header__user">
+                    {/* Parishioners the chatbot could not help */}
+                    <NavLink to="/admin/live-agent" className="ad-header__live" title="Live Agent — reply to parishioners from the chatbot">
+                        <FontAwesomeIcon icon={faHeadset} />
+                        <span>Live Agent</span>
+                        {liveCount > 0 && <b className="ad-header__live-count">{liveCount}</b>}
+                    </NavLink>
+                    {/* The account: opens the Admin Profile */}
+                    <NavLink to="/admin/profile" className="ad-header__user ad-header__user--link" title="Your profile">
                         <span className="ad-header__avatar">{initials}</span>
-                        {name}
-                    </span>
+                        <span className="ad-header__name">{name}</span>
+                    </NavLink>
                     <button className="ad-header__logout" onClick={handleLogout}>
                         <FontAwesomeIcon icon={faRightFromBracket} />
                         <span>Logout</span>
@@ -184,7 +221,7 @@ export default function AdminLayout() {
                 </aside>
 
                 {/* ── Page ── */}
-                <main className="ad-main">
+                <main className="ad-main" ref={mainRef}>
                     {scope && !scope.hasParish ? (
                         <NoParishNotice />
                     ) : (

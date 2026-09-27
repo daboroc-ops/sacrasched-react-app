@@ -34,7 +34,7 @@ export default function GuestContacts() {
                     <span className="ad-search__field">
                         <FontAwesomeIcon icon={faMagnifyingGlass} className="ad-search__icon" />
                         <input className="ad-input ad-input--search"
-                               placeholder="Search name, email, number or reference"
+                               placeholder="Enter a name, email, number or reference"
                                value={query} onChange={e => setQuery(e.target.value)} />
                     </span>
                     <button className="ad-btn ad-btn--filled" type="submit">Search</button>

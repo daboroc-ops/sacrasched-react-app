@@ -40,7 +40,7 @@ export default function MassScheduleView() {
             {/* The parish's own activities — as the office writes them on the board */}
             {activities.length > 0 && (
                 <section className="sched-special">
-                    <h3 className="sched-special__title">Parish activities</h3>
+                    <h3 className="sched-special__title">Parish Activities</h3>
                     <ul className="sched-special__list">
                         {activities.map((a, i) => (
                             <li key={i} className="sched-special__item">
@@ -62,7 +62,7 @@ export default function MassScheduleView() {
                 Set by the parish office under Configuration → Mass Schedule. */}
             {schedule.scheduled?.length > 0 && (
                 <section className="sched-special">
-                    <h3 className="sched-special__title">Coming up</h3>
+                    <h3 className="sched-special__title">Coming Up</h3>
                     <ul className="sched-special__list">
                         {schedule.scheduled.map(m => (
                             <li key={m._id} className="sched-special__item">

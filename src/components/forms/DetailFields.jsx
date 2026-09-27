@@ -9,6 +9,7 @@
  * the wedding's Groom and Bride.
  */
 import { groupDetailFields } from '../../utils/sacramentDetails';
+import { enterPlaceholder } from '../../utils/format';
 
 export default function DetailFields({ fields, values, onChange }) {
     if (!fields?.length) return null;
@@ -30,7 +31,7 @@ export default function DetailFields({ fields, values, onChange }) {
                     className="form-input"
                     type={f.type || 'text'}
                     value={values[f.key] || ''}
-                    placeholder={f.placeholder}
+                    placeholder={f.placeholder || enterPlaceholder(f.label)}
                     onChange={e => onChange(f.key, e.target.value)}
                 />
             )}

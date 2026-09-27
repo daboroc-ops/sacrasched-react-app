@@ -9,17 +9,21 @@ import CredentialsNotice from '../../components/admin/CredentialsNotice';
 import { fmtDate, fullName } from '../../utils/format';
 import { ROLES } from '../../utils/roles';
 
-const ROLE_ORDER = ['User', 'Editor', 'Admin', 'SuperAdmin'];
+// "User" is not offered: accounts are staff or priests (the parish asked
+// for it gone from the Role field). An older account that still is one
+// shows it, so its row reads true, but nothing can be made a User.
+const ROLE_ORDER = ['Priest', 'Editor', 'Admin', 'SuperAdmin'];
 
 const roleOf = user => {
     const codes = Object.values(user.roles || {}).filter(Boolean);
     if (codes.includes(ROLES.SuperAdmin)) return 'SuperAdmin';
     if (codes.includes(ROLES.Admin))      return 'Admin';
     if (codes.includes(ROLES.Editor))     return 'Editor';
+    if (codes.includes(ROLES.Priest))     return 'Priest';
     return 'User';
 };
 
-const TONE = { SuperAdmin: 'bad', Admin: 'ok', Editor: 'info', User: 'muted' };
+const TONE = { SuperAdmin: 'bad', Admin: 'ok', Editor: 'info', Priest: 'warn', User: 'muted' };
 
 /**
  * Role management across the whole platform. This is the only place the
@@ -88,6 +92,41 @@ export default function SuperAdminAccounts() {
         }
     };
 
+    /* A priest's title and whether he is the parish priest (one per parish) */
+    const changePriest = async (user, patch) => {
+        setBusyId(user._id);
+        setNotice(null);
+        try {
+            await axios.patch(`/superadmin-api/users/${user._id}/priest`, patch);
+            setNotice({
+                tone: 'ok',
+                message: patch.parishPriest === true ? `${fullName(user)} is now the parish priest of ${user.parishId?.name || 'his parish'}.`
+                       : patch.parishPriest === false ? `${fullName(user)} is no longer marked parish priest.`
+                       : `${fullName(user)}'s title was updated.`
+            });
+            list.reload();
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not update the priest.' });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    /* Lift a sign-in lock-out early (utils/loginLock on the server) */
+    const unlock = async user => {
+        setBusyId(user._id);
+        setNotice(null);
+        try {
+            await axios.patch(`/superadmin-api/users/${user._id}/unlock`);
+            setNotice({ tone: 'ok', message: `${fullName(user)} can sign in again.` });
+            list.reload();
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not unlock the account.' });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
     const deleteAccount = async () => {
         const user = pendingDelete;
         setBusyId(user._id);
@@ -118,7 +157,7 @@ export default function SuperAdminAccounts() {
                         <FontAwesomeIcon icon={faMagnifyingGlass} className="ad-search__icon" />
                         <input
                             className="ad-input ad-input--search"
-                            placeholder="Search name, username or email"
+                            placeholder="Enter a name, username or email"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                         />
@@ -136,7 +175,7 @@ export default function SuperAdminAccounts() {
                 </form>
 
                 <button className="ad-btn ad-btn--filled ad-toolbar__end" onClick={() => setShowNew(true)}>
-                    <FontAwesomeIcon icon={faUserPlus} /> New account
+                    <FontAwesomeIcon icon={faUserPlus} /> Create New Account
                 </button>
             </div>
 
@@ -173,22 +212,66 @@ export default function SuperAdminAccounts() {
                                         </td>
                                         <td className="ad-mono">{user.username}</td>
                                         <td>{user.email}</td>
-                                        <td><span className={`ad-badge ad-badge--${TONE[role]}`}>{role}</span></td>
+                                        <td>
+                                            <div className="ad-cell-stack">
+                                                <span className={`ad-badge ad-badge--${TONE[role]}`}>{role}</span>
+                                                {role === 'Priest' && (
+                                                    <>
+                                                        <select
+                                                            className="ad-select ad-select--sm"
+                                                            value={user.priestProfile?.title ?? 'Fr.'}
+                                                            disabled={busyId === user._id}
+                                                            title="Title"
+                                                            onChange={e => changePriest(user, { title: e.target.value })}
+                                                        >
+                                                            {PRIEST_TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                        </select>
+                                                        <label className="ad-check" title="The kura paroko — the default celebrant; one per parish">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(user.priestProfile?.parishPriest)}
+                                                                disabled={busyId === user._id || !user.parishId}
+                                                                onChange={e => changePriest(user, { parishPriest: e.target.checked })}
+                                                            />
+                                                            Parish priest
+                                                        </label>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td>
                                             <select
                                                 className="ad-select ad-select--sm"
                                                 value={user.parishId?._id || user.parishId || ''}
                                                 disabled={busyId === user._id || role === 'User'}
-                                                title={role === 'User' ? 'Devotees may book at any parish' : 'Parish this staff account administers'}
+                                                title={role === 'User' ? 'Devotees may book at any parish'
+                                                     : role === 'Priest' ? 'The parish this priest is assigned to'
+                                                     : 'Parish this staff account administers'}
                                                 onChange={e => changeParish(user, e.target.value)}
                                             >
-                                                <option value="">{role === 'User' ? 'Any parish' : 'All parishes'}</option>
+                                                <option value="">{role === 'User' ? 'Any parish' : role === 'Priest' ? 'Not assigned' : 'All parishes'}</option>
                                                 {parishes.map(p => (
                                                     <option key={p._id} value={p._id}>{p.name}</option>
                                                 ))}
                                             </select>
                                         </td>
-                                        <td>{fmtDate(user.createdAt)}</td>
+                                        <td>
+                                            <div className="ad-cell-stack">
+                                                <span>{fmtDate(user.createdAt)}</span>
+                                                {/* Locked after too many wrong passwords */}
+                                                {user.lockedUntil && new Date(user.lockedUntil) > new Date() && (
+                                                    <>
+                                                        <span className="ad-badge ad-badge--bad" title={`Locked until ${new Date(user.lockedUntil).toLocaleString('en-PH')}`}>
+                                                            Locked until {new Date(user.lockedUntil).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        </span>
+                                                        <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm"
+                                                                disabled={busyId === user._id} onClick={() => unlock(user)}>
+                                                            Unlock
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td>
                                             <select
                                                 className="ad-select ad-select--sm"
@@ -197,6 +280,7 @@ export default function SuperAdminAccounts() {
                                                 title={isSelf ? 'You cannot change your own role' : undefined}
                                                 onChange={e => changeRole(user, e.target.value)}
                                             >
+                                                {role === 'User' && <option value="User" disabled>User</option>}
                                                 {ROLE_ORDER.map(r => <option key={r} value={r}>{r}</option>)}
                                             </select>
                                         </td>
@@ -234,7 +318,7 @@ export default function SuperAdminAccounts() {
                 />
             )}
             {showNew && (
-                <Modal title="New account" onClose={() => setShowNew(false)}>
+                <Modal title="Create New Account" onClose={() => setShowNew(false)}>
                     <NewAccountForm
                         parishes={parishes}
                         onCancel={() => setShowNew(false)}
@@ -263,13 +347,20 @@ export default function SuperAdminAccounts() {
             <Pagination page={list.page} totalPages={list.totalPages} total={list.total} onChange={list.setPage} />
 
             <p className="sa-hint">
+                Accounts are created here only — public sign-up is closed. An account locks after 5 wrong
+                passwords in a row (for an hour, then a day, a week, and 30 days each time after); you are
+                emailed each time, and can unlock it early here.
                 Granting SuperAdmin gives full platform access, including this page.
                 A parish assignment limits an Admin or Editor to that parish's requests,
-                payments and users. Both take effect the next time that person signs in.
+                payments and users, and tells a Priest which parish's calendar he serves —
+                he then appears in that parish's configuration, where the parish admin sets
+                his days off. Role and parish take effect the next time that person signs in.
             </p>
         </>
     );
 }
+
+const PRIEST_TITLES = ['Fr.', 'Rev. Fr.', 'Msgr.', 'Rev.', 'Bishop', 'Deacon'];
 
 /* ── Creating an account by hand ──────────────────────────────
    The password is not asked for: the server generates one and returns it
@@ -281,6 +372,7 @@ function NewAccountForm({ parishes, onCancel, onCreated }) {
     const [form, setForm] = useState({
         firstname: '', lastname: '', email: '', username: '',
         role: 'Admin', parishId: '', contactNumber: '',
+        title: 'Fr.', parishPriest: false,
     });
     const [saving, setSaving] = useState(false);
     const [error,  setError]  = useState('');
@@ -302,7 +394,8 @@ function NewAccountForm({ parishes, onCancel, onCreated }) {
 
     /* Only parish staff are scoped to a parish; a superadmin belongs to the
        platform and a devotee books wherever they like. */
-    const needsParish = form.role === 'Admin' || form.role === 'Editor';
+    const needsParish = form.role === 'Admin' || form.role === 'Editor' || form.role === 'Priest';
+    const isPriest    = form.role === 'Priest';
 
     return (
         <form className="ad-form" onSubmit={submit}>
@@ -311,20 +404,20 @@ function NewAccountForm({ parishes, onCancel, onCreated }) {
             <div className="ad-form__grid">
                 <label className="ad-field">
                     <span>First name <b>*</b></span>
-                    <input className="ad-input" value={form.firstname} onChange={set('firstname')} required />
+                    <input className="ad-input" value={form.firstname} onChange={set('firstname')} placeholder="Enter the first name" required />
                 </label>
                 <label className="ad-field">
                     <span>Last name <b>*</b></span>
-                    <input className="ad-input" value={form.lastname} onChange={set('lastname')} required />
+                    <input className="ad-input" value={form.lastname} onChange={set('lastname')} placeholder="Enter the last name" required />
                 </label>
                 <label className="ad-field">
                     <span>Email <b>*</b></span>
-                    <input className="ad-input" type="email" value={form.email} onChange={set('email')} required />
+                    <input className="ad-input" type="email" value={form.email} onChange={set('email')} placeholder="Enter the email address" required />
                 </label>
                 <label className="ad-field">
                     <span>Username <em>optional</em></span>
                     <input className="ad-input" value={form.username} onChange={set('username')}
-                           placeholder="Taken from the email if left blank" />
+                           placeholder="Enter a username (taken from the email if left blank)" />
                 </label>
                 <label className="ad-field">
                     <span>Role</span>
@@ -341,6 +434,25 @@ function NewAccountForm({ parishes, onCancel, onCreated }) {
                         ))}
                     </select>
                 </label>
+                {/* A priest's assignment: his title, and whether he is the parish priest */}
+                {isPriest && (
+                    <>
+                        <label className="ad-field">
+                            <span>Title</span>
+                            <select className="ad-input" value={form.title} onChange={set('title')}>
+                                {PRIEST_TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </label>
+                        <label className="ad-check ad-field">
+                            <input
+                                type="checkbox"
+                                checked={form.parishPriest}
+                                onChange={e => setForm(p => ({ ...p, parishPriest: e.target.checked }))}
+                            />
+                            Parish priest (kura paroko) — the default celebrant; replaces the current one
+                        </label>
+                    </>
+                )}
             </div>
 
             <p className="ad-form__note">

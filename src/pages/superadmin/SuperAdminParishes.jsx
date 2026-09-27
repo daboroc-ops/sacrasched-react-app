@@ -137,7 +137,7 @@ export default function SuperAdminParishes() {
                             <FontAwesomeIcon icon={faMagnifyingGlass} className="ad-search__icon" />
                             <input
                                 className="ad-input ad-input--search"
-                                placeholder="Search parish or subdomain"
+                                placeholder="Enter a parish or subdomain"
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                             />
@@ -385,7 +385,7 @@ function SubdomainField({ value, onChange, baseDomain, excludeId }) {
             <div className="sa-subdomain">
                 <input
                     className="ad-input"
-                    placeholder="st-joseph"
+                    placeholder="Enter the subdomain (e.g. st-joseph)"
                     value={value}
                     onChange={e => onChange(e.target.value)}
                 />
@@ -459,32 +459,32 @@ function ParishForm({ parish, baseDomain, onCancel, onSaved, onProvisioned }) {
             <div className="ad-form__grid">
                 <label className="ad-field">
                     <span className="ad-field__label">Parish name<em> *</em></span>
-                    <input className="ad-input" value={form.name} required onChange={e => set('name', e.target.value)} />
+                    <input className="ad-input" value={form.name} placeholder="Enter the parish name" required onChange={e => set('name', e.target.value)} />
                 </label>
 
                 <label className="ad-field">
                     <span className="ad-field__label">Short code</span>
-                    <input className="ad-input" placeholder="SJP" value={form.code} onChange={e => set('code', e.target.value)} />
+                    <input className="ad-input" placeholder="Enter the parish code (e.g. SJP)" value={form.code} onChange={e => set('code', e.target.value)} />
                 </label>
 
                 <label className="ad-field ad-field--full">
                     <span className="ad-field__label">Address</span>
-                    <input className="ad-input" value={form.address} onChange={e => set('address', e.target.value)} />
+                    <input className="ad-input" value={form.address} placeholder="Enter the address" onChange={e => set('address', e.target.value)} />
                 </label>
 
                 <label className="ad-field ad-field--full">
                     <span className="ad-field__label">Diocese</span>
-                    <input className="ad-input" placeholder="e.g. Diocese of Legazpi" value={form.diocese} onChange={e => set('diocese', e.target.value)} />
+                    <input className="ad-input" placeholder="Enter the diocese (e.g. Diocese of Legazpi)" value={form.diocese} onChange={e => set('diocese', e.target.value)} />
                 </label>
 
                 <label className="ad-field">
                     <span className="ad-field__label">Contact email</span>
-                    <input className="ad-input" type="email" value={form.contactEmail} onChange={e => set('contactEmail', e.target.value)} />
+                    <input className="ad-input" type="email" value={form.contactEmail} placeholder="Enter the email address" onChange={e => set('contactEmail', e.target.value)} />
                 </label>
 
                 <label className="ad-field">
                     <span className="ad-field__label">Contact number</span>
-                    <input className="ad-input" value={form.contactPhone} onChange={e => set('contactPhone', e.target.value)} />
+                    <input className="ad-input" value={form.contactPhone} placeholder="Enter the contact number" onChange={e => set('contactPhone', e.target.value)} />
                 </label>
 
                 {!editing && (
@@ -493,7 +493,7 @@ function ParishForm({ parish, baseDomain, onCancel, onSaved, onProvisioned }) {
 
                 <label className="ad-field ad-field--full">
                     <span className="ad-field__label">Notes</span>
-                    <textarea className="ad-input" rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} />
+                    <textarea className="ad-input" rows={3} value={form.notes} placeholder="Enter notes (optional)" onChange={e => set('notes', e.target.value)} />
                 </label>
 
                 {editing && (

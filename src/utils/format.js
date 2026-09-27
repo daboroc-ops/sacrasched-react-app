@@ -21,6 +21,16 @@ export const fmtStamp = value => {
     return `${fmtDate(d)} · ${d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`;
 };
 
+/**
+ * The placeholder for a field that has none of its own: "Enter the …",
+ * from its label — "Child's Full Name" → "Enter the child's full name".
+ * A note in brackets ("(optional)") is left off.
+ */
+export const enterPlaceholder = label => {
+    const what = String(label || '').replace(/\s*\(optional\)\s*$/i, '').trim();
+    return what ? `Enter the ${what.charAt(0).toLowerCase()}${what.slice(1).toLowerCase()}` : '';
+};
+
 /** "14:30" → "2:30 PM". Leaves anything unparseable untouched. */
 export const fmtTime = value => {
     if (!value) return '';
@@ -49,8 +59,35 @@ export const relativeTime = value => {
     return fmtDate(value);
 };
 
+/**
+ * The filename the server asked for, out of a Content-Disposition header.
+ *
+ * A download built from a blob is named by the browser, not the server, so
+ * without this the file on disk is whatever the calling component made up —
+ * which is how a receipt numbered MS26-000-0022 came to be saved as
+ * receipt-2FD79C5E.pdf. Falls back to the caller's name if the header is
+ * missing, as it is on a cross-origin response that does not expose it.
+ */
+export const fileNameFrom = (headers, fallback) => {
+    const cd = headers?.['content-disposition'] || headers?.get?.('content-disposition') || '';
+    const star  = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+    const plain = /filename="?([^";]+)"?/i.exec(cd);
+    const name  = star ? decodeURIComponent(star[1]) : plain?.[1];
+    return name ? name.trim() : fallback;
+};
+
 /** Last 6 characters of a Mongo ObjectId — enough to identify a row by eye. */
 export const shortId = id => (id ? `#${String(id).slice(-6)}` : '—');
+
+/**
+ * What the office calls a row: the booking's reference — MS26-000-0036,
+ * the number on the parishioner's email, page and receipt, the one they
+ * read out at the counter. A booking and its payment both carry it.
+ *
+ * A walk-in or a signed-in parishioner's booking was never given one, and
+ * falls back to the short record ID so the row is still named.
+ */
+export const refOf = row => row?.guest?.reference || shortId(row?._id);
 
 export const fullName = user =>
     user ? [user.firstname, user.lastname].filter(Boolean).join(' ') || user.username || '—' : '—';

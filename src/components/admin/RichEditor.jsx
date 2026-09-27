@@ -41,7 +41,7 @@ function ToolBtn({ on, title, icon, cmd, arg, run, onClick }) {
     );
 }
 
-export default function RichEditor({ value = '', onChange, placeholder = 'Write the post…', minHeight = 320 }) {
+export default function RichEditor({ value = '', onChange, placeholder = 'Enter the post', minHeight = 320 }) {
     const box = useRef(null);
     const last = useRef(null);            // the HTML we last emitted or set
     /* Where the caret was the last time it was inside the editor. Opening

@@ -34,7 +34,7 @@ export default function ParishActivities({ subdomain = '' }) {
         <section className="lp-section lp-section--alt" id="activities">
             <div className="lp-section__inner">
                 <div className="lp-section__hd">
-                    <h2>Parish activities</h2>
+                    <h2>Parish Activities</h2>
                 </div>
                 <ul className="pa">
                     {acts.map((a, i) => (

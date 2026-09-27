@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faRotate } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faRotate, faEye } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import useAdminList from '../../hooks/useAdminList';
 import useAuth from '../../hooks/useAuth';
@@ -9,19 +9,27 @@ import {
     Loading, ErrorText, Empty, SearchBox, Tabs } from '../../components/admin/AdminUI';
 import { RESOURCES, optionsFor, tabsFor, tabCount } from './resources';
 import { getDetailFields, expandDetailFields, groupDetailFields } from '../../utils/sacramentDetails';
-import { getOccasionFields } from '../../utils/occasionalDetails';
+import { getOccasionFields, asksWhere, wherePlaceholder } from '../../utils/occasionalDetails';
 import IntentionFields from '../../components/forms/IntentionFields';
 import { summariseIntentions, missingIntentionNames, isNamedSouls, soulsProblem } from '../../utils/intentions';
 import { getDocumentFields } from '../../utils/documentDetails';
 import IntentionSheet from '../../components/admin/IntentionSheet';
 import useAvailability from '../../hooks/useAvailability';
-import { fmtTime } from '../../utils/format';
+import { fmtTime, enterPlaceholder } from '../../utils/format';
 
 const todayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 import FileLink from '../../components/admin/FileLink';
+import PriestSelect from '../../components/admin/PriestSelect';
+import BookingDetails from '../../components/admin/BookingDetails';
+
+/* Bookings are kept at UTC midnight of their day */
+const dowOfBooking = date => {
+    const d = new Date(date);
+    return Number.isNaN(d.getTime()) ? null : d.getUTCDay();
+};
 
 /**
  * One screen for all five request collections — blessings, mass intentions,
@@ -31,13 +39,14 @@ import FileLink from '../../components/admin/FileLink';
 export default function AdminRequests({ resource }) {
     const cfg    = RESOURCES[resource];
     const axios  = useAxiosPrivate();
-    const { isAdmin } = useAuth();
+    const { isAdmin, isStaff } = useAuth();
 
     const list = useAdminList(cfg.path);
 
     const [config,  setConfig]  = useState(null);   // parish config for the form dropdowns
     const [showNew, setShowNew] = useState(false);
     const [toDelete, setToDelete] = useState(null);
+    const [viewing,  setViewing]  = useState(null);   // the booking whose details are open
     const [busyId,  setBusyId]  = useState(null);
     const [notice,  setNotice]  = useState(null);   // { tone, message }
 
@@ -73,6 +82,22 @@ export default function AdminRequests({ resource }) {
         }
     };
 
+    /* The office verified the payment. With the papers, that completes a
+       sacrament; either one alone leaves it approved. */
+    const setPaid = async (row, paid) => {
+        setBusyId(row._id);
+        setNotice(null);
+        try {
+            const res = await axios.patch(`${cfg.path}/${row._id}/paid`, { paid });
+            setNotice({ tone: 'ok', message: `Payment ${paid ? 'marked as paid' : 'unmarked'} — status is now "${res.data.status}".` });
+            list.reload();
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Failed to update the payment.' });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
     /* The document is at the counter — the office's one tick for a document. */
     const setReady = async (row, ready) => {
         setBusyId(row._id);
@@ -82,6 +107,22 @@ export default function AdminRequests({ resource }) {
             list.reload();
         } catch (err) {
             setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not update.' });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    /* Give the booking to another of the parish's priests; he is notified. */
+    const assignPriest = async (row, priestId) => {
+        setBusyId(row._id);
+        setNotice(null);
+        try {
+            await axios.patch(`${cfg.path}/${row._id}/priest`, { priestId: priestId || null });
+            const who = (config?.priests || []).find(p => p._id === priestId);
+            setNotice({ tone: 'ok', message: who ? `${who.label} will preside — he has been notified.` : 'No priest is set for this booking now.' });
+            list.reload();
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not assign the priest.' });
         } finally {
             setBusyId(null);
         }
@@ -144,7 +185,7 @@ export default function AdminRequests({ resource }) {
                     takes whatever width the rest leaves it. */}
                 <div className="ad-toolbar ad-toolbar--main">
                     <SearchBox value={list.search} onSearch={list.setSearch}
-                               placeholder={`Search ${cfg.plural || cfg.singular + 's'} — name, reference, number, kind…`} />
+                               placeholder="Enter a name, reference, number or kind" />
 
                     {!cfg.noStatusFilter && (
                         <FilterBar
@@ -187,6 +228,7 @@ export default function AdminRequests({ resource }) {
                             <tr>
                                 {cfg.columns.map(c => <th key={c.key}>{c.label}</th>)}
                                 {cfg.attachments && <th>Papers</th>}
+                                {cfg.assignPriest && <th>Presiding priest</th>}
                                 <th>Status</th>
                                 <th className="ad-table__actions-hd">Actions</th>
                             </tr>
@@ -206,23 +248,68 @@ export default function AdminRequests({ resource }) {
                                             )}
                                         </td>
                                     )}
+                                    {cfg.assignPriest && (
+                                        <td>
+                                            {/* Admins and editors alike choose who presides */}
+                                            {isStaff ? (
+                                                <PriestSelect
+                                                    className="ad-select ad-select--sm"
+                                                    priests={config?.priests || []}
+                                                    dow={dowOfBooking(row.preferredDate)}
+                                                    value={row.priestId}
+                                                    disabled={busyId === row._id}
+                                                    emptyLabel="Not drawn yet"
+                                                    onChange={v => assignPriest(row, v)}
+                                                />
+                                            ) : (row.priest || <span className="ad-muted">—</span>)}
+                                        </td>
+                                    )}
                                     <td><StatusBadge status={row.status} /></td>
                                     <td>
                                         <div className="ad-row-actions">
+                                            {/* Everything this parishioner filled in */}
+                                            {cfg.details && (
+                                                <button
+                                                    type="button"
+                                                    className="ad-btn ad-btn--ghost ad-btn--sm ad-view-btn"
+                                                    onClick={() => setViewing(row)}
+                                                >
+                                                    <FontAwesomeIcon icon={faEye} /> View details
+                                                </button>
+                                            )}
                                             {/* A status that follows payment is shown, not set.
                                                 For a sacrament, what the office does set is
                                                 whether the papers are in. */}
-                                            {cfg.requirements ? (
-                                                <label className="ad-check" title="Paid and complete = completed">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={Boolean(row.requirementsComplete)}
-                                                        disabled={busyId === row._id}
-                                                        onChange={e => setRequirements(row, e.target.checked)}
-                                                    />
-                                                    Papers complete
-                                                </label>
-                                            ) : cfg.ready ? (
+                                            {(cfg.requirements || cfg.paidTick) && !['cancelled', 'rejected'].includes(row.status) ? (
+                                                /* A sacrament: either tick approves it, both complete it.
+                                                   A blessing or an occasional Mass: "Paid" completes it. */
+                                                <div className="ad-checks">
+                                                    {cfg.requirements && (
+                                                        <label className="ad-check" title="Papers complete and paid = completed">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(row.requirementsComplete)}
+                                                                disabled={busyId === row._id}
+                                                                onChange={e => setRequirements(row, e.target.checked)}
+                                                            />
+                                                            Papers complete
+                                                        </label>
+                                                    )}
+                                                    <label className="ad-check" title={cfg.requirements
+                                                        ? 'Tick once the payment is verified. Papers complete and paid = completed'
+                                                        : 'Tick once the payment is verified — the booking is then completed'}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(row.paymentVerified)}
+                                                            disabled={busyId === row._id}
+                                                            onChange={e => setPaid(row, e.target.checked)}
+                                                        />
+                                                        Paid
+                                                    </label>
+                                                </div>
+                                            ) : cfg.ready && !row.createdByStaff ? (
+                                                /* Not for one the office entered itself: it is handed
+                                                   over at the counter, completed once paid */
                                                 <label className="ad-check" title="Paid and ready = completed; the requester is texted">
                                                     <input
                                                         type="checkbox"
@@ -281,6 +368,16 @@ export default function AdminRequests({ resource }) {
                 </Modal>
             )}
 
+            {viewing && (
+                <Modal
+                    title={`${cfg.singular.replace(/^./, c => c.toUpperCase())} — ${viewing.requestorName || viewing.guest?.name || 'details'}`}
+                    wide
+                    onClose={() => setViewing(null)}
+                >
+                    <BookingDetails resource={resource} row={viewing} />
+                </Modal>
+            )}
+
             {toDelete && (
                 <ConfirmDialog
                     title={`Delete ${cfg.singular}?`}
@@ -304,6 +401,8 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
         cfg.fields.forEach(f => { base[f.name] = f.defaultValue ?? ''; });
         /* The intention block keeps its own shapes, which a flat field list
            cannot seed: the kinds ticked, a name per kind, and the souls. */
+        // Where an occasional Mass is held is typed into its details
+        if (cfg.hasOccasion) base.venue = '';
         if (cfg.intentionFields) {
             Object.assign(base, {
                 intentionType: '', intentionTypes: [], intentionNames: {},
@@ -319,6 +418,22 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
     const [error,   setError]   = useState('');
 
     const set = (name, value) => setForm(f => ({ ...f, [name]: value }));
+
+    /* A walk-in with no number of their own: the field starts with the
+       parish's number (Configuration → Parish), so nothing is filed blank */
+    const parishField = cfg.fields.find(f => f.parishDefault);
+    const [parishNumber, setParishNumber] = useState('');
+    useEffect(() => {
+        if (!parishField) return;
+        let alive = true;
+        axios.get('/admin-api/config/parish').then(res => {
+            const n = String(res.data?.contactPhone || res.data?.visit?.mobile || '').trim();
+            if (!alive || !n) return;
+            setParishNumber(n);
+            setForm(f => (f[parishField.name] ? f : { ...f, [parishField.name]: n }));
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [axios, parishField]);
 
     // Sacraments show extra fields once a type is picked (baptism, wedding, …);
     // an occasional Mass the details of its occasion
@@ -375,6 +490,9 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
             }
             const unnamed = missingIntentionNames(kinds, form.intentionNames);
             if (unnamed.length) { setError('Say who the ' + unnamed[0] + ' is offered for.'); return; }
+        }
+        if (cfg.hasOccasion && asksWhere(form.massType) && !String(form.venue || '').trim()) {
+            setError('Say where the Mass will be held.'); return;
         }
 
         setSaving(true);
@@ -441,6 +559,7 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
                                 <textarea
                                     className="ad-input"
                                     rows={3}
+                                    placeholder={field.placeholder || enterPlaceholder(field.label)}
                                     value={form[field.name]}
                                     onChange={e => set(field.name, e.target.value)}
                                 />
@@ -459,11 +578,20 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
                                     className="ad-input"
                                     type={field.type || 'text'}
                                     min={field.min}
-                                    placeholder={field.placeholder}
+                                    placeholder={field.placeholder || enterPlaceholder(field.label)}
                                     value={form[field.name]}
                                     required={field.required}
                                     onChange={e => set(field.name, e.target.value)}
                                 />
+                            )}
+                            {field.parishDefault && (
+                                <small className="ad-field__hint">
+                                    {parishNumber
+                                        ? (form[field.name] === parishNumber
+                                            ? "The parish's number, for a walk-in with none. Replace it if they have one."
+                                            : <>Leave it as the parish's number (<button type="button" className="ad-linkbtn" onClick={() => set(field.name, parishNumber)}>{parishNumber}</button>) if they have none.</>)
+                                        : 'The parish has no contact number saved (Configuration → Parish), so enter one.'}
+                                </small>
                             )}
                         </label>
                     );
@@ -500,7 +628,7 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
                                         className="ad-input"
                                         type={f.type || 'text'}
                                         value={details[f.key] || ''}
-                                        placeholder={f.placeholder}
+                                        placeholder={f.placeholder || enterPlaceholder(f.label)}
                                         onChange={e => setDetails(d => ({ ...d, [f.key]: e.target.value }))}
                                     />
                                     )
@@ -508,6 +636,19 @@ function RequestForm({ cfg, config, onCancel, onCreated }) {
                             </label>
                             ))
                         ])}
+                        {/* The same question the parishioner's form asks, in the same place */}
+                        {cfg.hasOccasion && asksWhere(form.massType) && (
+                            <label className="ad-field ad-field--full">
+                                <span className="ad-field__label">Where will the Mass be held?<em> *</em></span>
+                                <input
+                                    className="ad-input"
+                                    value={form.venue || ''}
+                                    required
+                                    placeholder={wherePlaceholder(form.massType)}
+                                    onChange={e => set('venue', e.target.value)}
+                                />
+                            </label>
+                        )}
                     </div>
                 </>
             )}

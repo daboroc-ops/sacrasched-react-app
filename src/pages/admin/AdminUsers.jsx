@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faMagnifyingGlass, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import useAdminList from '../../hooks/useAdminList';
 import useAuth from '../../hooks/useAuth';
-import { Pagination, ConfirmDialog, Banner, Loading, ErrorText, Empty, Segmented } from '../../components/admin/AdminUI';
+import { Pagination, ConfirmDialog, Banner, Loading, ErrorText, Empty, Segmented, Modal } from '../../components/admin/AdminUI';
+import CredentialsNotice from '../../components/admin/CredentialsNotice';
 import GuestContacts from './GuestContacts';
 import { fmtDate, fullName } from '../../utils/format';
 import { ROLES } from '../../utils/roles';
@@ -14,6 +15,7 @@ const roleOf = user => {
     const codes = Object.values(user.roles || {}).filter(Boolean);
     if (codes.includes(ROLES.Admin))  return 'Admin';
     if (codes.includes(ROLES.Editor)) return 'Editor';
+    if (codes.includes(ROLES.Priest)) return 'Priest';
     return 'User';
 };
 
@@ -35,6 +37,8 @@ export default function AdminUsers() {
     const [toDelete, setToDelete] = useState(null);
     const [busyId,   setBusyId]   = useState(null);
     const [notice,   setNotice]   = useState(null);
+    const [showNew,  setShowNew]  = useState(false);
+    const [issued,   setIssued]   = useState(null);    // the new account and its one-time password
 
     const myId = auth?.user?.id;
 
@@ -83,7 +87,7 @@ export default function AdminUsers() {
                         <FontAwesomeIcon icon={faMagnifyingGlass} className="ad-search__icon" />
                         <input
                             className="ad-input ad-input--search"
-                            placeholder="Search name, username or email"
+                            placeholder="Enter a name, username or email"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                         />
@@ -99,6 +103,11 @@ export default function AdminUsers() {
                         </button>
                     )}
                 </form>
+
+                {/* Only an Admin reaches this page; the account is for this parish */}
+                <button className="ad-btn ad-btn--filled ad-toolbar__end" onClick={() => setShowNew(true)}>
+                    <FontAwesomeIcon icon={faUserPlus} /> Create New Account
+                </button>
             </div>
 
             <Banner {...(notice || {})} onDismiss={() => setNotice(null)} />
@@ -133,6 +142,10 @@ export default function AdminUsers() {
                                         <td className="ad-mono">{user.username}</td>
                                         <td>{user.email}</td>
                                         <td>
+                                            {/* Priests are the platform owner's to manage */}
+                                            {roleOf(user) === 'Priest' ? (
+                                                <span className="ad-badge ad-badge--info" title="Managed by the platform owner">Priest</span>
+                                            ) : (
                                             <select
                                                 className="ad-select ad-select--sm"
                                                 value={roleOf(user)}
@@ -140,10 +153,12 @@ export default function AdminUsers() {
                                                 title={isSelf ? 'You cannot change your own role' : undefined}
                                                 onChange={e => changeRole(user, e.target.value)}
                                             >
-                                                <option value="User">User</option>
+                                                {/* No "User": accounts here are parish staff */}
+                                                {roleOf(user) === 'User' && <option value="User" disabled>User</option>}
                                                 <option value="Editor">Editor</option>
                                                 <option value="Admin">Admin</option>
                                             </select>
+                                            )}
                                         </td>
                                         <td>
                                             {user.parishId?.name || <span className="ad-mono">—</span>}
@@ -152,8 +167,9 @@ export default function AdminUsers() {
                                         <td>
                                             <button
                                                 className="ad-icon-btn ad-icon-btn--danger"
-                                                disabled={isSelf}
-                                                title={isSelf ? 'You cannot delete your own account' : 'Delete user'}
+                                                disabled={isSelf || roleOf(user) === 'Priest'}
+                                                title={isSelf ? 'You cannot delete your own account'
+                                                     : roleOf(user) === 'Priest' ? 'Priest accounts are managed by the platform owner' : 'Delete user'}
                                                 onClick={() => setToDelete(user)}
                                             >
                                                 <FontAwesomeIcon icon={faTrash} />
@@ -180,6 +196,98 @@ export default function AdminUsers() {
                     onConfirm={remove}
                 />
             )}
+
+            {showNew && (
+                <Modal title="Create New Account" onClose={() => setShowNew(false)}>
+                    <NewStaffForm
+                        onCancel={() => setShowNew(false)}
+                        onCreated={(user, password) => {
+                            setShowNew(false);
+                            setIssued({ ...user, password });
+                            list.reload();
+                        }}
+                    />
+                </Modal>
+            )}
+
+            {issued && (
+                <Modal title="Account created" onClose={() => setIssued(null)}>
+                    <CredentialsNotice
+                        username={issued.username}
+                        email={issued.email}
+                        password={issued.password}
+                        context={fullName(issued)}
+                        onClose={() => setIssued(null)}
+                    />
+                </Modal>
+            )}
         </>
+    );
+}
+
+/**
+ * A staff account for this parish: an Editor or an Admin. The password is
+ * made by the server and shown once, on the next screen.
+ */
+function NewStaffForm({ onCancel, onCreated }) {
+    const axios = useAxiosPrivate();
+    const [form, setForm] = useState({ firstname: '', lastname: '', email: '', username: '', contactNumber: '', role: 'Editor' });
+    const [saving, setSaving] = useState(false);
+    const [error,  setError]  = useState('');
+    const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+
+    const submit = async e => {
+        e.preventDefault();
+        setSaving(true); setError('');
+        try {
+            const res = await axios.post('/admin-api/users', form);
+            onCreated(res.data.user, res.data.password);
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Could not create the account.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <form className="ad-form" onSubmit={submit}>
+            {error && <div className="form-alert form-alert--error">{error}</div>}
+            <div className="ad-form__grid">
+                <label className="ad-field">
+                    <span>First name <b>*</b></span>
+                    <input className="ad-input" value={form.firstname} onChange={set('firstname')} placeholder="Enter the first name" required />
+                </label>
+                <label className="ad-field">
+                    <span>Last name <b>*</b></span>
+                    <input className="ad-input" value={form.lastname} onChange={set('lastname')} placeholder="Enter the last name" required />
+                </label>
+                <label className="ad-field">
+                    <span>Email <b>*</b></span>
+                    <input className="ad-input" type="email" value={form.email} onChange={set('email')} placeholder="Enter the email address" required />
+                </label>
+                <label className="ad-field">
+                    <span>Username <em>optional</em></span>
+                    <input className="ad-input" value={form.username} onChange={set('username')}
+                           placeholder="Enter a username (taken from the email if left blank)" />
+                </label>
+                <label className="ad-field">
+                    <span>Contact number <em>optional</em></span>
+                    <input className="ad-input" value={form.contactNumber} onChange={set('contactNumber')} placeholder="Enter the contact number" />
+                </label>
+                <label className="ad-field">
+                    <span>Role</span>
+                    <select className="ad-input" value={form.role} onChange={set('role')}>
+                        <option value="Editor">Editor</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </label>
+            </div>
+            <div className="ad-form__actions">
+                <button type="button" className="ad-btn ad-btn--ghost" onClick={onCancel}>Cancel</button>
+                <button type="submit" className="ad-btn ad-btn--filled" disabled={saving}>
+                    {saving ? 'Creating…' : 'Create account'}
+                </button>
+            </div>
+        </form>
     );
 }

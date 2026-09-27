@@ -54,8 +54,8 @@ export default function ParishBooking({ subdomain }) {
             <div className="lp-section__inner">
                 <div className="pb__pane">
                     <div className="lp-section__hd">
-                        <h2>This month</h2>
-                        <p>Pick a day to see what is on, and to book it.</p>
+                        <h2>This Month</h2>
+                        <p>Pick a day to see what is happening and to book a service.</p>
                     </div>
 
                     <ParishCalendar
@@ -65,9 +65,9 @@ export default function ParishBooking({ subdomain }) {
                     />
 
                     <p className="pb__track">
-                        Already sent an intention?{' '}
+                        Already sent a request?{' '}
                         <Link to="/track">
-                            <FontAwesomeIcon icon={faMagnifyingGlass} /> Check a request
+                            <FontAwesomeIcon icon={faMagnifyingGlass} /> Check its status
                         </Link>
                     </p>
                 </div>

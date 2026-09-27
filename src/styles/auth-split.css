@@ -266,3 +266,13 @@
     .sag       { padding: 20px 12px; }
     .sag__card { padding: 26px 20px 22px; border-radius: 16px; }
 }
+
+/* ─── "Forgot password?" ─────────────────────────────────────────── */
+.auth-forgot { margin: -4px 0 10px; text-align: right; font-size: 13px; }
+.auth-forgot a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.auth-forgot a:hover { text-decoration: underline; }
+.auth-resend__notice--bad { color: var(--red); background: var(--danger-bg); border-color: var(--danger-border); margin: 0 0 8px; }
+.auth-reset { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 380px; margin: 0 auto; text-align: left; }
+.auth-reset .auth-input { width: 100%; }
+.auth-reset .auth-input + .auth-field__label { margin-top: 10px; }
+.auth-reset .auth-btn { margin-top: 14px; }

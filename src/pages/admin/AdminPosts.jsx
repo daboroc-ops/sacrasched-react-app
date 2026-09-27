@@ -225,7 +225,7 @@ function PostEditor({ post, onCancel, onSaved }) {
                 <div className="ad-card ad-post-editor__main">
                     <input
                         className="ad-input ad-post-editor__title"
-                        placeholder="Title"
+                        placeholder="Enter the title"
                         value={form.title}
                         maxLength={160}
                         onChange={e => set('title', e.target.value)}

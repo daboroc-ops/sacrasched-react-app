@@ -264,7 +264,7 @@ export function TableSkeleton({ rows = 6, cols = 5, label = 'Loading…' }) {
 /** The parish's week of Masses: seven rows, the day on the left, dotted times across. */
 export function WeekScheduleSkeleton() {
     return (
-        <SkeletonBlock label="Loading Mass schedule…">
+        <SkeletonBlock label="Loading Mass Schedule…">
             <div className="skel-week">
                 {[5, 2, 2, 2, 2, 2, 2].map((n, i) => (
                     <div key={i} className="skel-week__row">

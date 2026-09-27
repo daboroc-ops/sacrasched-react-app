@@ -4,8 +4,12 @@ import { faPlus, faTrash, faBan, faRotateLeft, faCalendarDay } from '@fortawesom
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import { Banner, Loading, Empty, ConfirmDialog } from '../../components/admin/AdminUI';
 import { fmtDate, fmtTime } from '../../utils/format';
+import PriestSelect from '../../components/admin/PriestSelect';
 
-const BLANK = { date: '', time: '', title: '', priest: '', venue: '', note: '' };
+const BLANK = { date: '', time: '', title: '', priestId: '', venue: '', note: '' };
+
+/* Day of the week of a 'YYYY-MM-DD', for greying out a priest's day off */
+const dowOf = s => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T00:00:00`).getDay() : null);
 
 const todayStr = () => {
     const d = new Date();
@@ -19,7 +23,7 @@ const todayStr = () => {
  * else is happening" — a fiesta, a feast day, an anniversary Mass. Both feed
  * the devotee's Mass Schedules tab.
  */
-export default function SpecificMassesPanel() {
+export default function SpecificMassesPanel({ priests = [] }) {
     const axios = useAxiosPrivate();
 
     const [items,   setItems]   = useState([]);
@@ -81,6 +85,18 @@ export default function SpecificMassesPanel() {
         }
     };
 
+    const changePriest = async (mass, priestId) => {
+        setBusy(true); setNotice(null);
+        try {
+            await axios.patch(`/admin-api/scheduled-masses/${mass._id}`, { priestId: priestId || null });
+            reload();
+        } catch (err) {
+            setNotice({ tone: 'bad', message: err?.response?.data?.message || 'Could not change the priest.' });
+        } finally {
+            setBusy(false);
+        }
+    };
+
     const remove = async () => {
         setBusy(true); setNotice(null);
         try {
@@ -129,9 +145,9 @@ export default function SpecificMassesPanel() {
 
                 <div className="sm-form__row">
                     <label className="sm-field">
-                        <span>Priest <em>optional</em></span>
-                        <input className="ad-input" type="text" placeholder="Enter the priest"
-                               value={form.priest} onChange={set('priest')} />
+                        <span>Presiding priest <em>drawn at random if left blank</em></span>
+                        <PriestSelect className="ad-input" priests={priests} dow={dowOf(form.date)} emptyLabel="Draw at random"
+                                      value={form.priestId} onChange={v => setForm(f => ({ ...f, priestId: v }))} />
                     </label>
                     <label className="sm-field">
                         <span>Venue <em>optional</em></span>
@@ -189,6 +205,14 @@ export default function SpecificMassesPanel() {
                             {m.cancelled && <span className="ad-badge ad-badge--bad">cancelled</span>}
 
                             <span className="sm-item__actions">
+                                <PriestSelect
+                                    className="ad-select ad-select--sm"
+                                    priests={priests}
+                                    dow={new Date(m.date).getUTCDay()}
+                                    value={m.priestId}
+                                    disabled={busy || m.cancelled}
+                                    onChange={v => changePriest(m, v)}
+                                />
                                 <button
                                     type="button"
                                     className="ad-btn ad-btn--ghost ad-btn--sm"

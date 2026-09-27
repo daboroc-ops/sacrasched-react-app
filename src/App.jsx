@@ -19,8 +19,9 @@ const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
 const TrackRequest = lazy(() => import('./pages/TrackRequest'));
 const BookPage = lazy(() => import('./pages/BookPage'));
 const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ForgotPassword = lazy(() => import('./pages/PasswordReset').then(m => ({ default: m.ForgotPassword })));
+const ResetPassword  = lazy(() => import('./pages/PasswordReset').then(m => ({ default: m.ResetPassword })));
 const SuperAdminGate = lazy(() => import('./pages/SuperAdminGate'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
@@ -33,12 +34,17 @@ const AdminPayments = lazy(() => import('./pages/admin/AdminPayments'));
 const AdminCalendar = lazy(() => import('./pages/admin/AdminCalendar'));
 const AdminConfig = lazy(() => import('./pages/admin/AdminConfig'));
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'));
+const LiveAgent = lazy(() => import('./pages/admin/LiveAgent'));
+const ProfileView = lazy(() => import('./components/ProfileView'));
 const SuperAdminLayout = lazy(() => import('./pages/superadmin/SuperAdminLayout'));
 const SuperAdminOverview = lazy(() => import('./pages/superadmin/SuperAdminOverview'));
 const SuperAdminLogs = lazy(() => import('./pages/superadmin/SuperAdminLogs'));
 const SuperAdminAccounts = lazy(() => import('./pages/superadmin/SuperAdminAccounts'));
 const SuperAdminOfferings = lazy(() => import('./pages/superadmin/SuperAdminOfferings'));
 const SuperAdminThemes = lazy(() => import('./pages/superadmin/SuperAdminThemes'));
+const PriestLayout = lazy(() => import('./pages/priest/PriestLayout'));
+const PriestCalendar = lazy(() => import('./pages/priest/PriestCalendar'));
+const PriestNotifications = lazy(() => import('./pages/priest/PriestNotifications'));
 
 
 
@@ -113,6 +119,14 @@ function RequireSuperAdmin() {
         : <Navigate to="/dashboard" replace />;
 }
 
+/* ── Priest-only wrapper ─────────────────────────────────────── */
+function RequirePriest() {
+    const { isPriest } = useAuth();
+    return isPriest
+        ? <Outlet />
+        : <Navigate to="/dashboard" replace />;
+}
+
 /**
  * /dashboard is the single post-login destination. It reads the roles that
  * came back with the token and picks the dashboard: superadmins get the
@@ -120,9 +134,10 @@ function RequireSuperAdmin() {
  * devotee dashboard.
  */
 function DashboardRouter() {
-    const { isSuperAdmin, isStaff } = useAuth();
+    const { isSuperAdmin, isStaff, isPriest } = useAuth();
     if (isSuperAdmin) return <Navigate to="/superadmin" replace />;
-    return isStaff ? <Navigate to="/admin" replace /> : <Dashboard />;
+    if (isStaff)      return <Navigate to="/admin" replace />;
+    return isPriest ? <Navigate to="/priest" replace /> : <Dashboard />;
 }
 
 function App() {
@@ -135,8 +150,13 @@ function App() {
                 <Suspense fallback={<div className="app-lazy" aria-busy="true" />}>
                 <Routes>
                     <Route path="/login"    element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    {/* Public sign-up is closed: the SacraSched administrator
+                        creates accounts (Platform Accounts → Create New Account) */}
+                    <Route path="/register" element={<Navigate to="/login" replace />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
+                    {/* "Forgot password?" — ask for the link, then choose a new password */}
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password"  element={<ResetPassword />} />
 
                     {/* The platform console's private entrance. The key is
                         checked by the server, not by anything in this bundle —
@@ -203,6 +223,16 @@ function App() {
                                 </Route>
                             </Route>
 
+                            {/* ── Priest area: his calendar and notifications ── */}
+                            <Route element={<RequirePriest />}>
+                                <Route path="/priest" element={<PriestLayout />}>
+                                    <Route index                element={<PriestCalendar />} />
+                                    <Route path="notifications" element={<PriestNotifications />} />
+                                    <Route path="profile"       element={<ProfileView staff />} />
+                                    <Route path="*" element={<Navigate to="/priest" replace />} />
+                                </Route>
+                            </Route>
+
                             {/* ── Admin area ── */}
                             <Route element={<RequireStaff />}>
                                 <Route path="/admin" element={<AdminLayout />}>
@@ -213,7 +243,10 @@ function App() {
                                     <Route path="occasional-masses" element={<AdminRequests key="occasional-masses" resource="occasional-masses" />} />
                                     <Route path="sacraments"        element={<AdminRequests key="sacraments" resource="sacraments" />} />
                                     <Route path="document-requests" element={<AdminRequests key="document-requests" resource="document-requests" />} />
-                                    <Route path="facility-bookings" element={<AdminRequests key="facility-bookings" resource="facility-bookings" />} />
+                                    {/* Facility bookings are no longer taken; an old link lands on the dashboard */}
+                                    <Route path="facility-bookings" element={<Navigate to="/admin" replace />} />
+                                    <Route path="live-agent"        element={<LiveAgent />} />
+                                    <Route path="profile"           element={<ProfileView staff />} />
                                     <Route path="calendar"          element={<AdminCalendar />} />
                                     <Route path="content"           element={<AdminContent />} />
                                     <Route path="posts"             element={<AdminPosts />} />

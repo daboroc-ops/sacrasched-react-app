@@ -95,7 +95,7 @@ export default function DocumentRequestForm({ parishId, onExit, onCalendar }) {
                     {needsContact && (
                         <div className="form-group form-group--full">
                             <label className="form-label">Contact Number <span className="req">*</span></label>
-                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                            <input className="form-input" type="tel" placeholder="Enter your mobile number (09XXXXXXXXX)"
                                 value={form.contactNumber} onChange={set('contactNumber')} required />
                             <p className="form-hint">Your account has no number saved yet.</p>
                         </div>
@@ -122,7 +122,7 @@ export default function DocumentRequestForm({ parishId, onExit, onCalendar }) {
                         <label className="form-label">Number of Copies</label>
                         <div className="copies-row">
                             <input className="form-input copies-input" type="number" min={1} max={10}
-                                value={form.copies} onChange={set('copies')} />
+                                value={form.copies} onChange={set('copies')} placeholder="Enter the number of copies" />
                             <span className="copies-hint">× {fmtFee(baseFee)}</span>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ export default function DocumentRequestForm({ parishId, onExit, onCalendar }) {
                     <div className="form-group form-group--full">
                         <label className="form-label">Purpose <span className="req">*</span></label>
                         <input className="form-input" type="text"
-                            placeholder="e.g. For school enrollment, for employment…"
+                            placeholder="Enter the purpose (e.g. school enrollment, employment…)"
                             value={form.purpose} onChange={set('purpose')} />
                     </div>
                 </>
@@ -170,7 +170,8 @@ export default function DocumentRequestForm({ parishId, onExit, onCalendar }) {
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
-                            value={form.additionalNotes} onChange={set('additionalNotes')} />
+                            value={form.additionalNotes} onChange={set('additionalNotes')}
+                            placeholder="Enter anything else the office should know (optional)" />
                     </div>
                     <BookingNotice />
                 </>

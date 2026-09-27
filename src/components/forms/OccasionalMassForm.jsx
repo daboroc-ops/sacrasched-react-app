@@ -10,7 +10,7 @@ import DetailFields from './DetailFields';
 import BookingNotice from './BookingNotice';
 import { whenProblem } from '../../utils/booking';
 import { missingDetail } from '../../utils/documentDetails';
-import { MASS_TYPES, REQUESTER_FIELDS, getOccasionFields, isForDeceased, asksWhere } from '../../utils/occasionalDetails';
+import { MASS_TYPES, REQUESTER_FIELDS, getOccasionFields, isForDeceased, asksWhere, wherePlaceholder } from '../../utils/occasionalDetails';
 
 function fmtFee(fee) {
     return fee ? '₱' + Number(fee).toLocaleString() : '₱0';
@@ -100,7 +100,7 @@ export default function OccasionalMassForm({ parishId, onExit, initialDate, onCa
                     {needsContact && (
                         <div className="form-group form-group--full">
                             <label className="form-label">Contact Number <span className="req">*</span></label>
-                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                            <input className="form-input" type="tel" placeholder="Enter your mobile number (09XXXXXXXXX)"
                                 value={form.contactNumber} onChange={set('contactNumber')} required />
                             <p className="form-hint">Your account has no number saved yet.</p>
                         </div>
@@ -148,12 +148,12 @@ export default function OccasionalMassForm({ parishId, onExit, initialDate, onCa
             render: () => (
                 <>
                     <DetailFields fields={detailFields} values={details} onChange={setDet} />
-                    {/* An office or a school names the place itself; a funeral or a wake is in the church */}
+                    {/* Where it will be held, typed in — every kind of Mass asks */}
                     {asksWhere(form.massType) && (
                         <div className="form-group form-group--full">
                             <label className="form-label">Where will the Mass be held? <span className="req">*</span></label>
                             <input className="form-input" value={form.venue || ''} onChange={e => setForm(p => ({ ...p, venue: e.target.value }))}
-                                   placeholder="e.g. the office's conference hall, the school gym, or the parish church" />
+                                   placeholder={wherePlaceholder(form.massType)} />
                         </div>
                     )}
                 </>
@@ -167,7 +167,8 @@ export default function OccasionalMassForm({ parishId, onExit, initialDate, onCa
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
-                            value={form.additionalNotes} onChange={set('additionalNotes')} />
+                            value={form.additionalNotes} onChange={set('additionalNotes')}
+                            placeholder="Enter anything else the office should know (optional)" />
                     </div>
                     <BookingNotice reservation />
                 </>

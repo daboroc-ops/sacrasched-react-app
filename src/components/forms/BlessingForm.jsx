@@ -6,7 +6,6 @@ import BookingWizard from '../BookingWizard';
 import PayButton from '../PayButton';
 import useAvailability from '../../hooks/useAvailability';
 import WhenFields from './WhenFields';
-import VenueSelect from './VenueSelect';
 import BookingNotice from './BookingNotice';
 import { whenProblem } from '../../utils/booking';
 
@@ -39,8 +38,7 @@ export default function BlessingForm({ parishId, onExit, initialDate, onCalendar
     const selectedItem  = blessingItems.find(i => i.name === form.blessingType);
     const fee           = selectedItem?.fee ?? 0;
 
-    /* Office hours on that day, minus what is taken, the priest's day off
-       and anything already past. */
+    /* Office hours on that day, minus what is taken and anything already past. */
     const avail  = useAvailability({ service: 'blessing', type: form.blessingType, date: form.preferredDate, parishId });
     const months = config?.settings?.advanceMonths || 3;
 
@@ -84,7 +82,7 @@ export default function BlessingForm({ parishId, onExit, initialDate, onCalendar
             validate: () => {
                 if (!form.blessingType)      return 'Choose a blessing type.';
                 if (!form.blessingFor.trim()) return 'Tell us what the blessing is for.';
-                if (!form.venue.trim())      return 'Enter the address where the blessing will be held.';
+                if (!form.venue.trim())      return 'Enter where the blessing will be held.';
                 if (needsContact && !form.contactNumber.trim()) return 'Enter a contact number.';
                 return null;
             },
@@ -93,7 +91,7 @@ export default function BlessingForm({ parishId, onExit, initialDate, onCalendar
                     {needsContact && (
                         <div className="form-group form-group--full">
                             <label className="form-label">Contact Number <span className="req">*</span></label>
-                            <input className="form-input" type="tel" placeholder="09XXXXXXXXX"
+                            <input className="form-input" type="tel" placeholder="Enter your mobile number (09XXXXXXXXX)"
                                 value={form.contactNumber} onChange={set('contactNumber')} required />
                             <p className="form-hint">Your account has no number saved yet.</p>
                         </div>
@@ -119,13 +117,16 @@ export default function BlessingForm({ parishId, onExit, initialDate, onCalendar
                     <div className="form-group">
                         <label className="form-label">Blessing For <span className="req">*</span></label>
                         <input className="form-input" type="text"
-                            placeholder="e.g. Our new home, Toyota Fortuner…"
+                            placeholder="Enter what is to be blessed (e.g. our new home, a Toyota Fortuner…)"
                             value={form.blessingFor} onChange={set('blessingFor')} />
                     </div>
-                    <VenueSelect venues={config?.venues || []} date={form.preferredDate} value={form.venue}
-                                 onChange={v => setForm(p => ({ ...p, venue: v }))}
-                                 label="Address / Location" required
-                                 hint="One of the parish's venues, or the complete address where the blessing will be held." />
+                    {/* Typed in: the home, the shop, the car park — wherever the priest goes */}
+                    <div className="form-group form-group--full">
+                        <label className="form-label">Where will the blessing be held? <span className="req">*</span></label>
+                        <input className="form-input" type="text" placeholder="Enter the complete address (e.g. 12 Rizal St., Brgy. San Felipe, Naga City)"
+                            value={form.venue} onChange={set('venue')} />
+                        <p className="form-hint">The complete address, so the priest can find it.</p>
+                    </div>
                 </>
             ),
         },
@@ -146,7 +147,7 @@ export default function BlessingForm({ parishId, onExit, initialDate, onCalendar
                     <div className="form-group form-group--full">
                         <label className="form-label">Notes</label>
                         <textarea className="form-textarea" rows={3}
-                            placeholder="Any special instructions…"
+                            placeholder="Enter any special instructions"
                             value={form.additionalNotes} onChange={set('additionalNotes')} />
                     </div>
                     <BookingNotice />

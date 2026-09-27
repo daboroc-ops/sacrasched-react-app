@@ -26,7 +26,8 @@ export default function TrackRequest() {
     const fromLink  = Boolean(reference && token);
 
     return (
-        <div className="lp lp-track">
+        /* From the link the page is the invoice alone, and sits tighter */
+        <div className={`lp lp-track${fromLink ? ' lp-track--link' : ''}`}>
             <header className="lp-nav">
                 <div className="lp-nav__inner">
                     <Link to="/" className="lp-nav__brand">

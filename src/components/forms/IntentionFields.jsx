@@ -87,7 +87,7 @@ export default function IntentionFields({
                     </div>
                 ) : (
                     <input className="form-input" value={types[0] || ''} onChange={e => onTypes(e.target.value ? [e.target.value] : [])}
-                           placeholder="The kind of intention" />
+                           placeholder="Enter the kind of intention" />
                 )}
             </div>
 
@@ -97,7 +97,7 @@ export default function IntentionFields({
                     <label className="form-label">{type} — for whom <span className="req">*</span></label>
                     <input className="form-input" value={names[type] || ''}
                            onChange={e => setName(type, e.target.value)}
-                           placeholder={`Who the ${type.toLowerCase()} is offered for`} />
+                           placeholder={`Enter who the ${type.toLowerCase()} is offered for`} />
                 </div>
             ))}
 
@@ -105,12 +105,12 @@ export default function IntentionFields({
                 <>
                     <div className="form-group">
                         <label className="form-label">How many individual souls?</label>
-                        <input className="form-input" type="number" min={0} max={MAX_SOULS} value={individuals}
+                        <input className="form-input" type="number" min={0} max={MAX_SOULS} value={individuals} placeholder="Enter the number of souls"
                                onChange={e => reshape(Math.max(0, Math.min(MAX_SOULS, parseInt(e.target.value, 10) || 0)), couples)} />
                     </div>
                     <div className="form-group">
                         <label className="form-label">How many couples (mag-asawa)?</label>
-                        <input className="form-input" type="number" min={0} max={Math.floor(MAX_SOULS / 2)} value={couples}
+                        <input className="form-input" type="number" min={0} max={Math.floor(MAX_SOULS / 2)} value={couples} placeholder="Enter the number of couples"
                                onChange={e => reshape(individuals, Math.max(0, Math.min(Math.floor(MAX_SOULS / 2), parseInt(e.target.value, 10) || 0)))} />
                     </div>
 
@@ -123,7 +123,7 @@ export default function IntentionFields({
                                     <span className="souls__heading">Individual souls</span>
                                     {parts.individuals.map((s, i) => (
                                         <div key={`i${i}`} className="souls__row">
-                                            <input className="form-input" value={s?.name || ''} placeholder={`Name ${i + 1}`}
+                                            <input className="form-input" value={s?.name || ''} placeholder={`Enter name ${i + 1}`}
                                                    onChange={e => setIndividual(i, e.target.value)} />
                                         </div>
                                     ))}
@@ -136,9 +136,9 @@ export default function IntentionFields({
                                     {parts.couples.map(([h, w], c) => (
                                         <div key={`c${c}`} className="souls__couple">
                                             <span className="souls__tag">Couple {c + 1}</span>
-                                            <input className="form-input" value={h?.name || ''} placeholder="Husband's name"
+                                            <input className="form-input" value={h?.name || ''} placeholder="Enter the husband's name"
                                                    onChange={e => setCouple(c, 0, e.target.value)} />
-                                            <input className="form-input" value={w?.name || ''} placeholder="Wife's name"
+                                            <input className="form-input" value={w?.name || ''} placeholder="Enter the wife's name"
                                                    onChange={e => setCouple(c, 1, e.target.value)} />
                                         </div>
                                     ))}
@@ -155,7 +155,7 @@ export default function IntentionFields({
                     <div className="form-group form-group--full">
                         <label className="form-label">Purpose</label>
                         <input className="form-input" value={purpose} onChange={e => onPurpose?.(e.target.value)}
-                               placeholder="e.g. 40th day, 1st death anniversary, birthday" maxLength={120} />
+                               placeholder="Enter the purpose (e.g. 40th day, 1st death anniversary, birthday)" maxLength={120} />
                     </div>
                 </>
             )}

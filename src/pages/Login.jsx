@@ -118,6 +118,11 @@ export default function Login() {
                             required
                         />
 
+                        {/* An emailed link to choose a new one (pages/PasswordReset) */}
+                        <p className="auth-forgot">
+                            <Link to="/forgot-password">Forgot password?</Link>
+                        </p>
+
                         <Turnstile onToken={setCaptcha} resetKey={captchaRound} />
 
                         <div className="auth-btns">
@@ -129,11 +134,6 @@ export default function Login() {
                                 {loading ? 'Signing in…' : 'Login'}
                             </button>
 
-                            <Link to="/register" style={{ textDecoration: 'none' }}>
-                                <button type="button" className="auth-btn auth-btn--outline">
-                                    Create New Account
-                                </button>
-                            </Link>
                         </div>
                     </form>
 

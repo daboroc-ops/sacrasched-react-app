@@ -29,22 +29,22 @@ import { ParishDirectorySkeleton, CarouselSkeleton } from '../components/Skeleto
 const CAPABILITIES = [
     {
         icon: faGlobe,
-        title: 'Your own address',
+        title: 'Your Own Address',
         text: 'Every parish gets its own subdomain — a website of its own, not a page inside someone else\'s.',
     },
     {
         icon: faPalette,
-        title: 'Your own look',
+        title: 'Your Own Look',
         text: 'Colours and photos are set per parish, so the site carries your identity rather than ours.',
     },
     {
         icon: faClipboardList,
-        title: 'One office inbox',
+        title: 'One Office Inbox',
         text: 'Blessings, Mass intentions, sacraments and document requests arrive in a single dashboard.',
     },
     {
         icon: faShieldHalved,
-        title: 'Separate by design',
+        title: 'Separate by Design',
         text: 'Each parish sees only its own records. Nothing is shared between parishes.',
     },
 ];
@@ -255,7 +255,7 @@ export default function Landing() {
                     <div className="lp-section__inner">
                         <div className="lp-section__hd">
                             <span className="lp-eyebrow">Parishes on SacraSched</span>
-                            <h2>Churches with a site here</h2>
+                            <h2>Churches with a Site Here</h2>
                             <p>Open your parish to book a service or check its schedules.</p>
                         </div>
 
@@ -318,7 +318,7 @@ export default function Landing() {
                     <div className="lp-section__inner">
                         <div className="lp-section__hd">
                             <span className="lp-eyebrow">What SacraSched does</span>
-                            <h2>Built for parishes, not for one parish</h2>
+                            <h2>Built for Parishes, Not for One Parish</h2>
                         </div>
 
                         <div className="lp-grid lp-grid--4">
@@ -337,7 +337,7 @@ export default function Landing() {
             {/* ── Closing ── */}
             <section className="lp-cta">
                 <div className="lp-cta__inner">
-                    <h2>{isTenant ? `Book with ${siteName}` : 'Bring your parish onto SacraSched'}</h2>
+                    <h2>{isTenant ? `Book with ${siteName}` : 'Bring Your Parish onto SacraSched'}</h2>
                     <p>
                         {isTenant
                             ? 'Pick a day on the calendar and the service you need — no account required.'

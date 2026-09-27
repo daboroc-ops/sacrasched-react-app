@@ -105,7 +105,7 @@ export default function SuperAdminLogs() {
                         <FontAwesomeIcon icon={faMagnifyingGlass} className="ad-search__icon" />
                         <input
                             className="ad-input ad-input--search"
-                            placeholder="Search actor, action, path or target"
+                            placeholder="Enter an actor, action, path or target"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                         />

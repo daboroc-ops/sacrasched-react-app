@@ -17,6 +17,7 @@ const useAuth = () => {
         isSuperAdmin: R.isSuperAdmin(roles),
         isAdmin:   R.isAdmin(roles),
         isEditor:  R.isEditor(roles),
+        isPriest:  R.isPriest(roles),
         isStaff:   R.isStaff(roles),
         roleLabel: R.roleLabel(roles),
         homePath:  R.homePathFor(roles),

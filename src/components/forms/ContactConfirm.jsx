@@ -67,7 +67,7 @@ export default function ContactConfirm({ label, required = false, type = 'tel', 
                         maxLength={6}
                         value={code}
                         onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
-                        placeholder="6-digit code"
+                        placeholder="Enter the 6-digit code"
                     />
                     <button type="button" className="btn btn--primary gb__send-code"
                             onClick={verify} disabled={busy || code.length !== 6}>

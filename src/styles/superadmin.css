@@ -73,8 +73,58 @@
 }
 .sa-shell .ad-table tbody tr:hover { background: var(--sa-accent-light); }
 
-/* ── Overview banner ─────────────────────────────────────────── */
+/* ── Audit log ───────────────────────────────────────────────────
+   One entry per row: the category's icon, who did what to what, and when.
+   The row is a button (it opens the detail), so it is reset to look like
+   a row rather than the browser's grey button. */
+.sa-loglist { list-style: none; margin: 0; padding: 0; }
+.sa-log {
+    border-bottom: 1px solid var(--border);
+    border-left: 3px solid transparent;
+}
+.sa-log:last-child { border-bottom: 0; }
+.sa-log--failure { border-left-color: #dc2626; }
+.sa-log__main {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition);
+}
 .sa-log__main:hover { background: var(--surface-2); }
+.sa-log__main:focus-visible { outline: 2px solid var(--sa-accent); outline-offset: -2px; }
+.sa-log__headline b { font-weight: 700; color: var(--text-primary); }
+.sa-log__sub .ad-mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.sa-log__icon--system  { background: var(--stone-100); color: var(--stone-500); }
+.sa-chip--system       { background: var(--stone-100); color: var(--stone-500); }
+.sa-log .sa-log__detail { margin: 0 14px 12px; }
+
+/* The filters: the search takes the room it needs for its placeholder */
+.sa-filterbar .ad-search { flex: 1 1 260px; min-width: 0; }
+.sa-filterbar .ad-search__field { width: 100%; }
+.sa-filterbar .ad-input--search { flex: 1; width: 100%; min-width: 0; }
+.sa-filterbar .ad-select { text-transform: capitalize; }
+.sa-toolbar .ad-filter { text-transform: capitalize; }
+
+@media (max-width: 640px) {
+    .sa-log__main { flex-wrap: wrap; gap: 8px 10px; padding: 12px; }
+    .sa-log__body { flex-basis: calc(100% - 80px); }
+    .sa-log__time { order: 3; flex-basis: 100%; margin-left: 42px; }
+    .sa-log .sa-log__detail { grid-template-columns: 1fr; margin: 0 12px 12px; padding: 12px; }
+    /* The bar is a column here (Responsive, below): a flex-basis would become
+       each filter's height, so every one keeps its natural size */
+    .sa-filterbar .ad-search,
+    .sa-filterbar__field { flex: 0 0 auto; }
+    .sa-filterbar .ad-select, .sa-filterbar .ad-input { width: 100%; min-width: 0; }
+}
 
 .sa-log__icon {
     display: grid;
@@ -303,7 +353,7 @@
     .sa-filterbar .ad-select,
     .sa-filterbar .ad-input { width: 100%; }
     .sa-parish-grid { grid-template-columns: 1fr; }
-    .sa-log__time   { display: none; }
+    /* the time stays: it is half of what a log line says (see Audit log, above) */
 }
 
 /* ─── Offerings per parish ── */

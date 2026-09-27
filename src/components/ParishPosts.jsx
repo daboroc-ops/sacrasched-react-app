@@ -39,7 +39,7 @@ export default function ParishPosts({ subdomain = '' }) {
         <section className="lp-section" id="news">
             <div className="lp-section__inner">
                 <div className="lp-section__hd">
-                    <h2>News &amp; announcements</h2>
+                    <h2>News and Announcements</h2>
                 </div>
 
                 {!posts ? <PostsSkeleton /> : (

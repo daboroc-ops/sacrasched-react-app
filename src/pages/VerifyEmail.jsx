@@ -105,7 +105,7 @@ export function ResendForm({ defaultEmail = '' }) {
                 <input
                     className="auth-input"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Enter your email address"
                     value={value}
                     onChange={e => setValue(e.target.value)}
                     required

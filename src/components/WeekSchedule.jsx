@@ -48,12 +48,15 @@ export default function WeekSchedule({ days = {}, compact = false }) {
                                 .map(([tag, l]) => (
                                     <span key={tag} className="ws__line">
                                         <i className="ws__ampm">{tag}</i>
-                                        {l.map((t, i) => (
-                                            <span key={i} className="ws__time" title={t.label || undefined}>
-                                                <b>{clock(t.time)}</b>
-                                                {t.label && <small>{t.label}</small>}
-                                            </span>
-                                        ))}
+                                        {/* The tiles wrap among themselves, never under the AM/PM label */}
+                                        <span className="ws__tiles">
+                                            {l.map((t, i) => (
+                                                <span key={i} className="ws__time" title={t.label || undefined}>
+                                                    <b>{clock(t.time)}</b>
+                                                    {t.label && <small>{t.label}</small>}
+                                                </span>
+                                            ))}
+                                        </span>
                                     </span>
                                 ))}
                         </span>

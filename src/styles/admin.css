@@ -594,6 +594,17 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
 }
 .ad-config-items { padding-left: 14px; margin-top: 10px; border-left: 1px dashed var(--border); }
 .ad-fee-preview  { font-size: 12px; color: var(--text-muted); min-width: 70px; }
+/* Services are fixed — their names read as labels, only the fee is typed */
+.ad-card__note   { margin: -4px 0 14px; font-size: 12.5px; color: var(--text-muted); }
+.ad-fixed-name   { flex: 1; min-width: 0; font-size: 13.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.ad-fixed-name--bold { font-weight: 700; font-size: 14.5px; }
+/* On a phone the name takes its own line; the fee and Rules sit under it */
+@media (max-width: 640px) {
+    .ad-item > .ad-repeat-row { flex-wrap: wrap; }
+    .ad-item > .ad-repeat-row > .ad-fixed-name,
+    .ad-item > .ad-repeat-row > .ad-input:not(.ad-input--short) { flex-basis: 100%; }
+    .ad-item > .ad-repeat-row > .ad-input--short { flex: 1; min-width: 0; }
+}
 
 /* ── Recent lists ────────────────────────────────────────────── */
 .ad-recent { list-style: none; display: flex; flex-direction: column; }
@@ -1054,7 +1065,75 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
     margin-bottom: 14px;
 }
 .ad-table--compact td, .ad-table--compact th { padding-top: 8px; padding-bottom: 8px; }
-@media (max-width: 640px) { .ad-ledger__form { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+    .ad-ledger__form { grid-template-columns: 1fr 1fr; }
+    /* The note gets a line of its own rather than half of one */
+    .ad-ledger__form > .ad-input:not(.ad-input--short) { grid-column: 1 / -1; }
+    .ad-ledger__form > .ad-input--short { width: 100%; min-width: 0; }
+}
+
+/* ─── Tables on a phone ──────────────────────────────────────────
+   A 720px table in a 340px screen hid its right-hand columns — the
+   actions among them — behind a sideways scroll nobody knew was there.
+   Below 640px each row is a card instead, every cell on its own line
+   under its column's name (data-label, set by hooks/useTableLabels). */
+@media (max-width: 640px) {
+    .ad-table-wrap { overflow-x: visible; }
+    .ad-table { min-width: 0; }
+    .ad-table,
+    .ad-table tbody,
+    .ad-table tfoot,
+    .ad-table tr,
+    .ad-table td { display: block; width: 100%; }
+    /* Hidden from the eye only; screen readers still hear the headers */
+    .ad-table thead {
+        position: absolute;
+        width: 1px; height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .ad-table tbody tr,
+    .ad-table tfoot tr {
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .ad-table tbody tr:last-child { border-bottom: 0; }
+    .ad-table td,
+    .ad-table tbody tr:last-child td {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 14px;
+        border-bottom: 0;
+        text-align: right;
+        overflow-wrap: anywhere;
+        min-width: 0;
+    }
+    .ad-table td::before {
+        content: attr(data-label);
+        flex: none;
+        max-width: 42%;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        padding-top: 2px;
+    }
+    /* A cell with no column name (a toggle, a bare action) needs no label */
+    .ad-table td[data-label=""]::before,
+    .ad-table td:not([data-label])::before { content: none; }
+    .ad-table td[data-label=""],
+    .ad-table td:not([data-label]) { justify-content: flex-end; }
+    .ad-table td:empty { display: none; }
+    .ad-table td > * { min-width: 0; }
+    .ad-table .ad-cell-stack { align-items: flex-end; }
+    .ad-table .ad-row-actions { flex-wrap: wrap; justify-content: flex-end; }
+    .ad-table .ad-select--sm { max-width: 100%; }
+}
 
 /* ── The intentions sheet: a day, a Mass, a PDF ─────────────── */
 .ad-sheet { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -1187,23 +1266,11 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
     border-bottom: 1px solid var(--border);
 }
 
-/* On a phone, wrapping ten tabs makes four rows of them. There they scroll
-   instead — sideways is a natural gesture on a touch screen, and the
-   shadow at the edge says there is more. The first two layers scroll with
-   the content and cover the shadow once that end is reached, so it shows
-   exactly when there is something to reach. */
+/* On a phone the tabs still wrap — a sideways strip left the last ones past
+   the edge of the screen — but tighter, so ten of them take fewer rows. */
 @media (max-width: 720px) {
-    .ad-tabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-        background:
-            linear-gradient(to right, var(--surface) 40%, transparent) left / 28px 100% no-repeat local,
-            linear-gradient(to left,  var(--surface) 40%, transparent) right / 28px 100% no-repeat local,
-            radial-gradient(farthest-side at 0 50%,    rgba(0, 0, 0, .10), transparent) left / 12px 100% no-repeat scroll,
-            radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .10), transparent) right / 12px 100% no-repeat scroll;
-    }
-    .ad-tabs::-webkit-scrollbar { display: none; }
+    .ad-tabs { gap: 2px 0; }
+    .ad-tabs .ad-tab { padding: 7px 10px 8px; font-size: 12.5px; gap: 5px; }
 }
 
 .ad-tab {
@@ -1529,3 +1596,233 @@ textarea.ad-input   { height: auto; padding: 10px 12px; resize: vertical; line-h
 
 /* A Mass intention's kind, above the name offered for it */
 .int-group__type { font-weight: 650; color: var(--text-primary); }
+
+/* ─── Booking details (View details) ─────────────────────────────── */
+.ad-view-btn { white-space: nowrap; }
+
+.bd { display: flex; flex-direction: column; gap: 16px; }
+.bd-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+.bd-head__ref { display: flex; flex-direction: column; gap: 2px; }
+.bd-head > :last-child { margin-left: auto; }   /* the status, to the right */
+.bd-head__ref span {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--text-muted);
+}
+.bd-head__ref b { font-size: 15px; }
+
+.bd-section { border-top: 1px solid var(--border); padding-top: 12px; }
+.bd-section__title {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand);
+}
+.bd-group + .bd-group { margin-top: 10px; }
+.bd-group__title {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.bd-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; margin: 0; }
+.bd-row  { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bd-row dt { font-size: 11.5px; color: var(--text-muted); }
+.bd-row dd { margin: 0; font-size: 13.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.bd-rows + .bd-rows { margin-top: 8px; }
+
+.bd-empty { font-size: 12.5px; color: var(--text-muted); font-style: italic; }
+.bd-list  { margin: 0; padding-left: 18px; }
+.bd-files { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0 0 8px; padding: 0; }
+.bd-files li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+@media (max-width: 640px) {
+    .bd-rows { grid-template-columns: 1fr; }
+}
+
+/* The sacrament's two ticks, one under the other */
+.ad-checks { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+
+/* ─── Header: Live Agent, and the account as a link to the profile ─── */
+.ad-header__user--link {
+    padding: 3px 12px 3px 3px;
+    border-radius: 99px;
+    color: inherit;
+    text-decoration: none;
+    transition: background var(--transition);
+}
+.ad-header__user--link:hover,
+.ad-header__user--link.active { background: var(--stone-100); }
+.ad-header__live {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--brand);
+    border-radius: 99px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+.ad-header__live:hover,
+.ad-header__live.active { background: var(--brand); color: var(--on-brand); }
+.ad-header__live-count,
+.ad-nav__count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 99px;
+    background: var(--red);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+}
+.ad-nav__count { margin-left: auto; }
+@media (max-width: 900px) {
+    .ad-header__live span { display: none; }
+    .ad-header__live { padding: 0 10px; }
+    /* The name goes, the avatar stays: still the way to the profile */
+    .ad-header__user.ad-header__user--link { display: flex; padding: 2px; }
+    .ad-header__user--link .ad-header__name { display: none; }
+}
+/* A phone: the menu, the mark and three round buttons are all that fit on
+   one line — the wordmark and the role pill go (the sidebar still says
+   both), and nothing may run off the right edge */
+@media (max-width: 520px) {
+    .ad-header { gap: 8px; padding: 0 12px; }
+    .ad-header__left, .ad-header__right { gap: 8px; min-width: 0; }
+    .ad-header__wordmark, .ad-header__pill, .ad-header__tenant { display: none; }
+    .ad-header__live, .ad-header__logout { height: 36px; padding: 0 10px; }
+}
+
+/* ─── Live Agent ──────────────────────────────────────────────────── */
+.la-intro { display: block; margin: 0 0 12px; line-height: 1.5; }
+.la { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 16px; align-items: start; }
+.la-list, .la-thread { padding: 0; overflow: hidden; }
+.la-list__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.la-waiting { font-size: 12px; font-weight: 700; color: var(--red); }
+.la-chats { list-style: none; margin: 0; padding: 0; max-height: 62vh; overflow-y: auto; }
+.la-chat {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+.la-chat:hover { background: var(--surface-2); }
+.la-chat--on { background: var(--brand-light); box-shadow: inset 3px 0 0 var(--brand); }
+.la-chat__avatar {
+    flex: none;
+    display: grid; place-items: center;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--brand); color: var(--on-brand);
+    font-size: 13px; font-weight: 700;
+}
+.la-chat__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.la-chat__top { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+.la-chat__top em { flex: none; font-style: normal; font-size: 11.5px; color: var(--text-muted); }
+.la-chat__preview { font-size: 12.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-chat--unread .la-chat__top b, .la-chat--unread .la-chat__preview { font-weight: 700; color: var(--text-primary); }
+.la-chat__count { flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; line-height: 20px; text-align: center; }
+.la-status { width: fit-content; padding: 1px 8px; border-radius: 99px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.la-status--waiting { background: var(--danger-bg); color: var(--red); }
+.la-status--active  { background: var(--success-bg); color: var(--success-fg); }
+.la-status--closed  { background: var(--stone-100); color: var(--stone-500); }
+
+.la-thread { display: flex; flex-direction: column; min-height: 420px; }
+.la-thread__empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--text-muted); }
+.la-thread__empty svg { font-size: 30px; }
+.la-thread__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.la-msgs { list-style: none; margin: 0; padding: 16px; flex: 1; max-height: 52vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); }
+.la-msg { display: flex; flex-direction: column; gap: 3px; max-width: 78%; }
+.la-msg--person { align-self: flex-start; }
+.la-msg--staff  { align-self: flex-end; align-items: flex-end; }
+.la-msg--bot    { align-self: center; max-width: 100%; }
+.la-msg__bubble { padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.la-msg--person .la-msg__bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.la-msg--staff  .la-msg__bubble { background: var(--brand); color: var(--on-brand); border-bottom-right-radius: 4px; }
+.la-msg__meta { font-size: 11px; color: var(--text-muted); }
+.la-msg__note { font-size: 11.5px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.la-thread__closed { margin: 0; padding: 14px 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+.la-reply { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.la-reply textarea { flex: 1; resize: vertical; min-height: 42px; }
+
+@media (max-width: 900px) {
+    .la { grid-template-columns: 1fr; }
+    .la-chats { max-height: 40vh; }
+}
+
+/* ── How each service can be paid (Configuration → Parish) ── */
+.ad-payways { margin-top: 18px; }
+.ad-payways__head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.ad-payways__head span { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ad-payways__head small { font-size: 12px; color: var(--text-muted); }
+.ad-payways__grid { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.ad-payways__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 13.5px;
+}
+.ad-payways__row:first-child { border-top: 0; }
+.ad-payways__row--head { background: var(--surface-2); font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.ad-payways__tick { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ad-payways__tick input { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+.ad-payways__tick input:disabled { cursor: not-allowed; opacity: .6; }
+/* On a table the column says which; the word is for a phone */
+.ad-payways__word { display: none; font-size: 13px; color: var(--text-secondary); }
+@media (max-width: 640px) {
+    .ad-payways__row { grid-template-columns: 1fr; gap: 6px; }
+    .ad-payways__row--head { display: none; }
+    .ad-payways__row:nth-child(2) { border-top: 0; }
+    .ad-payways__row > span[role="cell"] { font-weight: 600; }
+    .ad-payways__word { display: inline; }
+}
+
+/* A note under a form field (e.g. the parish's number filled in for a walk-in) */
+.ad-field__hint { display: block; margin-top: 4px; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+.ad-linkbtn { padding: 0; border: 0; background: none; font: inherit; color: var(--brand); font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+/* ── A choice between a few options, as cards (Configuration → Priests) ── */
+.ad-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.ad-choice__opt {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s;
+}
+.ad-choice__opt:hover { border-color: var(--brand); }
+.ad-choice__opt--on { border-color: var(--brand); background: var(--brand-light); }
+.ad-choice__opt input { margin: 3px 0 0; accent-color: var(--brand); flex-shrink: 0; }
+.ad-choice__opt span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ad-choice__opt b { font-size: 14px; color: var(--text-primary); }
+.ad-choice__opt small { font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); }

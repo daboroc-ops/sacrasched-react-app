@@ -8,19 +8,27 @@
  *   statuses   — allowed values for the status dropdown
  *   filterStatuses — the statuses offered as filters, when not all of them
  *   typeField  — the field the kind of request is in (sacramentType…)
+ *   assignPriest — the admin gives each row a presiding priest (PATCH …/:id/priest)
+ *   paidTick   — the office ticks "Paid" once the payment is verified (PATCH …/:id/paid)
+ *   details    — each row has "View details": everything the form collected
+ *                (components/admin/BookingDetails)
  *   tabs       — the tabs the list is organised by, each matching every
  *                kind that contains its word ("Wedding" covers a Preferred
  *                and a Regular Wedding); a string names a config category
  *                whose items become the tabs instead
  */
 import { intentionGroups } from '../../utils/intentions';
-import { fmtDate, fmtDateTime, fmtStamp, fmtPeso, shortId } from '../../utils/format';
+import { fmtDate, fmtDateTime, fmtPeso, refOf } from '../../utils/format';
 
 const REQUEST_STATUSES = ['pending', 'approved', 'completed', 'cancelled'];
+/* A blessing or an occasional Mass is never "approved": pending until the
+   office ticks "Paid", completed once it does */
+const PAID_STATUSES = ['pending', 'completed', 'cancelled'];
 const BOOKING_STATUSES = ['pending', 'approved', 'rejected', 'cancelled'];
 
 /* Columns every request table starts with */
-const idCol = { key: 'id', label: 'ID', render: r => <span className="ad-mono">{shortId(r._id)}</span> };
+/* The booking's reference, the number the parishioner quotes; a row without one shows its record ID */
+const idCol = { key: 'id', label: 'Reference', render: r => <span className="ad-mono">{refOf(r)}</span> };
 
 const requestorCol = (nameKey = 'requestorName', label = 'Requestor') => ({
     key: 'requestor',
@@ -39,17 +47,15 @@ const scheduleCol = {
     render: r => fmtDateTime(r.preferredDate, r.preferredTime),
 };
 
+// When it was filed — only where a row has no "View details" to show it in
 const submittedCol = { key: 'createdAt', label: 'Submitted', render: r => fmtDate(r.createdAt) };
-// The day and the time of day the parishioner booked
-const bookedCol    = { key: 'createdAt', label: 'Booked on',  render: r => fmtStamp(r.createdAt) };
 
-/* The name alone — the office asked the contact number off the intention
-   and document forms */
-
-/* Fields every request form starts with */
-const contactFields = (nameLabel = 'Requestor Name', nameKey = 'requestorName') => ([
+/* Fields every request form starts with. `parishDefault`: a walk-in may
+   have no number to give, so the field starts filled with the parish's own
+   — never blank, and still the parishioner's if they have one. */
+const contactFields = (nameLabel = 'Requestor Name', nameKey = 'requestorName', { parishDefault = false } = {}) => ([
     { name: nameKey,        label: nameLabel,     required: true },
-    { name: 'contactNumber', label: 'Contact Number', required: true },
+    { name: 'contactNumber', label: 'Contact Number', required: true, parishDefault },
 ]);
 
 const scheduleFields = [
@@ -69,10 +75,13 @@ export const RESOURCES = {
         typeKey:  'blessingType',
         typeField: 'blessingType',
         tabs:      'Blessing',          // whatever kinds the parish offers
-        // The status follows the payment; nothing here to set — but the
-        // office filters by it: All / Pending / Approved / Completed / Cancelled
+        assignPriest: true,
+        details:  true,
+        // The status follows the "Paid" tick; the office filters by it:
+        // All / Pending / Completed / Cancelled
         statusAutomatic: true,
-        statuses: REQUEST_STATUSES,
+        paidTick: true,
+        statuses: PAID_STATUSES,
         columns: [
             idCol,
             requestorCol(),
@@ -80,13 +89,15 @@ export const RESOURCES = {
             { key: 'blessingFor',  label: 'Blessing For', render: r => r.blessingFor  || '—' },
             scheduleCol,
         ],
+        /* The parishioner's form, field for field and in its order: what,
+           for what, where (typed in), when, anything else */
         fields: [
             ...contactFields(),
             { name: 'blessingType', label: 'Blessing Type', required: true, source: 'Blessing' },
-            { name: 'blessingFor',  label: 'Blessing For',  required: true, placeholder: 'e.g. New house on Rizal St.' },
+            { name: 'blessingFor',  label: 'Blessing For',  required: true, placeholder: 'Enter what is to be blessed (e.g. our new home, a Toyota Fortuner…)' },
+            { name: 'venue',        label: 'Where will the blessing be held?', required: true, placeholder: 'Enter the complete address (e.g. 12 Rizal St., Brgy. San Felipe, Naga City)' },
             ...scheduleFields,
-            { name: 'venue',  label: 'Venue',  source: 'venues'  },
-            notesField,
+            { name: 'additionalNotes', label: 'Notes', type: 'textarea', placeholder: 'Enter any special instructions' },
         ],
     },
 
@@ -98,6 +109,7 @@ export const RESOURCES = {
         typeKey:  'intentionType',
         typeField: 'intentionType',
         tabs:      'Mass Intention',    // every kind under Mass Intention
+        details:  true,
         noStatusFilter: true,
         exportSheet: true,    // the intentions for one Mass, as a PDF
         statuses: REQUEST_STATUSES,
@@ -132,8 +144,8 @@ export const RESOURCES = {
         fields: [
             /* The contact number is not optional: the model requires it, and
                a walk-in booking was refused outright without it. */
-            ...contactFields('Offered by'),
-            { name: 'venue',         label: 'Venue',          placeholder: 'Parish, or the cemetery for Undas' },
+            ...contactFields('Offered by', 'requestorName', { parishDefault: true }),
+            { name: 'venue',         label: 'Venue',          placeholder: 'Enter the venue (the parish, or the cemetery for Undas)' },
             ...scheduleFields,
             notesField,
         ],
@@ -151,12 +163,15 @@ export const RESOURCES = {
             { label: 'Baptism',      match: 'baptism' },
             { label: 'Confirmation', match: 'confirmation' },
         ],
-        // The parish asked for the status to follow payment and the papers
-        // rather than a button: unpaid = pending, paid = approved, paid and
-        // requirements complete = completed. Nothing is "rejected".
+        // The status follows the office's two ticks, "Papers complete" and
+        // "Paid": neither = pending, either one = approved, both = completed.
+        // Nothing is "rejected".
         statuses: ['pending', 'approved', 'completed', 'cancelled'],
         statusAutomatic: true,
-        requirements: true,        // the office ticks "papers complete"
+        requirements: true,        // the office ticks "papers complete"…
+        paidTick:     true,        // …and "paid"
+        assignPriest: true,        // who presides
+        details:  true,
         attachments:  true,        // what the requester uploaded
         hasDetails: true,          // renders the type-specific detail fields
         columns: [
@@ -165,7 +180,6 @@ export const RESOURCES = {
             { key: 'sacramentType', label: 'Sacrament Type', render: r => r.sacramentType || '—' },
             { key: 'recipientName', label: 'Recipient',      render: r => r.recipientName || '—' },
             scheduleCol,
-            bookedCol,
         ],
         fields: [
             ...contactFields(),
@@ -182,6 +196,7 @@ export const RESOURCES = {
         statusAutomatic: true,
         ready: true,
         title:    'Document Requests',
+        details:  true,
         singular: 'document request',
         typeField: 'documentType',
         // The office files by paid (approved) and released (completed) only
@@ -190,7 +205,7 @@ export const RESOURCES = {
             { label: 'Baptismal Certificate',    match: 'baptismal' },
             { label: 'Confirmation Certificate', match: 'confirmation' },
             { label: 'Marriage Certificate',     match: 'marriage' },
-            { label: 'Burial',                   match: 'burial' },
+            { label: 'Burial Certificate',       match: 'burial' },
         ],
         statuses: REQUEST_STATUSES,
         columns: [
@@ -208,7 +223,6 @@ export const RESOURCES = {
                     return line || '—';
                 }
             },
-            submittedCol,
         ],
         attachments: true,
         /* The same particulars the public form asks for, by document type */
@@ -216,7 +230,7 @@ export const RESOURCES = {
         fields: [
             /* A contact number is required by the model: without it every
                walk-in document request was refused. */
-            ...contactFields(),
+            ...contactFields('Requestor Name', 'requestorName', { parishDefault: true }),
             { name: 'documentType', label: 'Document Type', required: true, source: 'Document Request' },
             { name: 'purpose',      label: 'Purpose',       required: true },
             { name: 'copies',       label: 'Copies',        type: 'number', min: 1, defaultValue: 1 },
@@ -237,9 +251,13 @@ export const RESOURCES = {
             { label: 'Office Mass',  match: 'office' },
             { label: 'School Mass',  match: 'school' },
         ],
-        statuses: REQUEST_STATUSES,
+        // Pending until "Paid" is ticked, then completed
+        statuses: PAID_STATUSES,
         statusAutomatic: true,
+        paidTick: true,
         hasOccasion: true,       // the details of the occasion, by kind
+        assignPriest: true,      // who presides
+        details:  true,
         columns: [
             idCol,
             requestorCol(),
@@ -247,14 +265,13 @@ export const RESOURCES = {
             { key: 'for',      label: 'For',      render: r => r.details?.deceased || r.details?.organisation || '—' },
             { key: 'venue',    label: 'Venue',    render: r => r.venue || 'Church' },
             scheduleCol,
-            bookedCol,
         ],
         fields: [
             ...contactFields(),
-            { name: 'relationship', label: 'Relationship', placeholder: 'Son, daughter, spouse…' },
+            { name: 'relationship', label: 'Relationship', placeholder: 'Enter the relationship (son, daughter, spouse…)' },
             { name: 'massType', label: 'Kind of Mass', required: true, options: ['Funeral Mass', 'Wake Mass', 'Office Mass', 'School Mass'] },
             ...scheduleFields,
-            { name: 'venue', label: 'Venue', source: 'venues' },
+            // Where it is held is asked in the details, typed in — as on the parishioner's form
             notesField,
         ],
     },

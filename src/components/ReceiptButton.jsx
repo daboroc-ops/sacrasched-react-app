@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileArrowDown } from '@fortawesome/free-solid-svg-icons';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
+import { fileNameFrom } from '../utils/format';
 
 /**
  * Downloads the PDF receipt for a paid payment.
@@ -20,7 +21,9 @@ export default function ReceiptButton({ paymentId, compact = false, className = 
             const res = await axios.get(`/payment/${paymentId}/receipt`, { responseType: 'blob', timeout: 60000 });
             const url = URL.createObjectURL(res.data);
             const a = document.createElement('a');
-            a.href = url; a.download = `receipt-${String(paymentId).slice(-8).toUpperCase()}.pdf`;
+            /* Named by the server, so the file matches the number on it */
+            a.href = url;
+            a.download = fileNameFrom(res.headers, `receipt-${String(paymentId).slice(-8).toUpperCase()}.pdf`);
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch {

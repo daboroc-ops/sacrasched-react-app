@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faChurch, faMagnifyingGlass, faCircleCheck, faCopy, faCreditCard, faChevronLeft, faCalendarDay, faFileArrowDown,
-    faHourglassHalf, faHandHoldingDollar, faCalendarDays, faCircleExclamation, faBan, faClock, faLocationDot,
+    faChurch, faMagnifyingGlass, faChevronLeft, faCalendarDay, faFileArrowDown,
+    faCircleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import axiosPublic from '../api/axios';
 import Turnstile from './Turnstile';
 import { turnstileEnabled } from '../utils/turnstile';
 import BookingWizard from './BookingWizard';
 import ParishBanner from './ParishBanner';
-import Invoice from './Invoice';
+import BookingSummary from './BookingSummary';
 import { TicketSkeleton } from './Skeleton';
 import FadeImg from './FadeImg';
 import useSiteContent from '../hooks/useSiteContent';
 import useGuestCode from '../hooks/useGuestCode';
 import useAvailability from '../hooks/useAvailability';
 import { mediaUrl } from '../utils/media';
+import { fileNameFrom } from '../utils/format';
 import { getDetailFields, expandDetailFields } from '../utils/sacramentDetails';
 import { getDocumentFields, missingDetail } from '../utils/documentDetails';
-import { MASS_TYPES, REQUESTER_FIELDS, getOccasionFields, isForDeceased, asksWhere } from '../utils/occasionalDetails';
+import { MASS_TYPES, REQUESTER_FIELDS, getOccasionFields, isForDeceased, asksWhere, wherePlaceholder } from '../utils/occasionalDetails';
 import {
     intentionFee, isNamedSouls, needsForWhom, amountDue, offeringProblem, soulsProblem,
     missingIntentionNames, summariseIntentions,
@@ -28,7 +29,6 @@ import DetailFields from './forms/DetailFields';
 import ContactConfirm from './forms/ContactConfirm';
 import RequirementUploads from './forms/RequirementUploads';
 import IntentionFields from './forms/IntentionFields';
-import VenueSelect from './forms/VenueSelect';
 import MassVenueSelect from './forms/MassVenueSelect';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -62,17 +62,15 @@ const longDate = iso => {
    confirmed before it is sent, and that plus the reference is what opens the
    request again later. Only the questions differ, and they live here.
 
-   Mass intentions and documents are paid online; a sacrament, a blessing or
-   an occasional Mass is settled at the parish office. The API says which
-   (config.paysOnline) and enforces it. */
+   Each is paid online, at the parish office, or either — whichever the
+   parish allows (config.settings.payWays); the visitor chooses on the
+   slide after Submit (BookingSummary). */
 const SERVICES = {
     intention: {
         label:    'Mass intention',
         endpoint: '/guest/mass-intention',
         category: 'mass intention',
         typeKey:  'intentionType',
-        done:     'Your Mass intention has been received',
-        again:    'Offer another intention',
         fields:   { intentionType: '', intentionTypes: [], souls: [], intentionNames: {}, intentionFor: '', purpose: '', venue: '', wantsDonation: false, offering: '', preferredDate: '', preferredTime: '' },
     },
     blessing: {
@@ -80,8 +78,6 @@ const SERVICES = {
         endpoint: '/guest/blessing',
         category: 'blessing',
         typeKey:  'blessingType',
-        done:     'Your blessing request has been received',
-        again:    'Request another blessing',
         fields:   { blessingType: '', blessingFor: '', venue: '', preferredDate: '', preferredTime: '' },
     },
     sacrament: {
@@ -89,8 +85,6 @@ const SERVICES = {
         endpoint: '/guest/sacrament',
         category: 'sacrament',
         typeKey:  'sacramentType',
-        done:     'Your sacrament request has been received',
-        again:    'Request another sacrament',
         fields:   { sacramentType: '', recipientName: '', preferredDate: '', preferredTime: '' },
     },
     occasional: {
@@ -98,8 +92,6 @@ const SERVICES = {
         endpoint: '/guest/occasional-mass',
         category: 'occasional',
         typeKey:  'massType',
-        done:     'Your Mass reservation has been received',
-        again:    'Reserve another Mass',
         fields:   { massType: '', relationship: '', venue: '', preferredDate: '', preferredTime: '' },
     },
     document: {
@@ -107,8 +99,6 @@ const SERVICES = {
         endpoint: '/guest/document-request',
         category: 'document',
         typeKey:  'documentType',
-        done:     'Your document request has been received',
-        again:    'Request another document',
         fields:   { documentType: '', purpose: '', copies: 1 },
     },
 };
@@ -119,23 +109,8 @@ const blankFor = (service, date = '') => ({
     ...('preferredDate' in SERVICES[service].fields ? { preferredDate: date } : {}),
 });
 
-/** "Sat, Sep 13, 3:15 PM" — when the offering must be settled by. */
-const fmtDeadline = iso => new Date(iso).toLocaleString('en-PH', {
-    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-});
-
 /** Has the visitor said they will pay at the office? */
 const onsiteChosen = r => r?.paymentChoice === 'onsite' || (r?.payment?.method === 'cash' && r.payment.status !== 'paid');
-
-/** How the offering stands, in words. */
-const paymentLabel = r => {
-    if (r.status === 'cancelled') return 'not settled in time';
-    if (!(r.fee > 0))  return 'nothing to pay';
-    if (r.payment?.status === 'paid') return 'paid';
-    if (onsiteChosen(r)) return 'to be settled at the parish office';
-    if (!r.payment)    return 'unpaid';
-    return r.payment.status;
-};
 
 /** Turn a PDF response into a download the browser will actually save. */
 const saveBlob = (blob, filename) => {
@@ -203,8 +178,8 @@ export default function GuestBooking({
     const [busy,   setBusy]   = useState(false);
     const [error,  setError]  = useState('');
     const [booked, setBooked] = useState(null);         // the reference we just created
+    const [rechoose, setRechoose] = useState('');       // the reference whose way to pay is being chosen again
     const [found,  setFound]  = useState(null);         // a request looked up
-    const [copied, setCopied] = useState(false);
 
     const [captcha, setCaptcha] = useState('');
     const [captchaRound, setCaptchaRound] = useState(0);
@@ -243,21 +218,41 @@ export default function GuestBooking({
         return () => { alive = false; };
     }, [autoToken, initialReference]);
 
+    /* Whose parish this is: the site's, or — opened on the main host from
+       an emailed link — the booking's own, so its invoice names the parish
+       it was booked with rather than the platform. */
+    const configParishId = parishId || found?.parishId || null;
+
     useEffect(() => {
         let alive = true;
         (async () => {
             try {
-                const res = await axiosPublic.get('/guest/config', { params: parishId ? { parishId } : {} });
+                const res = await axiosPublic.get('/guest/config', { params: configParishId ? { parishId: configParishId } : {} });
                 if (alive) setConfig({ venues: [], paysOnline: {}, ...(res.data || {}) });
             } catch {
                 if (alive) setConfig({ massSchedule: {}, serviceCategories: [], settings: {}, venues: [], paysOnline: {} });
             }
         })();
         return () => { alive = false; };
-    }, [parishId]);
+    }, [configParishId]);
 
     const set = field => e => { setForm(f => ({ ...f, [field]: e.target.value })); setError(''); };
     const setDet = (k, v) => setDetails(p => ({ ...p, [k]: v }));
+
+    /* How the parish lets a service be paid — both, unless it says otherwise */
+    const waysFor = kind => {
+        const w = config.settings?.payWays?.[kind] || {};
+        const online = w.online !== false, onsite = w.onsite !== false;
+        return online || onsite ? { online, onsite } : { online: true, onsite: true };
+    };
+
+    /* The same, in words, for the offering line on the form */
+    const payWord = kind => {
+        const w = waysFor(kind);
+        return w.online && w.onsite ? 'pay online or at the parish office; you choose after submitting'
+             : w.online ? 'paid online after submitting'
+             : 'paid at the parish office';
+    };
 
     /* What the parish charges for the thing being asked for, and what it
        needs with it. The category is named by hand in the admin, so match
@@ -278,8 +273,6 @@ export default function GuestBooking({
               : service === 'document'  ? unitFee * copies
               : unitFee;
 
-    // Paid online, or settled at the office — the API says which
-    const paysOnline = config.paysOnline?.[service] ?? (service === 'intention' || service === 'document');
 
     const requirements = selected?.requirements || [];
     const detailFields = service === 'sacrament'  ? expandDetailFields(getDetailFields(form.sacramentType), details)
@@ -417,6 +410,10 @@ export default function GuestBooking({
             const request = res.data.request;
             setBooked(b => (b && b.reference === reference ? { ...b, request } : b));
             setFound(f => (f && f.reference === reference ? request : f));
+            setRechoose('');
+            // On to the confirmation: the same screen, now with the deadline
+            // and the reference — read from the top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
             setError(err?.response?.data?.message || 'Could not record that. Please try again.');
         } finally {
@@ -431,20 +428,13 @@ export default function GuestBooking({
             const res = await axiosPublic.post('/guest/payment/receipt', {
                 reference, ...(autoToken ? { token: autoToken } : { email: second })
             }, { responseType: 'blob', timeout: 60000 });
-            saveBlob(res.data, `receipt-${String(reference).slice(0, 8)}.pdf`);
+            /* The server names it after the number printed on it */
+            saveBlob(res.data, fileNameFrom(res.headers, `receipt-${reference}.pdf`));
         } catch (err) {
             setError(err?.response?.data?.message || 'Could not get the receipt.');
         } finally {
             setBusy(false);
         }
-    };
-
-    const copyRef = async reference => {
-        try {
-            await navigator.clipboard.writeText(reference);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch { /* clipboard blocked — the reference is on screen anyway */ }
     };
 
     /* ── The questions that differ by service ──────────────────
@@ -614,6 +604,7 @@ export default function GuestBooking({
                 validate: () => {
                     if (!form.blessingType.trim()) return 'Choose a blessing.';
                     if (!form.blessingFor.trim())  return 'Say what is to be blessed.';
+                    if (!form.venue.trim())        return 'Enter where the blessing will be held.';
                     return null;
                 },
                 render: () => (
@@ -623,10 +614,15 @@ export default function GuestBooking({
                         <div className="form-group form-group--full">
                             <label className="form-label">What is being blessed <span className="req">*</span></label>
                             <input className="form-input" value={form.blessingFor} onChange={set('blessingFor')}
-                                   placeholder="A house, a vehicle, a business…" />
+                                   placeholder="Enter what is to be blessed (a house, a vehicle, a business…)" />
                         </div>
-                        <VenueSelect venues={config.venues} date={form.preferredDate} value={form.venue}
-                                     onChange={v => setForm(f => ({ ...f, venue: v }))} />
+                        {/* Typed in: the home, the shop, the car park — wherever the priest goes */}
+                        <div className="form-group form-group--full">
+                            <label className="form-label">Where will the blessing be held? <span className="req">*</span></label>
+                            <input className="form-input" value={form.venue} onChange={set('venue')}
+                                   placeholder="Enter the complete address (e.g. 12 Rizal St., Brgy. San Felipe, Naga City)" />
+                            <p className="form-hint">The complete address, so the priest can find it.</p>
+                        </div>
                     </>
                 ),
             },
@@ -649,7 +645,7 @@ export default function GuestBooking({
                         <div className="form-group form-group--full">
                             <label className="form-label">Recipient <span className="req">*</span></label>
                             <input className="form-input" value={form.recipientName} onChange={set('recipientName')}
-                                   placeholder="Name of the person receiving it" />
+                                   placeholder="Enter the full name of the person receiving it" />
                         </div>
                     </>
                 ),
@@ -680,7 +676,7 @@ export default function GuestBooking({
                         <div className="form-group form-group--full">
                             <label className="form-label">Requestor Name <span className="req">*</span></label>
                             <input className="form-input" value={form.requestorName} onChange={set('requestorName')}
-                                   placeholder="Full name of the person requesting" />
+                                   placeholder="Enter the full name of the person requesting" />
                         </div>
                         <DetailFields fields={REQUESTER_FIELDS} values={details} onChange={setDet} />
                     </>
@@ -693,13 +689,12 @@ export default function GuestBooking({
                 render: () => (
                     <>
                         <DetailFields fields={detailFields} values={details} onChange={setDet} />
-                        {/* An office or a school names the place itself; a funeral
-                            or a wake is in the church */}
+                        {/* Where it will be held, typed in — every kind of Mass asks */}
                         {asksWhere(form.massType) && (
                             <div className="form-group form-group--full">
                                 <label className="form-label">Where will the Mass be held? <span className="req">*</span></label>
-                                <input className="form-input" value={form.venue.trim()} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
-                                       placeholder="e.g. the office's conference hall, the school gym, or the parish church" />
+                                <input className="form-input" value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
+                                       placeholder={wherePlaceholder(form.massType)} />
                             </div>
                         )}
                         {feeBox('Offering')}
@@ -723,13 +718,13 @@ export default function GuestBooking({
                         <div className="form-group">
                             <label className="form-label">Copies</label>
                             <input className="form-input" type="number" min={1} max={10}
-                                   value={form.copies} onChange={set('copies')} />
+                                   value={form.copies} onChange={set('copies')} placeholder="Enter the number of copies" />
                         </div>
                         {feeBox(copies > 1 ? `Total for ${copies} copies` : 'Fee')}
                         <div className="form-group form-group--full">
                             <label className="form-label">Purpose <span className="req">*</span></label>
                             <input className="form-input" value={form.purpose} onChange={set('purpose')}
-                                   placeholder="School enrolment, marriage requirement…" />
+                                   placeholder="Enter the purpose (school enrollment, marriage requirement…)" />
                         </div>
                     </>
                 ),
@@ -755,7 +750,8 @@ export default function GuestBooking({
                 <div className="form-group form-group--full">
                     <label className="form-label">Notes</label>
                     <textarea className="form-textarea" rows={3}
-                              value={form.additionalNotes} onChange={set('additionalNotes')} />
+                              value={form.additionalNotes} onChange={set('additionalNotes')}
+                            placeholder="Enter anything else the office should know (optional)" />
                 </div>
             ),
         },
@@ -789,7 +785,7 @@ export default function GuestBooking({
                         label="Mobile number"
                         required
                         type="tel"
-                        placeholder="09XXXXXXXXX"
+                        placeholder="Enter your mobile number (09XXXXXXXXX)"
                         valid={v => PHONE_RE.test(cleanPhone(v))}
                         state={phone}
                         confirm={phoneConfirm}
@@ -817,7 +813,7 @@ export default function GuestBooking({
                             <span><b>No booking cancellation.</b> Once sent, a request cannot be cancelled online — please be sure of the date and time before you submit.</span>
                         </p>
                         <Turnstile onToken={setCaptcha} resetKey={captchaRound} />
-                        {fee > 0 && <p className="gb__fee">Offering: <b>{peso(fee)}</b> — {paysOnline ? 'paid online' : 'settled at the parish office'}</p>}
+                        {fee > 0 && <p className="gb__fee">Offering: <b>{peso(fee)}</b> — {payWord(service)}</p>}
                     </div>
                 </>
             ),
@@ -860,145 +856,46 @@ export default function GuestBooking({
         </div>
     );
 
-    /* The buttons that settle an offering: online for what is paid online,
-       the office for the rest — never both. Once "at the office" is chosen
-       there is nothing more to press. */
-    const renderPayButtons = (r, reference, second) => {
-        if (!(r.fee > 0) || r.status === 'cancelled' || r.payment?.status === 'paid') return null;
-        const online = r.paysOnline ?? paysOnline;
-        if (online) return (
-            <div className="gb__pay-row">
-                <button type="button" className="lp-btn lp-btn--filled gb__pay" disabled={busy}
-                        onClick={() => pay(reference, second)}>
-                    <FontAwesomeIcon icon={faCreditCard} />
-                    {busy ? 'Opening checkout…' : `Pay ${peso(r.fee + (r.donation || 0))} online`}
-                </button>
-            </div>
-        );
-        if (onsiteChosen(r)) return null;
-        return (
-            <div className="gb__pay-row">
-                <button type="button" className="lp-btn lp-btn--filled gb__pay" disabled={busy}
-                        onClick={() => payOnsite(reference, second)}>
-                    <FontAwesomeIcon icon={faHandHoldingDollar} /> Pay {peso(r.fee + (r.donation || 0))} at the parish office
-                </button>
-            </div>
-        );
-    };
+    /* How it is being paid: what the visitor chose on the slide after
+       Submit — or null while that is still to choose */
+    const methodOf = r => (r?.paymentChoice === 'online' ? 'online'
+        : onsiteChosen(r) ? 'office' : null);
 
-    /* What a looked-up request shows, wherever it is shown. A plain render
-       helper, not a component: it closes over this render's state. */
-    const renderResult = (r, second, solo = false) => {
-        const paid    = r.payment?.status === 'paid';
-        const owed    = r.fee > 0 && !paid && r.status !== 'cancelled';
-        const day     = r.preferredDate ? new Date(r.preferredDate) : null;
-        const tone    = r.status === 'cancelled' || r.status === 'rejected' ? 'bad'
-                      : r.status === 'pending' && owed ? 'wait' : 'ok';
-        const icon    = tone === 'bad' ? faBan : tone === 'wait' ? faHourglassHalf : faCircleCheck;
-        const standing = r.status === 'cancelled' ? 'Cancelled'
-                       : r.status === 'rejected'  ? 'Not accepted'
-                       : r.status === 'completed' ? 'Completed'
-                       : r.status === 'approved'  ? 'Confirmed'
-                       : paid ? 'Received — awaiting the office'
-                       : owed && onsiteChosen(r) ? 'Reserved — pay at the office'
-                       : owed ? 'Awaiting your offering'
-                       : 'Received — awaiting the office';
+    /* Something to pay, and no way chosen yet (or the visitor asked to
+       choose again): the slide asking how */
+    const owes = r => (r.fee > 0) && r.payment?.status !== 'paid'
+        && r.status !== 'cancelled' && r.status !== 'rejected';
+    const choosingFor = r => owes(r) && (!methodOf(r) || rechoose === r.reference);
 
-        return (
-        <article className={`tk tk--${tone}${solo ? ' tk--solo' : ''}`}>
-            {/* How it stands, in one line */}
-            <header className="tk__standing">
-                <FontAwesomeIcon icon={icon} />
-                <b>{standing}</b>
-            </header>
+    const choose = (r, second) => way => (way === 'online'
+        ? pay(r.reference, second)
+        : payOnsite(r.reference, second));
 
-            <div className="tk__body">
-                {/* What was booked */}
-                <div className="tk__head">
-                    <small>{r.service}</small>
-                    <h3>{r.type}</h3>
-                    {r.what && <p>{r.kind === 'intention' ? 'for' : r.kind === 'document' ? 'purpose:' : 'for'} <b>{r.what}</b></p>}
-                </div>
+    /* The bottom right of the invoice once it is paid: the receipt. Unpaid,
+       BookingSummary puts "Download invoice" there itself. */
+    const nextAction = (r, second) => (r.payment?.status === 'paid' ? (
+        <button type="button" className="btn btn--primary" disabled={busy}
+                onClick={() => receipt(r.reference, second)}>
+            <FontAwesomeIcon icon={faFileArrowDown} /> {busy ? 'Preparing…' : 'Download receipt'}
+        </button>
+    ) : null);
 
-                {/* When — a calendar leaf, the way it shows on the parish's calendar */}
-                {day && (
-                    <div className="tk__when">
-                        <div className="tk__leaf">
-                            <small>{day.toLocaleDateString('en-PH', { month: 'short' })}</small>
-                            <b>{day.getDate()}</b>
-                        </div>
-                        <div className="tk__when-text">
-                            <b>{day.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</b>
-                            <span><FontAwesomeIcon icon={faClock} /> {fmtTime(r.preferredTime)}</span>
-                            {r.venue && <span><FontAwesomeIcon icon={faLocationDot} /> {r.venue}</span>}
-                        </div>
-                    </div>
-                )}
+    /* The pill at the top of the finished step, where Cancel was */
+    const toCalendar = onExit
+        || (() => window.location.assign(subdomain ? `/parish/${subdomain}#calendar` : '/#calendar'));
 
-                <dl className="tk__facts">
-                    <div><dt>{r.kind === 'intention' ? 'Offered by' : 'Requested by'}</dt><dd>{r.requestorName}</dd></div>
-                    <div><dt>Offering</dt><dd>{r.fee ? peso(r.fee) : 'None'}</dd></div>
-                    {r.donation > 0 && <div><dt>Donation</dt><dd>{peso(r.donation)}</dd></div>}
-                    <div><dt>Payment</dt><dd className={`tk__pay tk__pay--${paid ? 'paid' : owed ? 'due' : 'none'}`}>{paymentLabel(r)}</dd></div>
-                    {r.settleBy && r.status === 'pending' && !paid && (
-                        <div className="tk__due"><dt>Settle by</dt><dd>{fmtDeadline(r.settleBy)}</dd></div>
-                    )}
-                </dl>
-
-                {r.status === 'cancelled' && (
-                    <p className="gb__cancelled">
-                        This request was cancelled: the offering was not settled in time
-                        {r.settleRule ? ` (${r.settleRule})` : ''}. You are welcome to book again.
-                    </p>
-                )}
-            </div>
-
-            {/* The stub: the reference, torn off along the perforation */}
-            {solo && (
-                <div className="tk__stub">
-                    <div className="tk__stub-text">
-                        <small>Reference</small>
-                        <code>{r.reference}</code>
-                    </div>
-                    <button type="button" className="gb__copy" onClick={() => copyRef(r.reference)}>
-                        <FontAwesomeIcon icon={faCopy} /> Copy
-                    </button>
-                </div>
-            )}
-
-            {/* Still to be paid at the office: the invoice again, to save or show */}
-            {owed && onsiteChosen(r) && r.status === 'pending' && (
-                <div className="tk__invoice">
-                    <Invoice r={r} parish={config.parish || { name: parishName }} service={SERVICES[r.kind]?.label || 'request'} />
-                </div>
-            )}
-
-            <footer className="tk__actions">
-                {renderPayButtons(r, r.reference, second)}
-
-                {paid && (
-                    <button type="button" className="lp-btn lp-btn--outline gb__pay" disabled={busy}
-                            onClick={() => receipt(r.reference, second)}>
-                        <FontAwesomeIcon icon={faFileArrowDown} />
-                        {busy ? 'Preparing…' : 'Download receipt'}
-                    </button>
-                )}
-
-                {onExit ? (
-                    <button type="button" className="gb__link" onClick={onExit}>
-                        <FontAwesomeIcon icon={faCalendarDays} /> Back to the calendar
-                    </button>
-                ) : (
-                    /* Opened from the emailed link, or back from paying: the
-                       calendar is on the parish's landing page */
-                    <a className="gb__link" href={subdomain ? `/parish/${subdomain}#calendar` : '/#calendar'}>
-                        <FontAwesomeIcon icon={faCalendarDays} /> Back to the calendar
-                    </a>
-                )}
-            </footer>
-        </article>
-        );
-    };
+    /* A booking, wherever it is shown — straight after the wizard, from the
+       emailed link, or looked up by reference. Always the same screen, laid
+       out as the wizard's last step. */
+    const renderSummary = (r, second, { pill = true } = {}) => (
+        <BookingSummary key={`${r.reference}-${choosingFor(r)}`}
+                        r={r} parish={config.parish || { name: parishName }}
+                        method={methodOf(r)} choosing={choosingFor(r)} busy={busy}
+                        ways={waysFor(r.kind)}
+                        onChoose={choose(r, second)}
+                        onRechoose={() => { setError(''); setRechoose(r.reference); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        action={nextAction(r, second)} onBack={pill ? toCalendar : undefined} />
+    );
 
     /* ── Opened from the emailed or texted link ── */
     if (autoState === 'loading') return (
@@ -1009,87 +906,20 @@ export default function GuestBooking({
 
     if (autoState === 'done' && found) return (
         <div className="gb">
-            <ParishBanner parish={config.parish || { name: parishName }} className="pban--result"
-                          eyebrow={found.payment?.status === 'paid' ? 'Paid to' : 'Booked with'} />
-            {renderResult(found, '', true)}
+            {renderSummary(found, '')}
             {error && <p className="gb__error gb__error--after">{error}</p>}
         </div>
     );
 
     /* ── Just booked ──
-       Three screens, by what the offering needs:
-         • paid online (an intention, a document): one line and the Pay
-           button — the reference and the rest come with the receipt;
-         • paid at the office, not yet chosen (a sacrament, a blessing): one
-           line and the "Pay at the parish office" button;
-         • paid at the office, chosen: the invoice — received, pay by when,
-           the reference — to download and show at the counter;
-         • nothing to pay: received, with the reference. */
-    if (booked) {
-        const r      = booked.request || {};
-        const owed   = r.fee > 0 && r.payment?.status !== 'paid';
-        const onsite = owed && onsiteChosen(r);
-        const online = r.paysOnline ?? paysOnline;
-        const parish = config.parish || { name: parishName };
-        const back   = onExit && (
-            <button type="button" className="lp-btn lp-btn--outline" onClick={onExit}>
-                <FontAwesomeIcon icon={faCalendarDays} /> Back to the calendar
-            </button>
-        );
-
-        if (onsite) return (
-            <div className="gb gb--done">
-                <ParishBanner parish={parish} eyebrow="Booked with" />
-                <Invoice r={{ ...r, reference: booked.reference }} parish={parish} service={svc.label} />
-                {error && <p className="gb__error">{error}</p>}
-                <div className="gb__after">{back}</div>
-            </div>
-        );
-
-        if (owed) return (
-            <div className="gb gb--done">
-                <ParishBanner parish={parish} eyebrow="Booked with" />
-                <h3>
-                    {online
-                        ? 'Pay now to settle your payment and complete your request.'
-                        : 'Pay at the parish office to settle your payment and complete your request.'}
-                </h3>
-                {renderPayButtons(r, booked.reference, booked.second)}
-                {error && <p className="gb__error">{error}</p>}
-                <div className="gb__after">{back}</div>
-            </div>
-        );
-
-        return (
-        <div className="gb gb--done">
-            <ParishBanner parish={parish} eyebrow={r.payment?.status === 'paid' ? 'Paid to' : 'Booked with'} />
-            <FontAwesomeIcon icon={faCircleCheck} className="gb__tick" />
-            <h3>{svc.done}</h3>
-            <p className="gb__sub">
-                {service === 'occasional'
-                    ? `This is a reservation: ${parishName} will confirm the Mass and the arrangements with you.`
-                    : `${parishName} will confirm it shortly.`}
-                {' '}Keep the reference below — with the number you confirmed it is how you check on the request.
-            </p>
-            <div className="gb__ref">
-                <code>{booked.reference}</code>
-                <button type="button" className="gb__copy" onClick={() => copyRef(booked.reference)}>
-                    <FontAwesomeIcon icon={faCopy} /> {copied ? 'Copied' : 'Copy'}
-                </button>
-            </div>
-            <p className="gb__sub gb__sub--small">We also sent it to you.</p>
-
-            {error && <p className="gb__error">{error}</p>}
-
-            <div className="gb__after">
-                {back}
-                <button type="button" className="gb__link" onClick={() => { setBooked(null); setMode('book'); }}>
-                    {svc.again}
-                </button>
-            </div>
+       The wizard's last step: the same screen the emailed link opens, so
+       the person sees now exactly what they will see when they come back. */
+    if (booked) return (
+        <div className="gb">
+            {renderSummary({ ...(booked.request || {}), reference: booked.reference }, booked.second)}
+            {error && <p className="gb__error gb__error--after">{error}</p>}
         </div>
-        );
-    }
+    );
 
     return (
         <div className="gb">
@@ -1139,13 +969,13 @@ export default function GuestBooking({
                         <span>Reference</span>
                         <input className="form-input gb__mono" value={track.reference}
                                onChange={e => { setTrack(t => ({ ...t, reference: e.target.value })); setError(''); }}
-                               placeholder="e.g. MS26-000-0012" required style={{ textTransform: 'uppercase' }} />
+                               placeholder="Enter your reference number (e.g. MS26-000-0012)" required style={{ textTransform: 'uppercase' }} />
                     </label>
                     <label className="gb__field">
                         <span>Mobile number or email</span>
                         <input className="form-input" value={track.email}
                                onChange={e => { setTrack(t => ({ ...t, email: e.target.value })); setError(''); }}
-                               placeholder="The one you booked with" required />
+                               placeholder="Enter the mobile number or email you booked with" required />
                     </label>
 
                     <div className="gb__actions">
@@ -1154,7 +984,7 @@ export default function GuestBooking({
                         </button>
                     </div>
 
-                    {found && renderResult(found, track.email)}
+                    {found && renderSummary(found, track.email, { pill: false })}
                 </form>
             )}
         </div>

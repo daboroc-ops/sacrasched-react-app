@@ -347,7 +347,7 @@ function AltTextDialog({ asset, onClose, onSaved }) {
                     <input
                         className="ad-input"
                         value={alt}
-                        placeholder="e.g. Parish façade at golden hour"
+                        placeholder="Enter a short description of the image (e.g. parish façade at golden hour)"
                         onChange={e => setAlt(e.target.value)}
                     />
                 </label>

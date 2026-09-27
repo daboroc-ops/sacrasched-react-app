@@ -125,157 +125,8 @@
 }
 
 /* ── A request looked up: a ticket ───────────────────────────── */
-/* How it stands across the top; what, when and who in the body; the
-   reference on a stub along a perforation; the actions at the foot. */
-.tk {
-    margin-top: 8px;
-    text-align: left;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: var(--surface);
-    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, .06));
-    overflow: hidden;
-}
-.tk--solo { margin-top: 0; }
-
-.tk__standing {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
-    font-size: 13.5px;
-    border-bottom: 1px solid var(--border);
-}
-.tk__standing b { flex: 1; min-width: 0; }
-.tk__standing svg { font-size: 15px; }
-.tk--ok   .tk__standing { background: var(--success-bg); color: var(--success-strong); }
-.tk--wait .tk__standing { background: var(--warning-bg); color: var(--warning-fg); }
-.tk--bad  .tk__standing { background: var(--danger-bg);  color: var(--danger-fg); }
-
-.tk__body { padding: 20px 20px 18px; }
-
-.tk__head small {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--brand);
-    margin-bottom: 4px;
-}
-.tk__head h3 {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -.01em;
-    line-height: 1.2;
-    margin: 0;
-    color: var(--text-primary);
-}
-.tk__head p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: var(--text-muted);
-}
-.tk__head p b { color: var(--text-primary); font-weight: 700; }
-
-.tk__when {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 18px;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface-2);
-}
-.tk__leaf {
-    flex-shrink: 0;
-    width: 52px;
-    border-radius: 10px;
-    overflow: hidden;
-    text-align: center;
-    border: 1px solid var(--border);
-    background: var(--surface);
-}
-.tk__leaf small {
-    display: block;
-    padding: 3px 0 2px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #fff;
-    background: var(--brand);
-}
-.tk__leaf b {
-    display: block;
-    padding: 3px 0 4px;
-    font-size: 21px;
-    font-weight: 800;
-    line-height: 1.1;
-    color: var(--text-primary);
-}
-.tk__when-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.tk__when-text b { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.tk__when-text span { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-.tk__when-text svg { font-size: 11.5px; color: var(--brand); }
-
-.tk__facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 14px 18px;
-    margin: 18px 0 0;
-}
-.tk__facts dt { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
-.tk__facts dd { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.tk__pay { text-transform: capitalize; }
-.tk__pay--paid { color: var(--success-fg); }
-.tk__pay--due  { color: var(--warning-fg); }
-.tk__due dd    { color: var(--warning-fg); }
 
 /* The stub: a perforation with a notch either side, the reference on it */
-.tk__stub {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
-    padding: 16px 20px;
-    border-top: 2px dashed var(--border);
-    background: var(--brand-light);
-}
-.tk__stub::before,
-.tk__stub::after {
-    content: '';
-    position: absolute;
-    top: -11px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--surface-2, #f6f7f5);
-    border: 1px solid var(--border);
-}
-.tk__stub::before { left: -11px; border-left-color: transparent; }
-.tk__stub::after  { right: -11px; border-right-color: transparent; }
-.tk__stub-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.tk__stub-text small { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-dark); }
-.tk__stub-text code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--brand-dark);
-    word-break: break-all;
-}
-
-.tk__actions {
-    padding: 4px 20px 20px;
-    text-align: center;
-}
-.tk__actions .gb__pay { margin-top: 16px; }
-.tk__actions .gb__pay-row .gb__pay { margin-top: 16px; }
-.tk__actions .gb__link { margin-top: 14px; }
-.tk__actions .gb__cancelled { text-align: left; }
 
 .gb__status {
     flex-shrink: 0;
@@ -313,11 +164,7 @@
     line-height: 1.5;
 }
 
-
 @media (max-width: 640px) {
-    .tk__body { padding: 16px; }
-    .tk__head h3 { font-size: 19px; }
-    .tk__stub, .tk__actions { padding-left: 16px; padding-right: 16px; }
     .gb        { padding: 20px 16px; }
     .gb__actions .lp-btn { width: 100%; }
     .gb__fee   { margin-right: 0; width: 100%; text-align: center; }
@@ -693,24 +540,6 @@
 .lp-track .pban__badge, .lp-track .pban__logo { width: 42px; height: 42px; border-radius: 12px; }
 .lp-track .pban__text b { font-size: 16px; }
 .lp-track .gb .pban--result { margin-bottom: 14px; }
-
-.lp-track .tk__standing { padding: 9px 16px; font-size: 13px; }
-.lp-track .tk__body     { padding: 14px 16px 12px; }
-.lp-track .tk__head h3  { font-size: 19px; }
-.lp-track .tk__head p   { font-size: 13px; margin-top: 2px; }
-.lp-track .tk__when     { margin-top: 12px; padding: 8px 12px; gap: 12px; }
-.lp-track .tk__leaf     { width: 46px; }
-.lp-track .tk__leaf b   { font-size: 18px; padding: 2px 0 3px; }
-.lp-track .tk__when-text b    { font-size: 13.5px; }
-.lp-track .tk__when-text span { font-size: 12.5px; }
-.lp-track .tk__facts    { margin-top: 12px; gap: 10px 16px; }
-.lp-track .tk__facts dd { font-size: 13.5px; }
-.lp-track .tk__stub     { padding: 10px 16px; }
-.lp-track .tk__stub-text code { font-size: 13px; }
-.lp-track .tk__actions  { padding: 0 16px 14px; }
-.lp-track .tk__actions .gb__pay,
-.lp-track .tk__actions .gb__pay-row .gb__pay { margin-top: 12px; }
-.lp-track .tk__actions .gb__link { margin-top: 10px; }
 .lp-track .gb__cancelled { margin-top: 10px; padding: 8px 12px; }
 
 /* ─── Mass intention: dropdown rows, names, the offering ─────────── */
@@ -774,69 +603,17 @@
 .off-line--total b { color: var(--brand-dark); font-size: 15px; }
 .off-gift { width: 100%; }
 
-/* ── The invoice — to be paid at the parish office ──────────────
-   The card is what "Download invoice" saves as a picture, so everything
-   the office needs is inside it and nothing else is. */
-.inv { text-align: center; }
-.inv h3 { font-size: 19px; font-weight: 700; margin-bottom: 10px; }
-.inv__terms { max-width: 40em; }
-.inv__terms b { color: var(--text-primary); }
-.inv__card {
-    max-width: 520px;
-    margin: 22px auto 0;
-    padding: 22px 24px 18px;
-    text-align: left;
-    background: #fff;
-    color: #1a1a1a;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06));
-}
-.inv__head { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.inv__mark.pmark { width: 44px; height: 44px; font-size: 13px; border-radius: 10px; flex-shrink: 0; }
-.inv__parish { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.inv__parish b { font-size: 14.5px; line-height: 1.25; }
-.inv__parish span { font-size: 11.5px; color: var(--text-muted); }
-.inv__label { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
-.inv__ref {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    margin: 16px 0;
-    padding: 12px;
-    border: 1.5px dashed var(--brand);
-    border-radius: var(--radius);
-    background: var(--brand-light);
-}
-.inv__ref small { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-dark); }
-.inv__ref code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; font-weight: 700; letter-spacing: .04em; color: var(--brand-dark); }
-.inv__facts { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; }
-.inv__facts div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; font-size: 13px; }
-.inv__facts dt { color: var(--text-muted); }
-.inv__facts dd { margin: 0; font-weight: 600; }
-.inv__amount {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    margin-top: 16px;
-    padding: 12px 14px;
-    border-radius: var(--radius);
-    background: var(--surface-2);
-}
-.inv__amount div { display: flex; flex-direction: column; gap: 2px; }
-.inv__amount small { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
-.inv__amount span { font-size: 12px; color: var(--text-muted); }
-.inv__amount b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--brand); }
-.inv__foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 10.5px; color: var(--text-muted); }
-.inv__notice { margin-top: 18px; max-width: 40em; }
-.inv .gb__pay { margin-top: 14px; }
-.tk__invoice { padding: 0 22px 8px; }
-.tk__invoice .gb__tick, .tk__invoice h3 { display: none; }   /* the ticket above already says it */
-.tk__invoice .inv__terms { margin-top: 6px; }
+/* The page around it: a slim banner, less air above and below */
+.lp-track--link .lp-section { padding: 14px 0 16px; }
+.lp-track--link .gb { padding: 14px; }
 
-@media (max-width: 480px) {
-    .inv__card { padding: 18px 16px 14px; }
-    .inv__facts div { grid-template-columns: 90px 1fr; }
-    .inv__ref code { font-size: 18px; }
+/* On a phone the card's own header already names the parish, logo and
+   address, so the banner above it is only a second copy — and the height
+   it takes is the Download button's. */
+@media (max-width: 640px) {
+    .lp-track--link .lp-section { padding: 10px 0 12px; }
+    .lp-track--link .gb { padding: 12px; }
 }
-.inv__ref code { word-break: break-all; text-align: center; }
-.inv__ref code.inv__ref-long { font-size: 14px; letter-spacing: 0; }
 
 /* A couple of the departed: two names side by side under one tag */
 .souls__couple {

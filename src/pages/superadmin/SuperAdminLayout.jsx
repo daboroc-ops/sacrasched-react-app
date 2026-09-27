@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faUserShield, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import useAuth from '../../hooks/useAuth';
 import useLogout from '../../hooks/useLogout';
+import useTableLabels from '../../hooks/useTableLabels';
 
 /* Two destinations, so they sit in the header rather than behind a drawer.
    Everything else about a parish — its website, appearance and offerings —
@@ -23,6 +25,10 @@ const NAV = [
 export default function SuperAdminLayout() {
     const { auth } = useAuth();
     const handleLogout = useLogout();
+
+    // Tables become labelled cards on a phone (admin.css)
+    const mainRef = useRef(null);
+    useTableLabels(mainRef);
 
     const user = auth?.user;
     const name = user ? `${user.firstname} ${user.lastname}` : 'Super Admin';
@@ -63,7 +69,7 @@ export default function SuperAdminLayout() {
                 </div>
             </header>
 
-            <main className="sa-main">
+            <main className="sa-main" ref={mainRef}>
                 <Outlet />
             </main>
         </div>

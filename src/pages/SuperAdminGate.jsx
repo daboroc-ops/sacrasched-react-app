@@ -100,6 +100,7 @@ export default function SuperAdminGate() {
                 <label className="auth-field__label" htmlFor="sa-user">Username</label>
                 <input
                     id="sa-user"
+                    placeholder="Enter your username"
                     className="auth-input"
                     autoComplete="username"
                     value={form.username}
@@ -110,6 +111,7 @@ export default function SuperAdminGate() {
                 <label className="auth-field__label" htmlFor="sa-pass">Password</label>
                 <input
                     id="sa-pass"
+                    placeholder="Enter your password"
                     className="auth-input"
                     type="password"
                     autoComplete="current-password"

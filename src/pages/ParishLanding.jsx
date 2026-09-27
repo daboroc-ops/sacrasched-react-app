@@ -48,9 +48,9 @@ function PlatformLink({ siteHost }) {
 const SERVICE_ICONS = [faHandsPraying, faChurch, faCross, faFileLines];
 
 const STEPS = [
-    { n: 1, title: 'Pick a day',         text: 'Choose a date on the calendar and the service you need.' },
-    { n: 2, title: 'Fill in the details', text: 'Only what the office needs — no account required.' },
-    { n: 3, title: 'Follow it through',  text: 'A reference comes by text; check the request any time.' },
+    { n: 1, title: 'Pick a Day',          text: 'Choose a date on the calendar and the service you need.' },
+    { n: 2, title: 'Fill In the Details', text: 'Give only what the office needs. No account is required.' },
+    { n: 3, title: 'Follow Your Request', text: 'You will receive a reference number by text, so you can check your request at any time.' },
 ];
 
 /**
@@ -206,7 +206,7 @@ function ParishSite({ subdomain }) {
                 <section className="lp-section" id="services">
                     <div className="lp-section__inner">
                         <div className="lp-section__hd">
-                            <h2>What you can request here</h2>
+                            <h2>What You Can Request Here</h2>
                         </div>
 
                         <div className="lp-grid lp-grid--4">
@@ -247,7 +247,7 @@ function ParishSite({ subdomain }) {
             <section className="lp-section" id="how">
                 <div className="lp-section__inner">
                     <div className="lp-section__hd">
-                        <h2>How it works</h2>
+                        <h2>How It Works</h2>
                     </div>
 
                     <div className="lp-grid lp-grid--3">

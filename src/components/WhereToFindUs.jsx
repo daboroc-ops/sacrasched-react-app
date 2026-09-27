@@ -50,7 +50,7 @@ export default function WhereToFindUs({ parish }) {
             <div className="lp-section__inner">
                 <div className="lp-section__hd">
                     <span className="lp-eyebrow">Visit</span>
-                    <h2>Where to find us</h2>
+                    <h2>Where to Find Us</h2>
                 </div>
 
                 <div className={`pl-visit${src ? '' : ' pl-visit--nomap'}`}>

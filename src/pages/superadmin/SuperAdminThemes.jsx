@@ -245,6 +245,7 @@ export default function SuperAdminThemes() {
                                             <input
                                                 type="text"
                                                 className="ad-input sa-token__hex"
+                                                placeholder="Enter a hex colour (e.g. #1f5c3a)"
                                                 value={tokens[field.key] || ''}
                                                 onChange={e => setToken(field.key, e.target.value)}
                                             />
@@ -261,6 +262,7 @@ export default function SuperAdminThemes() {
                                             <input
                                                 type="text"
                                                 className="ad-input sa-token__hex"
+                                                placeholder="Enter a hex colour (e.g. #1f5c3a)"
                                                 value={tokens[field.key] || ''}
                                                 onChange={e => setToken(field.key, e.target.value)}
                                             />

@@ -119,7 +119,7 @@ function ServicePick({ slots, onPick }) {
                 ))}
             </div>
 
-            <p className="pc-pick__note">No account needed — your reference comes by text.</p>
+            <p className="pc-pick__note">No account needed — you will receive your reference number by text.</p>
         </div>
     );
 }
@@ -297,7 +297,8 @@ function DayPanel({ day, events, lit, slots, onClose, onBook }) {
                                                     <div key={i} className={`time-slot__event time-slot__event--${e.kind}`}>
                                                         <span className="time-slot__event-time">{fmtTime(e.time)}</span>
                                                         <span className="time-slot__event-label">
-                                                            {e.title}{e.venue ? ` — ${e.venue}` : ''}
+                                                            {/* The kind of service only — never who or where */}
+                                                            {e.title}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -500,7 +501,7 @@ export default function ParishCalendar({ onBook, onUnavailable, subdomain }) {
 
             <p className="cal-hint">
                 <FontAwesomeIcon icon={faCircleInfo} className="cal-hint__icon" />
-                Click a date to see what is on — or to book that day.
+                Click a date to see what is happening, or to book that day.
             </p>
 
             <div className="cal-card">

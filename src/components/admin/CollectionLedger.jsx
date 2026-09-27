@@ -76,9 +76,9 @@ export default function CollectionLedger() {
             <form className="ad-ledger__form" onSubmit={save}>
                 <input className="ad-input ad-input--short" type="date" value={form.date} required
                        onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-                <input className="ad-input ad-input--short" type="number" min="0" step="0.01" placeholder="Amount (₱)" required
+                <input className="ad-input ad-input--short" type="number" min="0" step="0.01" placeholder="Enter the amount (₱)" required
                        value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
-                <input className="ad-input" placeholder="Note (optional) — fiesta, second collection…"
+                <input className="ad-input" placeholder="Enter a note (optional) — fiesta, second collection…"
                        value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
                 <button className="ad-btn ad-btn--filled" disabled={busy}>
                     <FontAwesomeIcon icon={faPlus} /> {busy ? 'Saving…' : 'Record'}
